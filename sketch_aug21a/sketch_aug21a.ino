@@ -22,12 +22,14 @@ void loop()
         string.concat(character); // Add the received character to the receive buffer
   }
   string.trim();
-   if (string.equals(string2))
+   if (string.startsWith("LED"))
    {
-    Serial.println("LED shown");
+    Serial.print ("LED shown ");
+    Serial.print (string.substring(3));
     digitalWrite(13,HIGH);
     Wire.beginTransmission(8);
-    Wire.write(1);
+    char a = &string.substring(3);
+    Wire.write(a);
     Wire.endTransmission();
     delay(500);
     digitalWrite(13,LOW);
