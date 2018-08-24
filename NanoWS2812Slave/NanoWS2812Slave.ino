@@ -1,5 +1,6 @@
 #include "FastLED.h"
 #include <Wire.h>
+#define LED_PIN        3
 #define COLOR_ORDER    GRB
 #define CHIPSET        WS2812B
 #define NUM_LEDS 30
@@ -7,52 +8,96 @@
 #define FRAMES_PER_SECOND  120
 
 CRGB leds[NUM_LEDS];
-
-String ourString = "";
-CRGB ourCol;
+CRGB ourCol = CRGB(255,255,255);
 int x = 0; // holder for i2c message
-int y = 0; // holder for numeric value
-int z = 0; // holder for alphabetic character
+String string = "";
+uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 
 void setup() { 
   Wire.begin(8);
-  Wire.onReceive(receiveEvent); 
+  Wire.onReceive(receiveEvent);
+  Serial.begin(9600);
+  Serial.println("Ready for IC2");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(32); 
-  ourCol = CRGB( 255, 255, 255); 	  
-  }
+  FastLED.setBrightness(64);
+  for(int i = 0; i < NUM_LEDS; i++){
+  leds[i] = CRGB( 255, 0, 0); }
+  FastLED.show();
+  FastLED.delay(500);
+  for(int i = 0; i < NUM_LEDS; i++){
+  leds[i] = CRGB( 0, 255, 0); }
+  FastLED.show();
+  FastLED.delay(500);
+  for(int i = 0; i < NUM_LEDS; i++){
+  leds[i] = CRGB( 0, 0, 255); }
+  FastLED.show();
+  FastLED.delay(500);
+  for(int i = 0; i < NUM_LEDS; i++){
+  leds[i] = CRGB( 0, 0, 0); }
+  FastLED.show();
+  FastLED.delay(500);
+
+}
+
+// function that executes whenever data is received from master
+// this function is registered as an event, see setup()
 void receiveEvent(int howMany) {
-  Serial.print("i2c message ");
-  if (Wire.available()) { // loop through all but the last
-    int x = Wire.read(); // receive byte as a int
-    Serial.println(x);
-    while(Wire.available()){
-      char c = Wire.read();
-      ourString.concat(c);
-    }
-    Serial.println("STRING = "+ourString);
+  while (Wire.available()) { // loop through all but the last
+    char c = Wire.read(); // receive byte as a character
+    string.concat(c);       // print the character
+  }
+  string.trim();
+  String ss = string.substring(0,1);
+  string.remove(0,1);
+  x = ss.toInt();
+  Serial.print("INT = ");
+  Serial.print(x);
+  Serial.print(" STRING = ");
+  Serial.print(string);
+  Serial.print(" Length ");
+  Serial.println(string.length());
+  if (string.length() == 6){
     char charbuf[8];
-    ourString.toCharArray(charbuf,8);
+    string.toCharArray(charbuf,8);
     long int rgb=strtol(charbuf,0,16); //=>rgb=0x001234FE;
     byte r=(byte)(rgb>>16);
     byte g=(byte)(rgb>>8);
     byte b=(byte)(rgb);
     ourCol = CRGB(r,g,b);
-    Serial.write(ourCol);
-    Serial.println();
-    y = 1;
   }
-
+  string = "";
 }
-
 void loop() { 
+  EVERY_N_MILLISECONDS(30) { gHue++;}
   switch (x) {
     case 0:
-      turnOff;
+      turnOff();
       break;
     case 1:
-      theLights(); 
+      turnOn(); 
+     break;
+    case 2:
+      theLights();
       break;
+    case 3:
+      rainbow();
+      break;
+    case 4:
+      rainbowWithGlitter();
+      break;
+    case 5:
+      confetti();
+      break;
+    case 6:
+      sinelon();
+      break;
+    case 7:
+      bpm();
+      break;
+    case 8:
+      juggle();
+      break;
+    
   }
   //call function
   FastLED.show();  
@@ -61,17 +106,75 @@ void loop() {
   //  EVERY_N_MILLISECONDS( 20 )
 }  
 void turnOff() {
-  for (int i = 0; i < NUM_LEDS; i++){
-    leds[i] = CRGB::Black;
+    for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CRGB( 0, 0, 0);
+  }
+}
+void turnOn() {
+    for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = ourCol;
   }
 }
 void theLights() { //  speckles and strobes
   fadeToBlackBy( leds, 30, 10);
   int pos = random16(30);
-  leds[pos] += ourCol;
+  leds[pos] = ourCol;
 }
-void requestEvent() {
-  Wire.write(y); // respond with message of 6 bytes
-  y = 0;
-  // as expected by master
+void rainbow() 
+{
+  // FastLED's built-in rainbow generator
+  fill_rainbow( leds, NUM_LEDS, gHue, 7);
 }
+void addGlitter( fract8 chanceOfGlitter) 
+{
+  if( random8() < chanceOfGlitter) {
+    leds[ random16(NUM_LEDS) ] += CRGB::White;
+  }
+}
+void rainbowWithGlitter() 
+{
+  // built-in FastLED rainbow, plus some random sparkly glitter
+  rainbow();
+  addGlitter(80);
+}
+void confetti() 
+{
+  // random colored speckles that blink in and fade smoothly
+  fadeToBlackBy( leds, NUM_LEDS, 10);
+  int pos = random16(NUM_LEDS);
+  leds[pos] = ourCol;
+  leds[pos] += CHSV( gHue + random8(64), 200, 255);
+}
+
+void sinelon()
+{
+  // a colored dot sweeping back and forth, with fading trails
+  fadeToBlackBy( leds, NUM_LEDS, 20);
+  int pos = beatsin16( 13, 0, NUM_LEDS-1 );
+  leds[pos] = ourCol;
+  leds[pos] += CHSV( gHue, 255, 192);
+}
+
+void bpm()
+{
+  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+  uint8_t BeatsPerMinute = 62;
+  CRGBPalette16 palette = PartyColors_p;
+  uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+  for( int i = 0; i < NUM_LEDS; i++) { //9948
+    leds[i] = ourCol;
+    leds[i] = ColorFromPalette(palette, gHue+(i*2), beat-gHue+(i*10));
+  }
+}
+
+void juggle() {
+  // eight colored dots, weaving in and out of sync with each other
+  fadeToBlackBy( leds, NUM_LEDS, 20);
+  byte dothue = 0;
+  for( int i = 0; i < 8; i++) {
+    leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= ourCol;
+    leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
+    dothue += 32;
+  }
+}
+

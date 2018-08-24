@@ -28,8 +28,8 @@ void loop()
     Serial.print (string.substring(3));
     digitalWrite(13,HIGH);
     Wire.beginTransmission(8);
-    char a = &string.substring(3);
-    Wire.write(a);
+    String buff = string.substring(3);
+    Wire.write(buff);
     Wire.endTransmission();
     delay(500);
     digitalWrite(13,LOW);
