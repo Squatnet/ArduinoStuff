@@ -22,14 +22,22 @@ void loop()
         string.concat(character); // Add the received character to the receive buffer
   }
   string.trim();
+  Serial.println(string);
+   if (string.startsWith("POL"))
+   {
+    Serial.println(string);
+    BTSerial.write("{String}");
+   }
    if (string.startsWith("LED"))
    {
     Serial.print ("LED shown ");
-    Serial.print (string.substring(3));
+    Serial.println (string.substring(3));
     digitalWrite(13,HIGH);
     Wire.beginTransmission(8);
     String buff = string.substring(3);
-    Wire.write(buff);
+    char buffer[32];
+    buff.toCharArray(buffer, 32);
+    Wire.write(buffer);
     Wire.endTransmission();
     delay(500);
     digitalWrite(13,LOW);
