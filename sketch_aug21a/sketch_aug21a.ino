@@ -22,7 +22,6 @@ void loop()
         string.concat(character); // Add the received character to the receive buffer
   }
   string.trim();
-  Serial.println(string);
    if (string.startsWith("POL"))
    {
     Serial.println(string);

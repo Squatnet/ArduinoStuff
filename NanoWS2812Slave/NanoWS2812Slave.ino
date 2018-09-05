@@ -1,39 +1,48 @@
 #include "FastLED.h"
 #include <Wire.h>
-#define LED_PIN        3
 #define COLOR_ORDER    GRB
 #define CHIPSET        WS2812B
-#define NUM_LEDS 30
+#define NUM_LEDS 29
 #define DATA_PIN 6
+#define DATA_PIN_2 7
 #define FRAMES_PER_SECOND  120
 
 CRGB leds[NUM_LEDS];
+CRGB leds2[NUM_LEDS];
 CRGB ourCol = CRGB(255,255,255);
 int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-
+int timeSinceBt = 0;
+int autoMode = 1;
+int autoSecs = 5;
 void setup() { 
   Wire.begin(8);
   Wire.onReceive(receiveEvent);
   Serial.begin(9600);
   Serial.println("Ready for IC2");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
   FastLED.setBrightness(64);
   for(int i = 0; i < NUM_LEDS; i++){
-  leds[i] = CRGB( 255, 0, 0); }
+  leds[i] = CRGB( 255, 0, 0);
+  leds2[i] = CRGB(255, 0, 0);}
+  
   FastLED.show();
   FastLED.delay(500);
   for(int i = 0; i < NUM_LEDS; i++){
-  leds[i] = CRGB( 0, 255, 0); }
+  leds[i] = CRGB( 0, 255, 0);
+  leds2[i] = CRGB(0, 255, 0); }
   FastLED.show();
   FastLED.delay(500);
   for(int i = 0; i < NUM_LEDS; i++){
-  leds[i] = CRGB( 0, 0, 255); }
+  leds[i] = CRGB( 0, 0, 255);
+  leds2[i] = CRGB(0, 0, 255); }
   FastLED.show();
   FastLED.delay(500);
   for(int i = 0; i < NUM_LEDS; i++){
-  leds[i] = CRGB( 0, 0, 0); }
+  leds[i] = CRGB( 0, 0, 0);
+  leds2[i] = CRGB(0, 0, 0);}
   FastLED.show();
   FastLED.delay(500);
 
@@ -46,10 +55,15 @@ void receiveEvent(int howMany) {
     char c = Wire.read(); // receive byte as a character
     string.concat(c);       // print the character
   }
+  timeSinceBt = 0;
   string.trim();
   String ss = string.substring(0,1);
   string.remove(0,1);
-  x = ss.toInt();
+  if (ss == "X"){ autoMode = 0; Serial.print("AUTO OFF");}
+  else if (ss == "O"){ autoMode = 1; Serial.print("AUTO ON!");}
+  else if (ss == "S"){ autoSecs = string.toInt(); Serial.print("AUTOSECS = "+string);}
+  else{
+    x = ss.toInt();
   Serial.print("INT = ");
   Serial.print(x);
   Serial.print(" STRING = ");
@@ -64,11 +78,21 @@ void receiveEvent(int howMany) {
     byte g=(byte)(rgb>>8);
     byte b=(byte)(rgb);
     ourCol = CRGB(r,g,b);
+    }
   }
   string = "";
 }
 void loop() { 
   EVERY_N_MILLISECONDS(30) { gHue++;}
+  EVERY_N_SECONDS(1) {
+   timeSinceBt++;
+   if (timeSinceBt == autoSecs){
+    if (autoMode = 1) {
+      x = random(2,8);
+    }
+    timeSinceBt = 0;
+   }
+  }
   switch (x) {
     case 0:
       turnOff();
@@ -100,6 +124,9 @@ void loop() {
     
   }
   //call function
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds2[i] = leds[i];
+  }
   FastLED.show();  
   FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest 
   
@@ -116,8 +143,8 @@ void turnOn() {
   }
 }
 void theLights() { //  speckles and strobes
-  fadeToBlackBy( leds, 30, 10);
-  int pos = random16(30);
+  fadeToBlackBy( leds, NUM_LEDS, 10);
+  int pos = random16(NUM_LEDS);
   leds[pos] = ourCol;
 }
 void rainbow() 
@@ -177,4 +204,3 @@ void juggle() {
     dothue += 32;
   }
 }
-
