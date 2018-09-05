@@ -14,8 +14,8 @@ int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
-int autoMode = 1;
-int autoSecs = 5;
+int autoMode = 0;
+int autoSecs = 30;
 void setup() { 
   Wire.begin(8);
   Wire.onReceive(receiveEvent);
@@ -23,7 +23,7 @@ void setup() {
   Serial.println("Ready for IC2");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
-  FastLED.setBrightness(64);
+  FastLED.setBrightness(96);
   for(int i = 0; i < NUM_LEDS; i++){
   leds[i] = CRGB( 255, 0, 0);
   leds2[i] = CRGB(255, 0, 0);}
@@ -59,9 +59,14 @@ void receiveEvent(int howMany) {
   string.trim();
   String ss = string.substring(0,1);
   string.remove(0,1);
-  if (ss == "X"){ autoMode = 0; Serial.print("AUTO OFF");}
-  else if (ss == "O"){ autoMode = 1; Serial.print("AUTO ON!");}
-  else if (ss == "S"){ autoSecs = string.toInt(); Serial.print("AUTOSECS = "+string);}
+  if (ss == "X"){ autoMode = string.toInt();
+  Serial.print("AUTO");
+  Serial.print(autoMode);
+  }
+  else if (ss == "S"){ autoSecs = string.toInt(); 
+    Serial.print("AUTOSECS = ");
+    Serial.println(autoSecs);
+    }
   else{
     x = ss.toInt();
   Serial.print("INT = ");
@@ -82,15 +87,30 @@ void receiveEvent(int howMany) {
   }
   string = "";
 }
+void randX(){
+  if (autoMode == 1) {
+      x = random(2,8);
+      Serial.print("RANDOM");
+      Serial.println(x);
+    }
+  else{
+    Serial.println("AUTO is OFF");
+  }
+}
 void loop() { 
   EVERY_N_MILLISECONDS(30) { gHue++;}
   EVERY_N_SECONDS(1) {
    timeSinceBt++;
    if (timeSinceBt == autoSecs){
-    if (autoMode = 1) {
-      x = random(2,8);
-    }
+    Serial.print("AUTOTIMEOUT ");
+    Serial.print(timeSinceBt);
+    Serial.print(" ");
     timeSinceBt = 0;
+    Serial.print(" ");
+    Serial.print(timeSinceBt);
+    Serial.print(" ");
+    Serial.println(autoSecs);
+    randX();
    }
   }
   switch (x) {
