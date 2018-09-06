@@ -14,8 +14,8 @@ int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
-int autoMode = 0;
-int autoSecs = 30;
+int autoMode = 1;
+int autoSecs = 10;
 void setup() { 
   Wire.begin(8);
   Wire.onReceive(receiveEvent);
@@ -90,7 +90,7 @@ void receiveEvent(int howMany) {
 void randX(){
   if (autoMode == 1) {
       x = random(2,8);
-      Serial.print("RANDOM");
+      Serial.print("RANDOM ");
       Serial.println(x);
     }
   else{
