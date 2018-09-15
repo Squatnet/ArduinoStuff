@@ -2,13 +2,21 @@
 #include <Wire.h>
 #define COLOR_ORDER    GRB
 #define CHIPSET        WS2812B
-#define NUM_LEDS 29
-#define DATA_PIN 6
-#define DATA_PIN_2 7
+#define NUM_LEDS 58
+#define PNP_PIN A1
+#define DATA_PIN 2
+#define PNP_PIN_2 A2
+#define DATA_PIN_2 3
+#define PNP_PIN_3 A3
+#define DATA_PIN_3 4
+#define PNP_PIN_4 A7
+#define DATA_PIN_4 5
 #define FRAMES_PER_SECOND  120
 
 CRGB leds[NUM_LEDS];
 CRGB leds2[NUM_LEDS];
+CRGB leds3[NUM_LEDS];
+CRGB leds4[NUM_LEDS];
 CRGB ourCol = CRGB(255,255,255);
 int x = 0; // holder for i2c message
 String string = "";
@@ -21,28 +29,50 @@ void setup() {
   Wire.onReceive(receiveEvent);
   Serial.begin(9600);
   Serial.println("Ready for IC2");
+  Serial.println("READING ANALOG INPUTS");
+  Serial.print("PIN A1 - ");
+  Serial.println(analogRead(PNP_PIN));
+  Serial.print("PIN A2 - ");
+  Serial.println(analogRead(PNP_PIN_2));
+    Serial.print("PIN A3 - ");
+  Serial.println(analogRead(PNP_PIN_3));
+    Serial.print("PIN A7 - ");
+  Serial.println(analogRead(PNP_PIN_4));
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
-  FastLED.setBrightness(96);
+  FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(leds3, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(leds4, NUM_LEDS);
+  FastLED.setBrightness(128);
   for(int i = 0; i < NUM_LEDS; i++){
   leds[i] = CRGB( 255, 0, 0);
-  leds2[i] = CRGB(255, 0, 0);}
+  leds2[i] = CRGB(255, 0, 0);
+  leds3[i] = CRGB(255, 0, 0);
+  leds4[i] = CRGB(255, 0, 0);}
   
   FastLED.show();
   FastLED.delay(500);
   for(int i = 0; i < NUM_LEDS; i++){
   leds[i] = CRGB( 0, 255, 0);
-  leds2[i] = CRGB(0, 255, 0); }
+  leds2[i] = CRGB(0, 255, 0); 
+  leds3[i] = CRGB(0, 255, 0);
+  leds4[i] = CRGB(0, 255, 0);}
+  
   FastLED.show();
   FastLED.delay(500);
   for(int i = 0; i < NUM_LEDS; i++){
   leds[i] = CRGB( 0, 0, 255);
-  leds2[i] = CRGB(0, 0, 255); }
+  leds2[i] = CRGB(0, 0, 255);
+  leds3[i] = CRGB(0, 0, 255);
+  leds4[i] = CRGB(0, 0, 255);}
+  
   FastLED.show();
   FastLED.delay(500);
   for(int i = 0; i < NUM_LEDS; i++){
   leds[i] = CRGB( 0, 0, 0);
-  leds2[i] = CRGB(0, 0, 0);}
+  leds2[i] = CRGB(0, 0, 0);
+  leds3[i] = CRGB(0, 0, 0);
+  leds4[i] = CRGB(0, 0, 0);}
+  
   FastLED.show();
   FastLED.delay(500);
 
@@ -146,6 +176,8 @@ void loop() {
   //call function
   for(int i = 0; i < NUM_LEDS; i++){
     leds2[i] = leds[i];
+    leds3[i] = leds[i];
+    leds4[i] = leds[i];
   }
   FastLED.show();  
   FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest 
