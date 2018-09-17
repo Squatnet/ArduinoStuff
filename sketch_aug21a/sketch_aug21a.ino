@@ -25,6 +25,7 @@ void loop()
    if (string.startsWith("POL"))
    {
     Wire.requestFrom(8,32);
+    delay(10);
     String str = "{";
     while (Wire.available()) { // slave may send less than requested
       char c = Wire.read(); // receive a byte as character
@@ -39,7 +40,7 @@ void loop()
    }
    if (string.startsWith("LED"))
    {
-    Serial.print ("LED shown ");
+    Serial.print ("LED ");
     Serial.println (string.substring(3));
     digitalWrite(13,HIGH);
     Wire.beginTransmission(8);
