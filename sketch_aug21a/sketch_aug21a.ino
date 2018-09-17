@@ -24,8 +24,18 @@ void loop()
   string.trim();
    if (string.startsWith("POL"))
    {
-    Serial.println(string);
-    BTSerial.write("{String}");
+    Wire.requestFrom(8,32);
+    String str = "{";
+    while (Wire.available()) { // slave may send less than requested
+      char c = Wire.read(); // receive a byte as character
+      str.concat(c);
+    }
+    str.trim();
+    str += "}";
+    Serial.println(str);
+    char buffr[64];
+    str.toCharArray(buffr,64);
+    BTSerial.write(buffr);
    }
    if (string.startsWith("LED"))
    {
