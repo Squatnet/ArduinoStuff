@@ -1,4 +1,5 @@
 #include <ESP8266WiFi.h>
+#include <Wire.h>
 
 // Replace with your network credentials
 const char* ssid     = "SKY195AD";
