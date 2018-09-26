@@ -6,7 +6,6 @@
 #define DATA_PIN_3 4
 #define DATA_PIN_4 5
 #define FRAMES_PER_SECOND  120
-int pnpPins[] = {A1, A2, A3, A7};
 CRGB leds[NUM_LEDS];
 CRGB leds2[NUM_LEDS];
 CRGB leds3[NUM_LEDS];
@@ -28,21 +27,12 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Ready for IC2");
   Serial.println("READING ANALOG INPUTS");
-  int i = 0;
-  while (i < 4) {
-    if (analogRead(pnpPins[i]) > 1000) {
-      connectDevs[i] = 1;
-      Serial.print("Found LED Strips at port ");
-      Serial.println(i);
-    }
-    i++;
-  }
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(leds3, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(leds4, NUM_LEDS);
   FastLED.setBrightness(128);
-  i = 0;
+  int i = 0;
   while (i < 4) {
     ourCol = startup[i];
     turnOn();
@@ -56,7 +46,7 @@ void setup() {
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void requestEvent() {
-  String msg = "STR,"+String(connectDevs[0])+","+String(connectDevs[1])+","+String(connectDevs[2])+","+String(connectDevs[3])+","+String(ourCol.r)+","+String(ourCol.g)+","+String(ourCol.b)+","+String(x)+","+String(autoMode)+","+String(autoSecs);
+  String msg = "STR,"+String(ourCol.r)+","+String(ourCol.g)+","+String(ourCol.b)+","+String(x)+","+String(autoMode)+","+String(autoSecs);
   char bufer[50];
   msg.toCharArray(bufer, 50);
   Serial.println(msg);
