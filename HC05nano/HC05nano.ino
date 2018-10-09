@@ -1,13 +1,15 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
 
-SoftwareSerial BTSerial(3, 2); // RX | TX
+SoftwareSerial BTSerial(2, 3); // RX | TX
 String string = "";
 String string2 = "LED";
 void setup()
 {
   pinMode(13, OUTPUT);
   Serial.begin(9600);
+  pinMode(9, OUTPUT);
+  digitalWrite(9, HIGH);
   Serial.println("Enter a command");
   BTSerial.begin(38400);
   Wire.begin();

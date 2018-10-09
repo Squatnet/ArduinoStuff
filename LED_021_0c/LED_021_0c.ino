@@ -16,16 +16,6 @@ void setup()
   BTSerial.begin(38400);
   Wire.begin();
 }
-void sendMatrix(){
-    String buff = string.substring(4);
-    char buffer[buff.length()];
-    buff.toCharArray(buffer, buff.length());
-    Wire.write(buffer);
-    Wire.endTransmission();
-    delay(500);
-    digitalWrite(13,LOW);
-    string = "";
-      }
 void loop()
 {
   while(BTSerial.available()){
@@ -34,31 +24,37 @@ void loop()
   }
   string.trim();
    if (string.startsWith("MAT")){
-    Serial.print("Matrix "+string.substring(3,4));
+    Serial.println("Matrix "+string.substring(3,4));
     String which = string.substring(3,4);
     int i2cNum = 0;
     if (which == "A")i2cNum = I2C_MAT_A;
     else if (which == "B")i2cNum = I2C_MAT_B;
-    else if (which == "C")i2cNum = I2C_MAT_C;    
-    Serial.println(which);
+    else if (which == "C")i2cNum = I2C_MAT_C;
+    Serial.print("Message : ");
     Serial.println(string.substring(4));
     if (i2cNum != 0){
+      Serial.println("Sending to Matrix "+which+" via i2c");
       Wire.beginTransmission(i2cNum);
       sendMatrix();
     }
     else {
+      Serial.println("Unknown ID, Sending to all overI2c");
       Wire.beginTransmission(2);
+      Serial.print("A, ");
       sendMatrix();
       Wire.beginTransmission(3);
+      Serial.print("B, ");
       sendMatrix();
       Wire.beginTransmission(4);
+      Serial.print("C, ");
+      Serial.println("Done!");
       sendMatrix();
     }
    }
    if (string.startsWith("LED"))
    {
-    Serial.print ("LED ");
-    Serial.println (string.substring(3));
+    Serial.print ("Led Strip "+string.substring(3,4)+" ");
+    Serial.println ("Sending "+string.substring(3)+" via i2c to RS485");
     digitalWrite(13,HIGH);
     Wire.beginTransmission(1);
     String buff = string.substring(4);
@@ -69,9 +65,10 @@ void loop()
     delay(500);
     digitalWrite(13,LOW);
     string = "";
+    Serial.println("Message sent");
    }
    if (string != ""){
-            Serial.println(string); //Output the message
+            Serial.println("Unfiltered message! "+string); //Output the message
            string =""; //clear the buffer/message
         }
 
@@ -79,3 +76,13 @@ void loop()
   if (Serial.available())
     BTSerial.write(Serial.read());
 }
+void sendMatrix(){
+    String buff = string.substring(4);
+    char buffer[buff.length()];
+    buff.toCharArray(buffer, buff.length());
+    Wire.write(buffer);
+    Wire.endTransmission();
+    delay(500);
+    digitalWrite(13,LOW);
+    string = "";
+      }

@@ -4,7 +4,7 @@
 #define I2C_MAT_A 2
 #define I2C_MAT_B 3
 #define I2C_MAT_C 4
-SoftwareSerial BTSerial(2, 3); // RX | TX
+SoftwareSerial BTSerial(2,3); // RX | TX
 String string = "";
 void setup()
 {
@@ -16,16 +16,6 @@ void setup()
   BTSerial.begin(38400);
   Wire.begin();
 }
-void sendMatrix(){
-    String buff = string.substring(4);
-    char buffer[buff.length()];
-    buff.toCharArray(buffer, buff.length());
-    Wire.write(buffer);
-    Wire.endTransmission();
-    delay(500);
-    digitalWrite(13,LOW);
-    string = "";
-      }
 void loop()
 {
   while(BTSerial.available()){
@@ -79,3 +69,13 @@ void loop()
   if (Serial.available())
     BTSerial.write(Serial.read());
 }
+void sendMatrix(){
+    String buff = string.substring(4);
+    char buffer[buff.length()];
+    buff.toCharArray(buffer, buff.length());
+    Wire.write(buffer);
+    Wire.endTransmission();
+    delay(500);
+    digitalWrite(13,LOW);
+    string = "";
+      }
