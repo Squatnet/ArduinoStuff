@@ -6,11 +6,13 @@
 #define DATA_PIN_3 4
 #define DATA_PIN_4 5
 #define FRAMES_PER_SECOND  120
-int pnpPins[] = {A1, A2, A3, A7};
-CRGB leds[NUM_LEDS];
-CRGB leds2[NUM_LEDS];
-CRGB leds3[NUM_LEDS];
-CRGB leds4[NUM_LEDS];
+#define I2C_ADDR 8
+#define CONNECTED_STRIPS 4
+#define FL(aa,bb) for (int i = aa; i < bb; i++)
+CRGB ledsA[NUM_LEDS];
+CRGB ledsB[NUM_LEDS];
+CRGB ledsC[NUM_LEDS];
+CRGB ledsD[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 
@@ -20,32 +22,22 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 10;
-int connectDevs[] = {0,0,0,0}; 
 void setup() {
-  Wire.begin(8);
+  Wire.begin(I2C_ADDR);
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
   Serial.begin(9600);
-  Serial.println("Ready for IC2");
-  Serial.println("READING ANALOG INPUTS");
-  int i = 0;
-  while (i < 4) {
-    if (analogRead(pnpPins[i]) > 1000) {
-      connectDevs[i] = 1;
-      Serial.print("Found LED Strips at port ");
-      Serial.println(i);
-    }
-    i++;
-  }
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(leds2, NUM_LEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(leds3, NUM_LEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(leds4, NUM_LEDS);
+  Serial.println("Ready for i2c");
+  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(ledsD, NUM_LEDS);
   FastLED.setBrightness(128);
-  i = 0;
+  int i = 0;
   while (i < 4) {
     ourCol = startup[i];
     turnOn();
+    copyLeds();
     FastLED.show();
     FastLED.delay(300);
     i++;
@@ -56,11 +48,30 @@ void setup() {
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void requestEvent() {
-  String msg = "STR,"+String(connectDevs[0])+","+String(connectDevs[1])+","+String(connectDevs[2])+","+String(connectDevs[3])+","+String(ourCol.r)+","+String(ourCol.g)+","+String(ourCol.b)+","+String(x)+","+String(autoMode)+","+String(autoSecs);
-  char bufer[50];
-  msg.toCharArray(bufer, 50);
+  String msg = "STR,";
+  msg += String(I2C_ADDR);
+  msg += ",";
+  msg += String(CONNECTED_STRIPS);
+  msg += ",";
+  msg += String(ourCol.r);
+  msg += ",";
+  msg += String(ourCol.g);
+  msg += ",";
+  msg += String(ourCol.b);
+  msg += ",";
+  msg += String(x);
+  msg += ",";
+  msg += String(autoMode);
+  msg += ",";
+  msg += String(autoSecs);
+  msg += ",";
+  msg += '\0';
+  char buffer[msg.length()];
+  msg.toCharArray(buffer, msg.length());
   Serial.println(msg);
-  Wire.write(bufer);
+  Serial.println(msg.length());
+  Wire.write(buffer);
+  Serial.println(buffer);
 }
 void receiveEvent(int howMany) {
   while (Wire.available()) { // loop through all but the last
@@ -152,36 +163,37 @@ void loop() {
   //  EVERY_N_MILLISECONDS( 20 )
 }
 void copyLeds() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds2[i] = leds[i];
-    leds3[i] = leds[i];
-    leds4[i] = leds[i];
+  ///for (int i = 0; i < NUM_LEDS; i++) 
+  FL(0,NUM_LEDS){
+    ledsB[i] = ledsA[i];
+    ledsC[i] = ledsA[i];
+    ledsD[i] = ledsA[i];
   }
 }
 void turnOff() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB( 0, 0, 0);
+  FL(0,NUM_LEDS) {
+    ledsA[i] = CRGB( 0, 0, 0);
   }
 }
 void turnOn() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = ourCol;
+  FL(0,NUM_LEDS) {
+    ledsA[i] = ourCol;
   }
 }
 void theLights() { //  speckles and strobes
-  fadeToBlackBy( leds, NUM_LEDS, 10);
+  fadeToBlackBy( ledsA, NUM_LEDS, 10);
   int pos = random16(NUM_LEDS);
-  leds[pos] = ourCol;
+  ledsA[pos] = ourCol;
 }
 void rainbow()
 {
   // FastLED's built-in rainbow generator
-  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  fill_rainbow( ledsA, NUM_LEDS, gHue, 7);
 }
 void addGlitter( fract8 chanceOfGlitter)
 {
   if ( random8() < chanceOfGlitter) {
-    leds[ random16(NUM_LEDS) ] += CRGB::White;
+    ledsA[ random16(NUM_LEDS) ] += CRGB::White;
   }
 }
 void rainbowWithGlitter()
@@ -193,19 +205,19 @@ void rainbowWithGlitter()
 void confetti()
 {
   // random colored speckles that blink in and fade smoothly
-  fadeToBlackBy( leds, NUM_LEDS, 10);
+  fadeToBlackBy( ledsA, NUM_LEDS, 10);
   int pos = random16(NUM_LEDS);
-  leds[pos] = ourCol;
-  leds[pos] += CHSV( gHue + random8(64), 200, 255);
+  ledsA[pos] = ourCol;
+  ledsA[pos] += CHSV( gHue + random8(64), 200, 255);
 }
 
 void sinelon()
 {
   // a colored dot sweeping back and forth, with fading trails
-  fadeToBlackBy( leds, NUM_LEDS, 20);
+  fadeToBlackBy( ledsA, NUM_LEDS, 20);
   int pos = beatsin16( 13, 0, NUM_LEDS - 1 );
-  leds[pos] = ourCol;
-  leds[pos] += CHSV( gHue, 255, 192);
+  ledsA[pos] = ourCol;
+  ledsA[pos] += CHSV( gHue, 255, 192);
 }
 
 void bpm()
@@ -214,19 +226,19 @@ void bpm()
   uint8_t BeatsPerMinute = 62;
   CRGBPalette16 palette = PartyColors_p;
   uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
-  for ( int i = 0; i < NUM_LEDS; i++) { //9948
-    leds[i] = ourCol;
-    leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
+  FL(0,NUM_LEDS) { //9948
+    ledsA[i] = ourCol;
+    ledsA[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
   }
 }
 
 void juggle() {
   // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy( leds, NUM_LEDS, 20);
+  fadeToBlackBy( ledsA, NUM_LEDS, 20);
   byte dothue = 0;
-  for ( int i = 0; i < 8; i++) {
-    leds[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= ourCol;
-    leds[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= CHSV(dothue, 200, 255);
+  FL(0,8) {
+    ledsA[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= ourCol;
+    ledsA[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= CHSV(dothue, 200, 255);
     dothue += 32;
   }
 }
