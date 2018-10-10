@@ -27,6 +27,7 @@ void receiveEvent(int howMany) {
     Serial.print(c);         // print the character
     stringeh.concat(c);
   }
+  Serial.println("Got I2c");
 }
 void setup()   /****** SETUP: RUNS ONCE ******/
 {
@@ -34,9 +35,12 @@ void setup()   /****** SETUP: RUNS ONCE ******/
   Serial.begin(9600);
   Serial.println("Nano RS485 Master serial console");
   pinMode(Pin13LED, OUTPUT);   
+  pinMode(TX_ON_A, OUTPUT);
+  pinMode(TX_ON_B, OUTPUT);
   digitalWrite(TX_ON_A, RS485Receive);  // Init Transceiver A
   digitalWrite(TX_ON_B, RS485Receive);  // Init Transceiver B
   Wire.begin(1);
+  Wire.onReceive(receiveEvent);
   Serial.print("RS485 A,RS485 B, i2c setup");
   // Start the software serial port, to another device
   RS485A.begin(38400); 
@@ -50,41 +54,47 @@ void setup()   /****** SETUP: RUNS ONCE ******/
 void loop()   /****** LOOP: RUNS CONSTANTLY ******/
 {
   digitalWrite(Pin13LED, HIGH);  // Show activity
-  while(Serial.available()){
-     char character = Serial.read(); // Receive a single character from the software serial port
-        stringeh.concat(character); // Add the received character to the receive buffer
-  }
   if (stringeh != ""){
+    Serial.print("SENDING TO : ");
     if(stringeh.startsWith("A")){
-     digitalWrite(TX_ON_A,RS485Transmit);
-    String buff = stringeh.substring(1);
-    char buffer[buff.length()];
-    buff.toCharArray(buffer, buff.length());
-     RS485A.write(buffer);
-     digitalWrite(TX_ON_A,RS485Receive);
-     stringeh = "";
-    }
+      Serial.print("A - ");
+      
+      digitalWrite(TX_ON_A,RS485Transmit);
+      String buff = stringeh.substring(1);
+      
+      char buffer[buff.length()+1];
+      buff.toCharArray(buffer, buff.length());
+      Serial.println(buffer);
+      RS485A.write(buffer);
+      digitalWrite(TX_ON_A,RS485Receive);
+      stringeh = "";
+     }
     else if (stringeh.startsWith("B")){
+      Serial.print("B - ");
+      
       digitalWrite(TX_ON_B,RS485Transmit);
     String buff = stringeh.substring(1);
-    char buffer[buff.length()];
+    Serial.println(buff);
+    char buffer[buff.length()+1];
     buff.toCharArray(buffer, buff.length());
+    
       RS485B.write(buffer);
-      }
       digitalWrite(TX_ON_B,RS485Receive);
       stringeh = "";
     }
     else {
-      Serial.println("UNKNOWN FILTER SENDING TO ALL");
+      Serial.println("UNKNOWN FILTER SENDING TO ALL ");
     digitalWrite(TX_ON_A,RS485Transmit);
-    digitalWrite(TX_ON_A,RS485Transmit);
+    digitalWrite(TX_ON_B,RS485Transmit);
     String buff = stringeh.substring(1);
+    Serial.println(buff);
     char buffer[buff.length()];
     buff.toCharArray(buffer, buff.length());
      RS485A.write(buffer);
      RS485B.write(buffer);
      digitalWrite(TX_ON_A,RS485Receive);
-     digitalWrite(TX_ON_A,RS485Receive);
+     digitalWrite(TX_ON_B,RS485Receive);
      stringeh = "";
+  }
   }
 }//--(end main loop )---

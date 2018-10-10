@@ -1,6 +1,6 @@
 #include "FastLED.h"
 #include <Wire.h>
-#define NUM_LEDS 58
+#define NUM_LEDS 29
 #define DATA_PIN 2
 #define DATA_PIN_2 3
 #define DATA_PIN_3 4

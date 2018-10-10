@@ -51,7 +51,7 @@ void loop()
     Serial.println (string.substring(3));
     digitalWrite(13,HIGH);
     Wire.beginTransmission(1);
-    String buff = string.substring(4);
+    String buff = string.substring(3);
     char buffer[32];
     buff.toCharArray(buffer, 32);
     Wire.write(buffer);
