@@ -2,8 +2,8 @@
 /*-----( Import needed libraries )-----*/
 #include <SoftwareSerial.h>
 /*-----( Declare Constants and Pin Numbers )-----*/
-#define SSerialRX        10  //Serial Receive pin
-#define SSerialTX        11  //Serial Transmit pin
+#define SSerialRX        11  //Serial Receive pin
+#define SSerialTX        10  //Serial Transmit pin
 
 #define SSerialTxControl 3   //RS485 Direction control
 
