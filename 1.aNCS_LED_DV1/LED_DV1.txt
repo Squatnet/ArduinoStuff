@@ -1,0 +1,27 @@
+1st Development Project for Demonstration of ws2812b LED projects.
+
+Includes:
+aNCS_LED_041:
+	*aNCS_LED_021/0b (UNO, HC05)
+		Pinout:	HC05 RX/TX = 3,2
+	*aNCS_LED_020/0c (NANO, 2xRS485)
+		Pinout: RS485 A - RO/DI/RE = 10,11,3
+ 			RS485 B - RO/DI/RE = 7,8,6
+	PSU required: 5V 1A.
+	Max Rating 4A.
+aNCS_LED_020/4b: (x2) ( 4 outputs + RS485 receiver 020/0b )
+	PSU required: 5V 4A.
+	Max Rating: 4A
+aNCS_LED_2560: (x3) ( 8x32 Matrix Boards )
+	PSU required: 5V 10A.
+	Max Rating: 13A.
+
+ChangeLog:
+
+13.10.18: 
+	*files correctly renamed to fit updated project board.
+	*necessary files for dev project moved to folder 1.aNCS_LED_DV1
+
+   To Do:
+	*Extentsion Cables for 3 Pin Molex.
+	*Update LED hardware to _010/1b (add chain molex) 
