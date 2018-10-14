@@ -17,7 +17,8 @@ aNCS_LED_2560: (x3) ( 8x32 Matrix Boards )
 	Max Rating: 13A.
 
 ChangeLog:
-
+14.10.18:
+	* HW/ aNCS_LED_041 circuit updated to revision 2. 
 13.10.18: 
 	*files correctly renamed to fit updated project board.
 	*necessary files for dev project moved to folder 1.aNCS_LED_DV1
