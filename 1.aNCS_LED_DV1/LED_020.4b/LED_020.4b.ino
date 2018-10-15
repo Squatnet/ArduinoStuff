@@ -15,6 +15,8 @@
 #define DATA_PIN_3 4
 #define DATA_PIN_4 5
 #define FRAMES_PER_SECOND  120
+#define ZOOMING_BEATS_PER_MINUTE 122
+#define STROBE_BEATS_PER_MINUTE 97.5
 #define I2C_ADDR 8
 #define CONNECTED_STRIPS 4
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
@@ -161,6 +163,9 @@ void loop() {
     case 8:
       juggle();
       break;
+    case 9:
+      simpleStrobe();
+      break;
 
   }
   //call function
@@ -251,3 +256,71 @@ void juggle() {
     dothue += 32;
   }
 }
+void simpleStrobe () {
+ fill_solid( ledsA, NUM_LEDS, CRGB::Black);
+ const uint8_t kStrobeCycleLength = 6; // light every Nth frame
+  static uint8_t sStrobePhase = 0;
+  sStrobePhase = sStrobePhase + 1;
+  if( sStrobePhase >= kStrobeCycleLength ) { 
+    sStrobePhase = 0; 
+  }
+ if( sStrobePhase == 0 ) {
+    uint8_t dashperiod= beatsin8( 8/*cycles per minute*/, 4,10);
+    uint8_t dashwidth = (dashperiod / 4) + 1;
+    uint8_t zoomBPM = STROBE_BEATS_PER_MINUTE;
+    int8_t  dashmotionspeed = beatsin8( (zoomBPM /2), 1,dashperiod);
+    if( dashmotionspeed >= (dashperiod/2)) { 
+      dashmotionspeed = 0 - (dashperiod - dashmotionspeed );
+    }
+    uint8_t cycle = beat8(2); // two cycles per minute
+    uint8_t easedcycle = ease8InOutCubic( ease8InOutCubic( cycle));
+    uint8_t wavecycle = cubicwave8( easedcycle);
+   // uint8_t hueShift = 0; // NO SHIFT OF HUE IN COLOUR (we should rebuild in RGB...) 
+    uint8_t hueShift = scale8( wavecycle,130); // METHOD HOW HUE VALUE SHIFTS
+    uint8_t strobesPerPosition = 2; // try 1..4
+    strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
+  }
+}
+void strobeCore( 
+    uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats,
+    uint8_t huedelta) {
+  static uint8_t sRepeatCounter = 0;
+  static int8_t sStartPosition = 0;
+  static uint8_t sStartHue = 0;
+  sStartHue += 1; //Shift the Colour little by little
+  sRepeatCounter = sRepeatCounter + 1;
+  if( sRepeatCounter>= stroberepeats) {
+    sRepeatCounter = 0;
+    sStartPosition = sStartPosition + dashmotionspeed;
+    if( sStartPosition >= dashperiod ) {
+      while( sStartPosition >= dashperiod) { sStartPosition -= dashperiod; }
+      sStartHue  -= huedelta;
+    } else if( sStartPosition < 0) {
+      while( sStartPosition < 0) { sStartPosition += dashperiod; }
+      sStartHue  += huedelta;
+    }
+  }
+  const uint8_t kSaturation = 208; // WHITE >> CURRENT COLOUR control (def 208)
+  const uint8_t kValue = 200; // Brightness??
+  strobeDraw( sStartPosition, NUM_LEDS-1, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
+}
+static void strobeDraw( 
+  uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width, 
+  uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value) 
+  {
+  uint8_t hue = huestart;
+  for( uint16_t i = startpos; i <= lastpos; i += period) {
+    CRGB color = CHSV( hue, saturation, value);  
+    //CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
+    uint16_t pos = i;
+    for( uint8_t w = 0; w < width; w++) {
+      ledsA[ pos ] = color;
+      pos++;
+      if( pos >= NUM_LEDS) {
+        break;
+      }
+    }
+    hue += huedelta;
+  }
+}
+
