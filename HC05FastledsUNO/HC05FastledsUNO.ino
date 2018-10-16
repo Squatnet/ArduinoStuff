@@ -71,8 +71,8 @@ void loop()
 }
 void sendMatrix(){
     String buff = string.substring(4);
-    char buffer[buff.length()];
-    buff.toCharArray(buffer, buff.length());
+    char buffer[buff.length()+1];
+    buff.toCharArray(buffer, buff.length()+1);
     Wire.write(buffer);
     Wire.endTransmission();
     delay(500);

@@ -398,7 +398,7 @@ WindowDialog/icons/close_highlight = null
 WindowDialog/styles/panel = null
 _sections_unfolded = [ "OptionButton/fonts", "OptionButton/icons", "OptionButton/styles", "PopupMenu", "PopupMenu/colors", "PopupMenu/constants", "PopupMenu/fonts", "PopupMenu/icons", "PopupMenu/styles" ]
 
-[node name="LEDString" type="Control"]
+[node name="LEDString" type="Panel" index="0"]
 
 anchor_left = 0.0
 anchor_top = 0.0
@@ -495,7 +495,7 @@ focus_mode = 2
 context_menu_enabled = true
 placeholder_text = "x"
 placeholder_alpha = 0.6
-caret_blink = false
+caret_blink = true
 caret_blink_speed = 0.65
 caret_position = 0
 _sections_unfolded = [ "Anchor", "Caret", "Margin", "Placeholder", "Rect" ]
@@ -561,6 +561,7 @@ _sections_unfolded = [ "Anchor", "Focus", "Grow Direction", "Hint", "Margin", "M
 
 [node name="PopupMEN" type="PopupMenu" parent="OptionButton" index="0"]
 
+visible = false
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0

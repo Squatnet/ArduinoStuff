@@ -16,18 +16,15 @@
 #define FRAMES_PER_SECOND  120
 #define STROBE_BEATS_PER_MINUTE 97.5
 
-#define I2C_ADDR 8
+#define I2C_ADDR 2
 #define CONNECTED_STRIPS 1
 
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 cLEDText ScrollingMsg;
 CRGB tst[256];
 CRGB ourCol = CRGB(255, 255, 255);
-const unsigned char TxtANCS[] = { 
-  EFFECT_FRAME_RATE "\x02"
-  EFFECT_HSV_AV "\x00\xff\xff\x40\x00\xff"
-  EFFECT_SCROLL_LEFT "    ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    " 
-  };
+unsigned char TxtANCS[] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
+int textlength = 30;
 /*
 unsigned char txtLive[] = "";
 unsigned char displayTxt = {  
@@ -36,17 +33,18 @@ unsigned char displayTxt = {
     EFFECT_SCROLL_LEFT ... // issue starts here - Consider various options
   };
   */
+
 int iic = 0; // holder for i2c message
 String string = "";
 int timeSinceBt = 0;
-int autoMode = 1;
+int autoMode = 0;
 int autoSecs = 10;  
          
 void setup() {
   Wire.begin(2); //2,3,4 for A,B+C aNCS_2560 boards.
   //Serial.begin(9600);
   Wire.onReceive(receiveEvent);
-  Wire.onRequest(requestEvent);
+  Serial.begin(9600);
   FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds[0], leds.Size());
   FastLED.setBrightness(64); // Limit Power Consumption 
   FastLED.clear(true);
@@ -54,45 +52,20 @@ void setup() {
   ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
   ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS) - 1);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0x00, 0xff);
+  ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
   delay(500);
   FastLED.showColor(CRGB::Red);
   FastLED.show();
+  Serial.println("SETUP");
 }
 
 typedef void (*PatternList[])();
 
-PatternList gPatterns = { turnOff, turnOn, theLights, rainbow, rainbowWithGlitter, confetti, sinelon, bpm, juggle} ; 
+PatternList gPatterns = { turnOff, turnOn, theLights, rainbow, rainbowWithGlitter, confetti, sinelon, bpm, juggle, scrollText} ; 
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 
-void requestEvent() {
-  String msg = "STR,";
-  msg += String(I2C_ADDR);
-  msg += ",";
-  msg += String(CONNECTED_STRIPS);
-  msg += ",";
-  msg += String(ourCol.r);
-  msg += ",";
-  msg += String(ourCol.g);
-  msg += ",";
-  msg += String(ourCol.b);
-  msg += ",";
-  msg += String(iic);
-  msg += ",";
-  msg += String(autoMode);
-  msg += ",";
-  msg += String(autoSecs);
-  msg += ",";
-  // add string of characters here - send to txtBuffer
-  msg += '\0';
-  char buffer[msg.length()];
-  msg.toCharArray(buffer, msg.length());
-  Serial.println(msg);
-  Serial.println(msg.length());
-  Wire.write(buffer);
-  Serial.println(buffer);
-}
 //***I2c Reveive event***
 void receiveEvent(int howMany) {
   while (Wire.available()) { // loop through all but the last
@@ -113,6 +86,13 @@ void receiveEvent(int howMany) {
     Serial.print("AUTOSECS = ");
     Serial.println(autoSecs);
   }
+  else if (ss == "M") {
+    Serial.print("Message = ");
+    Serial.println(string);
+    clean(TxtANCS);
+    string.toCharArray(TxtANCS, sizeof(TxtANCS));
+    string = "";
+  }
   else {
     iic = ss.toInt();
     if (string.length() == 6) {
@@ -127,9 +107,16 @@ void receiveEvent(int howMany) {
   }
   string = "";
 }
+void clean(char *var) {
+    int i = 0;
+    while(var[i] != '\0') {
+        var[i] = '\0';
+        i++;
+    }
+}
 void randX() {
   if (autoMode == 1) {
-    iic = random(2, 9);
+    iic = random(2, 10);
     Serial.print("RANDOM ");
     Serial.println(iic);
   }
@@ -151,7 +138,7 @@ void loop() {
       break;
       }
     }
-    gPatterns[gCurrentPatternNumber](); // Call the current pattern function once, updating the 'leds' array
+      gPatterns[gCurrentPatternNumber](); // Call the current pattern function once, updating the 'leds' array
     FastLED.show();  
     FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest 
     // Periodic Updates
@@ -188,8 +175,14 @@ void rXY() {
 }
 
 void scrollText(){
-  if (ScrollingMsg.UpdateText() == -1) // if end of text
-    ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS) - 1); 
+  if (ScrollingMsg.UpdateText() == -1) {// if end of text
+    ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS)+1); 
+    Serial.print("Scroll text");
+    for(int i=0;i<sizeof(TxtANCS)+1 ;i++){
+      Serial.write(TxtANCS[i]);
+      }
+      Serial.println("");
+  }
   else
     return;
     }
