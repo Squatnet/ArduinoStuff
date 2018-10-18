@@ -43,7 +43,7 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
     
     digitalWrite(Pin13LED, HIGH);  // Show activity             
     digitalWrite(Pin13LED, LOW);   
-    
+    Serial.print(byteSend);
     digitalWrite(SSerialTxControl, RS485Transmit);  // Enable RS485 Transmit    
     RS485Serial.write(byteSend); // Send the byte back
     digitalWrite(SSerialTxControl, RS485Receive);  // Disable RS485 Transmit      
