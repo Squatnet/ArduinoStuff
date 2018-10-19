@@ -3,8 +3,8 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
 /*-----( Declare Constants and Pin Numbers )-----*/
-#define RX_A       4  //Serial Receive pin
-#define TX_A       5 //Serial Transmit pin
+#define RX_A       10  //Serial Receive pin
+#define TX_A       11 //Serial Transmit pin
 #define TX_ON_A    3
 #define RX_B       7
 #define TX_B       8
@@ -63,7 +63,7 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
       String buff = stringeh.substring(1);
       
       char buffer[buff.length()+1];
-      buff.toCharArray(buffer, buff.length());
+      buff.toCharArray(buffer, buff.length()+1);
       Serial.println(buffer);
       RS485A.write(buffer);
       digitalWrite(TX_ON_A,RS485Receive);
@@ -76,7 +76,7 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
     String buff = stringeh.substring(1);
     Serial.println(buff);
     char buffer[buff.length()+1];
-    buff.toCharArray(buffer, buff.length());
+    buff.toCharArray(buffer, buff.length()+1);
     
       RS485B.write(buffer);
       digitalWrite(TX_ON_B,RS485Receive);
@@ -88,8 +88,8 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
     digitalWrite(TX_ON_B,RS485Transmit);
     String buff = stringeh.substring(1);
     Serial.println(buff);
-    char buffer[buff.length()];
-    buff.toCharArray(buffer, buff.length());
+    char buffer[buff.length()+1];
+    buff.toCharArray(buffer, buff.length()+1);
      RS485A.write(buffer);
      RS485B.write(buffer);
      digitalWrite(TX_ON_A,RS485Receive);

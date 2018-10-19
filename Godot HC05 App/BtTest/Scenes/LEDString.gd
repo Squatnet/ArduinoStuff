@@ -140,4 +140,4 @@ func _on_color_pressed():
 		$LEDString/Sprite.hide()
 		$LEDString/Label.hide()
 func _on_opt_pressed():
-	$LEDString/OptionButton/PopupMEN.popup()
+	$OptionButton/PopupMEN.popup()

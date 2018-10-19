@@ -1,3 +1,12 @@
+// LEDcxFFFFFF 
+// c is channel 
+// x is pattern number
+// Valid x : 
+// 0 Off
+// 1-8 Patterns
+// S00 Seconds timeout
+// X0  Boolean automode
+// Color optional
 #include "FastLED.h"
 #include <Wire.h>
 #define NUM_LEDS 29

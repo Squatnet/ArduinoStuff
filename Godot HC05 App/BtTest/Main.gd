@@ -7,6 +7,7 @@ var matrixes = []
 var strips = []
 func _ready():
 	set_signals()
+	addDevice("Setting","s")
 	if BTHandler.bluetooth:
 		bt = true
 	
@@ -24,6 +25,9 @@ func _on_connected():
 	btn_connect.set_text("Disconnect")
 	$ScrollContainer.show()
 	addDevice("Setting","s")
+	addDevice("LED","A")
+	addDevice("LED","B")
+	addDevice("MAT","A")
 
 func _on_disconnected():
 	btn_connect.set_text("Connect")
