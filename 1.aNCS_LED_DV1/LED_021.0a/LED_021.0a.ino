@@ -60,6 +60,16 @@ void loop()
     digitalWrite(13,LOW);
     string = "";
    }
+   if (string.startsWith("ALL")){
+      Wire.beginTransmission(1);
+      sendMatrix();
+      Wire.beginTransmission(2);
+      sendMatrix();
+      Wire.beginTransmission(3);
+      sendMatrix();
+      Wire.beginTransmission(4);
+      sendMatrix();
+   }
    if (string != ""){
             Serial.println(string); //Output the message
            string =""; //clear the buffer/message
