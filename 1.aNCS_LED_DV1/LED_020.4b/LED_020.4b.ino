@@ -119,7 +119,7 @@ void receiveEvent(int howMany) {
 }
 void randX() {
   if (autoMode == 1) {
-    x = random(2, 9);
+    x = random(2, 10);
     Serial.print("RANDOM ");
     Serial.println(x);
   }
