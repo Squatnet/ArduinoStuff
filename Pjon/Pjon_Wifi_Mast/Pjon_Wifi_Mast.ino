@@ -1,16 +1,17 @@
 #include <TwitterApi.h>
 #include <Arduino.h>
 /*******************************************************************
- *  An Example of getting data back from the TwitterAPI            *
- *  https://github.com/witnessmenow/arduino-twitter-api            * 
+    An Example of getting data back from the TwitterAPI
+    https://github.com/witnessmenow/arduino-twitter-api
  *                                                                 *
- *  Written by Brian Lough                                         *
+    Written by Brian Lough
  *******************************************************************/
 using namespace std;
 
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
-
+#include <PJON.h>
+PJON<SoftwareBitBang> bus(1);
 //------- Replace the following! ------
 char ssid[] = "OriginBroadband60027";       // your network SSID (name)
 char password[] = "lKG8u8Rr";  // your network key
@@ -46,7 +47,9 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
-
+  // Pjon
+  bus.begin();
+  bus.strategy.set_pin(D2);
   // Attempt to connect to Wifi network:
   Serial.print("Connecting Wifi: ");
   Serial.println(ssid);
@@ -67,50 +70,53 @@ void setup() {
 
 }
 void getMentions() {
-   Serial.println("Getting twitter mentions for AutoNcs");
-    String responseString = api.getMentions();
-    //Serial.println(responseString);
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(responseString);
-    if (root.success()){
-      
-      JsonArray& statuses = root["statuses"];
-      for( const auto& value : statuses ) {
-        JsonObject& singleStat = value;
-        const char* statuses_text = singleStat["text"]; // "@AutoNcs Yo This!!"
+  Serial.println("Getting twitter mentions for AutoNcs");
+  String responseString = api.getMentions();
+  //Serial.println(responseString);
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject& root = jsonBuffer.parseObject(responseString);
+  if (root.success()) {
+
+    JsonArray& statuses = root["statuses"];
+    for ( const auto& value : statuses ) {
+      JsonObject& singleStat = value;
+      const char* statuses_text = singleStat["text"]; // "@AutoNcs Yo This!!"
       String theText = String(statuses_text);
       JsonObject& statuses_user = singleStat["user"];
       const char* statuses_user_screen_name = statuses_user["screen_name"]; // "dirtywastegash"
-      String theUser = String(statuses_user_screen_name);  
-        Serial.println("User : "+theUser+ " Said : "+theText);
-      
-        }
-
-      Serial.println("parsed Json");
-      // Use Arduino Json to parse the data
-    } else {
-      Serial.println("Failed to parse Json");
+      String theUser = String(statuses_user_screen_name);
+      Serial.println("User : " + theUser + " Said : " + theText);
+      String completeString = theUser + " " + theText;
+      char buff[completeString.length() + 1];
+      completeString.toCharArray(buff, completeString.length());
+      bus.send_packet(3, buff, completeString.length() + 1);
     }
+
+    Serial.println("parsed Json");
+    // Use Arduino Json to parse the data
+  } else {
+    Serial.println("Failed to parse Json");
+  }
 }
 void getTwitterStats(String name) {
   Serial.println("Getting twitter stats for " + name);
-    String responseString = api.getUserStatistics(name);
-    Serial.println(responseString);
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& response = jsonBuffer.parseObject(responseString);
-    if (response.success()) {
-     Serial.println("parsed Json");
-     //Serial.print(response);
-     
-    } else {
-      Serial.println("Failed to parse Json");
-    }
+  String responseString = api.getUserStatistics(name);
+  Serial.println(responseString);
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject& response = jsonBuffer.parseObject(responseString);
+  if (response.success()) {
+    Serial.println("parsed Json");
+    //Serial.print(response);
+
+  } else {
+    Serial.println("Failed to parse Json");
+  }
 }
 void loop() {
   delay(10);
-  if(haveBearerToken){
+  if (haveBearerToken) {
     unsigned long timenow = millis();
-    if (api_lasttime == 0 || timenow-api_lasttime > api_mtbs )  {
+    if (api_lasttime == 0 || timenow - api_lasttime > api_mtbs )  {
       getMentions();
       api_lasttime = timenow;
     }
