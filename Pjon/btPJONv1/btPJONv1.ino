@@ -1,17 +1,26 @@
+#include <ArduinoJson.h>
+
+
 /* SoftwareBitBang default SWBB_MODE: 1
    (Transfer speed: 16.949kBb or 2.11kB/s) */
 #include <SoftwareSerial.h>
-#include <PJON.h>
-
+#include <PJONMaster.h>
 SoftwareSerial BTSerial(9, 8); // RX | TX for HC05 Module
 
 #define SWBB_RESPONSE_TIMEOUT 1500 /* Synchronous acknowledgement response timeout*/
 #define SWBB_BACK_OFF_DEGREE     4 // Set the back-off exponential degree (default 4)
 #define SWBB_MAX_ATTEMPTS       20 // Set the maximum sending attempts (default 20)
 uint8_t bus_id[4] = {0,0,1,53}; // aNCS Unique Bus ID :)
-PJON<SoftwareBitBang> bus(bus_id, 1); // Correct initializer.
-
+PJONMaster<SoftwareBitBang> bus(bus_id); // Correct initializer.
+uint32_t t_millis;
 String string = "";
+const size_t bufferSize = JSON_ARRAY_SIZE(3) + 2*JSON_ARRAY_SIZE(5) + JSON_OBJECT_SIZE(3);
+DynamicJsonBuffer jsonBuffer(bufferSize);
+
+JsonObject& root = jsonBuffer.createObject();
+JsonArray& serial = root.createNestedArray("serial");
+JsonArray& strips = root.createNestedArray("strips");
+JsonArray& matrix = root.createNestedArray("matrix");
 
 #define LPIN 4 // Latch
 #define CPIN 5 // Clock
@@ -25,7 +34,6 @@ void hc595(int aa) {
         digitalWrite(LPIN, 1);
         delay(50);
 }
-
 void setup() {
   pinMode(LPIN, OUTPUT); // Init 595 (menu)
   dataArray[0] = 0b00000000;
@@ -39,23 +47,116 @@ void setup() {
   dataArray[8] = 0b00000001;
   dataArray[9] = 0b11111111;
   dataArray[10] = 0b10101010;
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Starting Host BT Connection");
   BTSerial.begin(38400); //HC05
   bus.strategy.set_pin(12); //PJON 
+  bus.debug = false;
+  bus.set_receiver(receiver_function);
+  bus.set_error(error_handler);
   bus.begin(); //PJON begin strategy
+  if(bus.debug)
+    bus.send_repeatedly(PJON_BROADCAST, "Master says hi!", 15, 2500000);
+  t_millis = millis();
 }
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
+  if(code == PJON_CONNECTION_LOST) {
+    Serial.print("PJON error: connection lost with device id ");
+    Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+  }
+  if(code == PJON_ID_ACQUISITION_FAIL) {
+    Serial.print("PJONMaster error: connection lost with slave id ");
+    Serial.println(data, DEC);
+  }
+  if(code == PJON_DEVICES_BUFFER_FULL) {
+    Serial.print("PJONMaster error: master devices' buffer is full with a length of ");
+    Serial.println(data);
+  }
+};
+void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
+  /* Make use of the payload before sending something, the buffer where payload points to is
+     overwritten when a new message is dispatched */
 
+  // If debug is active prints addressing packet infromation
+  if(packet_info.port == PJON_DYNAMIC_ADDRESSING_PORT) {
+    uint32_t rid =
+      (uint32_t)(payload[1]) << 24 |
+      (uint32_t)(payload[2]) << 16 |
+      (uint32_t)(payload[3]) <<  8 |
+      (uint32_t)(payload[4]);
+    Serial.print("Addressing request: ");
+    Serial.print(payload[0]);
+    Serial.print(" RID: ");
+    Serial.print(rid);
+  }
+
+  // General packet data
+  Serial.print(" Header: ");
+  Serial.print(packet_info.header, BIN);
+  Serial.print(" Length: ");
+  Serial.print(length);
+  Serial.print(" Sender id: ");
+  Serial.print(packet_info.sender_id);
+
+  // Packet content
+  Serial.print(" Packet: ");
+  for(uint8_t i = 0; i < length; i++) {
+    Serial.print(char( payload[i]));
+    Serial.print(" ");
+  }
+  Serial.print("Packets in buffer: ");
+  Serial.println(bus.update());
+
+  if (payload[0] == 'S'){
+    serial.add(packet_info.sender_id);
+  }
+  if (payload[0] == 'm'){
+    matrix.add(packet_info.sender_id);
+  }
+  if (payload[0] == 'l'){
+    strips.add(packet_info.sender_id);
+  }
+};
 void loop() {
+  if(millis() - t_millis > 5000) {
+    // Check if registered slaves are still present on the bus
+    bus.check_slaves_presence();
+
+    Serial.println("List of slaves known by master: ");
+    for(uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
+      if(bus.ids[i].state) {
+        Serial.print(" - Device id: ");
+        Serial.print(i + 1); // Shifted by one to avoid PJON_BROADCAST
+        Serial.print(" Device rid: ");
+        Serial.print(bus.ids[i].rid);
+        Serial.println();
+      }
+    }
+    Serial.println();
+    Serial.flush();
+    t_millis = millis();
+  }
+  bus.receive(5000);
+  bus.update();
   while(BTSerial.available()){
      char character = BTSerial.read(); // Receive a single character from the software serial port
         string.concat(character); // Add the received character to the receive buffer
   }
   string.trim();
-  if (string.startsWith("A")){
-    bus.send_packet(10, bus_id, "A", 1);
-    hc595(1);
+    String temp = string.substring(3);
+    char buff[temp.length()+1];
+    temp.toCharArray(buff, sizeof(buff));
+    for (auto value : serial) {
+    int id = value.as<int>();
+    bus.send_packet(id, bus_id, buff, sizeof(buff));    }
+    if (string.startsWith("LED")){
+      for (auto value : strips) {
+      int id = value.as<int>();
+    
+     bus.send_packet(id, bus_id, buff, sizeof(buff));
+     hc595(1);
    }
+  }
    if (string.startsWith("B")){
     bus.send_packet(10, bus_id, "B", 1);
     hc595(2);
