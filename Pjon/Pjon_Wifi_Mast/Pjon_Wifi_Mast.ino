@@ -6,6 +6,10 @@
  *                                                                 *
     Written by Brian Lough
  *******************************************************************/
+char nmanSSID[] = "OriginBroadband60027";       // your network SSID (name)
+char nmanPassword[] = "lKG8u8Rr"; 
+char rioSSID[] = "SKYD399A";
+char rioPassword[] = "DDNFXPTMPD";
 using namespace std;
 
 #include <ESP8266WiFi.h>
@@ -13,8 +17,6 @@ using namespace std;
 #include <PJON.h>
 PJON<SoftwareBitBang> bus(1);
 //------- Replace the following! ------
-char ssid[] = "OriginBroadband60027";       // your network SSID (name)
-char password[] = "lKG8u8Rr";  // your network key
 
 // Normally we would use these to generate the bearer token but its not working yet :/
 // Use steps on the readme to generate the Bearer Token
@@ -49,11 +51,11 @@ void setup() {
   delay(100);
   // Pjon
   bus.begin();
-  bus.strategy.set_pin(D2);
+  bus.strategy.set_pin(D1);
   // Attempt to connect to Wifi network:
   Serial.print("Connecting Wifi: ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
+  Serial.println(rioSSID);
+  WiFi.begin(rioSSID, rioPassword);
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);

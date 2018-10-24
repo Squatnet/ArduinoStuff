@@ -31,17 +31,16 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
 
   Serial.print(*payload);
     // Get back the original integer from the 2 separate bytes
-  }
   Serial.println();
 };
 
 void setup() {
-  bus.strategy.set_pin(10);
+  bus.strategy.set_pin(12);
   bus.begin();
 
   bus.set_receiver(receiver_function);
-
   Serial.begin(115200);
+  Serial.println("SETUP DONE");
 };
 
 void loop() {
