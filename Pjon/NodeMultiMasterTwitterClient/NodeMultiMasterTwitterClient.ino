@@ -1,3 +1,4 @@
+#include <PJONSlave.h>
 #include <TwitterApi.h>
 #include <Arduino.h>
 /*******************************************************************
@@ -37,8 +38,15 @@ bool firstTime = true;
 String screenName = "dirtywastegash";
 bool haveBearerToken = false;
 
-void setup() {
+// Bus id definition
+uint8_t bus_id[] = {0, 0, 1, 53};
 
+// PJON object
+PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED);
+
+int packet;
+char content[] = "01234567890123456789";
+bool acquired = false;
   Serial.begin(115200);
 
   // Set WiFi to station mode and disconnect from an AP if it was Previously
@@ -72,8 +80,7 @@ void getMentions() {
     //Serial.println(responseString);
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(responseString);
-    if (root.success()){
-      
+    if (root.success()){ 
       JsonArray& statuses = root["statuses"];
       for( const auto& value : statuses ) {
         JsonObject& singleStat = value;
@@ -82,8 +89,7 @@ void getMentions() {
       JsonObject& statuses_user = singleStat["user"];
       const char* statuses_user_screen_name = statuses_user["screen_name"]; // "dirtywastegash"
       String theUser = String(statuses_user_screen_name);  
-        Serial.println("User : "+theUser+ " Said : "+theText);
-        
+        Serial.println("User : "+theUser+ " Said : "+theText); 
         }
 
       Serial.println("parsed Json");
@@ -106,8 +112,51 @@ void getTwitterStats(String name) {
       Serial.println("Failed to parse Json");
     }
 }
+void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
+  Serial.print("Received: ");
+  for(uint16_t i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+    Serial.print(" ");
+  }
+  Serial.println();
+  Serial.flush();
+};
+
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
+  if(code == PJON_CONNECTION_LOST) {
+    Serial.print("Connection lost with device ");
+    Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+  }
+  if(code == PJON_ID_ACQUISITION_FAIL) {
+    if(data == PJON_ID_ACQUIRE)
+      Serial.println("PJONSlave error: multi-master addressing failed.");
+    if(data == PJON_ID_CONFIRM)
+      Serial.println("PJONSlave error: master-slave id confirmation failed.");
+    if(data == PJON_ID_NEGATE)
+      Serial.println("PJONSlave error: master-slave id release failed.");
+    if(data == PJON_ID_REQUEST)
+      Serial.println("PJONSlave error: master-slave id request failed.");
+  }
+  Serial.flush();
+};
+
+void setup() {
+  Serial.begin(115200);
+  bus.set_error(error_handler);
+  bus.set_receiver(receiver_handler);
+  bus.strategy.set_pin(D1);
+  bus.begin();
+  delay(160);
+  bus.acquire_id_multi_master();
+}
+
 void loop() {
-  delay(10);
+  if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
+    Serial.print("Acquired device id: ");
+    Serial.println(bus.device_id());
+    Serial.flush();
+    acquired = true;
+  }
   if(haveBearerToken){
     unsigned long timenow = millis();
     if (api_lasttime == 0 || timenow-api_lasttime > api_mtbs )  {
@@ -115,4 +164,6 @@ void loop() {
       api_lasttime = timenow;
     }
   }
-}
+  bus.update();
+  bus.receive(5000);
+};

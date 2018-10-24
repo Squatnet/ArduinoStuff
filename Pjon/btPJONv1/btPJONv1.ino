@@ -80,9 +80,10 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   // Packet content
   Serial.print(" Packet: ");
   for(uint8_t i = 0; i < length; i++) {
-    //Serial.print(char( payload[i]));
+    Serial.print(char( payload[i]));
     rootStr.concat(char( payload[i]));
   }
+  Serial.print("THE STRING IS ");
  Serial.print(rootStr.substring(1));
  rootStr.trim();
   if (rootStr.startsWith("S")){
@@ -90,13 +91,14 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     rootStr.substring(1).toCharArray(json,rootStr.length());
     JsonObject& newDevice = jsonBuffer.parseObject(rootStr.substring(1));
     if (newDevice.success()){
-      Serial.println("VALID JSON");
+      Serial.println(" VALID JSON");
       newDevice["id"] = packet_info.sender_id;
       newDevice.printTo(Serial);
-      Serial.println("parsed Json");
+      Serial.println(" parsed Json");
       // Use Arduino Json to parse the data
     } else {
-      Serial.println("Failed to parse Json");
+      Serial.println(" Failed to parse Json");
+      Serial.print("THE JSON");
       Serial.println(json);
     }
     serial.add(packet_info.sender_id);
@@ -112,7 +114,6 @@ void loop() {
   if(millis() - t_millis > 5000) {
     // Check if registered slaves are still present on the bus
     bus.check_slaves_presence();
-/**
     Serial.println("List of slaves known by master: ");
     for(uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
       if(bus.ids[i].state) {
@@ -122,7 +123,7 @@ void loop() {
         Serial.print(bus.ids[i].rid);
         Serial.println();
       } 
-    }**/
+    }
     Serial.println();
     Serial.flush();
     t_millis = millis();
@@ -145,28 +146,28 @@ void loop() {
       int id = value.as<int>();
     
      bus.send_packet(id, bus_id, buff, sizeof(buff));
-     hc595(1);
+     //hc595(1);
    }
   }
    if (string.startsWith("B")){
     bus.send_packet(10, bus_id, "B", 1);
-    hc595(2);
+    //hc595(2);
    }
   if (string.startsWith("C")){
     bus.send_packet(10, bus_id, "C", 1);
-    hc595(3);
+    //hc595(3);
    }
    if (string.startsWith("D")){
     bus.send_packet(10, bus_id, "D", 1);
-    hc595(4);
+    //hc595(4);
    }
    if (string.startsWith("E")){
     bus.send_packet(10, bus_id, "E", 1);
-    hc595(5);
+    //hc595(5);
    }
    if (string.startsWith("F")){
     bus.send_packet(10, bus_id, "F", 1);
-    hc595(6);
+   // hc595(6);
    }
    if (string.startsWith("G")){
     bus.send_packet(10, bus_id, "G", 1);
@@ -174,11 +175,11 @@ void loop() {
    }
    if (string.startsWith("X")){
     bus.send_packet(10, bus_id, "X", 1);
-    hc595(0);
+    //hc595(0);
    }
   if (string.startsWith("Y")){
     bus.send_packet(10, bus_id, "Y", 1);
-    hc595(9);
+   // hc595(9);
    }
   if (string != ""){
             Serial.println(string); //Output the message
