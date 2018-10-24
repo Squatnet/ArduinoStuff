@@ -76,38 +76,29 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   /* Make use of the payload before sending something, the buffer where payload points to is
      overwritten when a new message is dispatched */
-
-  // If debug is active prints addressing packet infromation
-  if(packet_info.port == PJON_DYNAMIC_ADDRESSING_PORT) {
-    uint32_t rid =
-      (uint32_t)(payload[1]) << 24 |
-      (uint32_t)(payload[2]) << 16 |
-      (uint32_t)(payload[3]) <<  8 |
-      (uint32_t)(payload[4]);
-    Serial.print("Addressing request: ");
-    Serial.print(payload[0]);
-    Serial.print(" RID: ");
-    Serial.print(rid);
-  }
-
-  // General packet data
-  Serial.print(" Header: ");
-  Serial.print(packet_info.header, BIN);
-  Serial.print(" Length: ");
-  Serial.print(length);
-  Serial.print(" Sender id: ");
-  Serial.print(packet_info.sender_id);
-
+     String rootStr = "";
   // Packet content
   Serial.print(" Packet: ");
   for(uint8_t i = 0; i < length; i++) {
-    Serial.print(char( payload[i]));
-    Serial.print(" ");
+    //Serial.print(char( payload[i]));
+    rootStr.concat(char( payload[i]));
   }
-  Serial.print("Packets in buffer: ");
-  Serial.println(bus.update());
-
-  if (payload[0] == 'S'){
+ Serial.print(rootStr.substring(1));
+ rootStr.trim();
+  if (rootStr.startsWith("S")){
+    char json[rootStr.length()];
+    rootStr.substring(1).toCharArray(json,rootStr.length());
+    JsonObject& newDevice = jsonBuffer.parseObject(rootStr.substring(1));
+    if (newDevice.success()){
+      Serial.println("VALID JSON");
+      newDevice["id"] = packet_info.sender_id;
+      newDevice.printTo(Serial);
+      Serial.println("parsed Json");
+      // Use Arduino Json to parse the data
+    } else {
+      Serial.println("Failed to parse Json");
+      Serial.println(json);
+    }
     serial.add(packet_info.sender_id);
   }
   if (payload[0] == 'm'){
@@ -121,7 +112,7 @@ void loop() {
   if(millis() - t_millis > 5000) {
     // Check if registered slaves are still present on the bus
     bus.check_slaves_presence();
-
+/**
     Serial.println("List of slaves known by master: ");
     for(uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
       if(bus.ids[i].state) {
@@ -130,8 +121,8 @@ void loop() {
         Serial.print(" Device rid: ");
         Serial.print(bus.ids[i].rid);
         Serial.println();
-      }
-    }
+      } 
+    }**/
     Serial.println();
     Serial.flush();
     t_millis = millis();
