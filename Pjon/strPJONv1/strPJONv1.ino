@@ -10,7 +10,6 @@
 
 // Fastleds defines
 #include "FastLED.h"
-#include <Wire.h>
 #define NUM_LEDS 29
 #define DATA_PIN 2
 #define DATA_PIN_2 3
@@ -33,7 +32,6 @@ uint8_t bus_id[] = {0, 0, 1, 53};
 // PJON object
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED);
 int packet;
-char content[] = "01234567890123456789";
 bool acquired = false;
 
 // internal vars
@@ -58,7 +56,7 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
 
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
-    Serial.print("Connection lost with device ");
+    Serial.print("lost device ");
     Serial.println((uint8_t)bus.packets[data].content[0], DEC);
   }
   if(code == PJON_ID_ACQUISITION_FAIL) {
@@ -68,8 +66,11 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       Serial.println("ERR: slave id conf failed.");
     if(data == PJON_ID_NEGATE)
       Serial.println("ERR: id release failed.");
-    if(data == PJON_ID_REQUEST)
+    if(data == PJON_ID_REQUEST){
       Serial.println("ERR: id request failed.");
+      delay(160);
+      bus.acquire_id_master_slave();
+    }
   }
   Serial.flush();
 };
@@ -102,8 +103,6 @@ void setup() {
 void randX() {
   if (autoMode == 1) {
     x = random(2, 9);
-    Serial.print("RANDOM ");
-    Serial.println(x);
   }
 }
 void loop() {
@@ -150,8 +149,9 @@ void loop() {
   //call function
   copyLeds();
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
-    Serial.print("Acquired device id: ");
+    Serial.print("Got device id: ");
     Serial.println(bus.device_id());
+    delay(160);
     tellMasterAboutSelf();
     acquired = true;
   }
@@ -162,9 +162,18 @@ void loop() {
 
   //  EVERY_N_MILLISECONDS( 20 )
 }
+
 void tellMasterAboutSelf(){
-  char JSON = "{\"type\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
-  bus.send_packet(254,JSON,sizeof(JSON));
+  const char * JSON = "{\"type\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
+    int Size = 0;
+    while (JSON[Size] != '\0') Size++;
+    if(bus.send_packet(254,JSON,Size) == PJON_ACK){
+    Serial.println("Hi MOM");
+    Serial.print(JSON);
+   }
+  else{
+    Serial.println("failed");
+  }
 };
 void copyLeds() {
   ///for (int i = 0; i < NUM_LEDS; i++) 
