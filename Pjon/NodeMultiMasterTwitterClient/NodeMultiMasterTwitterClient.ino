@@ -1,6 +1,24 @@
 #include <PJONSlave.h>
 #include <TwitterApi.h>
 #include <Arduino.h>
+#include <FastLED.h>
+#include <Wire.h>
+#include <LEDMatrix.h>
+#include <LEDText.h>
+#include <FontMatrise.h>
+#define LED_PIN        3
+#define COLOR_ORDER    GRB
+#define CHIPSET        WS2812B
+#define MATRIX_WIDTH   32
+#define MATRIX_HEIGHT  8
+#define NUM_LEDS       256
+#define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX
+#define FRAMES_PER_SECOND  120
+cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
+
+cLEDText ScrollingMsg;
+char TxtAncs[] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
+int textlength = 30;
 /*******************************************************************
  *  An Example of getting data back from the TwitterAPI            *
  *  https://github.com/witnessmenow/arduino-twitter-api            * 
@@ -13,8 +31,8 @@ using namespace std;
 #include <WiFiClientSecure.h>
 
 //------- Replace the following! ------
-char ssid[] = "OriginBroadband60027";       // your network SSID (name)
-char password[] = "lKG8u8Rr";  // your network key
+char ssid[] = "SKYD399A";       // your network SSID (name)
+char password[] = "DDNFXPTMPD";  // your network key
 
 // Normally we would use these to generate the bearer token but its not working yet :/
 // Use steps on the readme to generate the Bearer Token
@@ -47,6 +65,11 @@ PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED);
 int packet;
 char content[] = "01234567890123456789";
 bool acquired = false;
+void setup()
+{
+  FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds[0], leds.Size());
+  FastLED.setBrightness(64);
+  FastLED.clear(true);
   Serial.begin(115200);
 
   // Set WiFi to station mode and disconnect from an AP if it was Previously
@@ -68,6 +91,16 @@ bool acquired = false;
   Serial.println("IP address: ");
   IPAddress ip = WiFi.localIP();
   Serial.println(ip);
+  bus.set_error(error_handler);
+  bus.set_receiver(receiver_handler);
+  bus.strategy.set_pin(D1);
+  bus.begin();
+  delay(160);
+  bus.acquire_id_multi_master();
+  ScrollingMsg.SetFont(MatriseFontData);
+  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
+  ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
+  ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0x00, 0xff);
 
   api.setBearerToken(BEARER_TOKEN);
   haveBearerToken = true;
@@ -88,10 +121,13 @@ void getMentions() {
       String theText = String(statuses_text);
       JsonObject& statuses_user = singleStat["user"];
       const char* statuses_user_screen_name = statuses_user["screen_name"]; // "dirtywastegash"
-      String theUser = String(statuses_user_screen_name);  
-        Serial.println("User : "+theUser+ " Said : "+theText); 
+      theText.concat(" ");
+      theText.concat(statuses_user_screen_name);  
+        Serial.println(theText); 
+        clean(TxtAncs);
+        theText.toCharArray(TxtAncs, theText.length());
         }
-
+      
       Serial.println("parsed Json");
       // Use Arduino Json to parse the data
     } else {
@@ -110,6 +146,13 @@ void getTwitterStats(String name) {
      
     } else {
       Serial.println("Failed to parse Json");
+    }
+}
+void clean(char *var) {
+    int i = 0;
+    while(var[i] != '\0') {
+        var[i] = '\0';
+        i++;
     }
 }
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
@@ -140,16 +183,6 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   Serial.flush();
 };
 
-void setup() {
-  Serial.begin(115200);
-  bus.set_error(error_handler);
-  bus.set_receiver(receiver_handler);
-  bus.strategy.set_pin(D1);
-  bus.begin();
-  delay(160);
-  bus.acquire_id_multi_master();
-}
-
 void loop() {
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
     Serial.print("Acquired device id: ");
@@ -166,4 +199,8 @@ void loop() {
   }
   bus.update();
   bus.receive(5000);
+  if (ScrollingMsg.UpdateText() == -1)
+    ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
+  else
+    FastLED.show();
 };

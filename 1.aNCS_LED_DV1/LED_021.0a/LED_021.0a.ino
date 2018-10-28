@@ -4,14 +4,14 @@
 #define I2C_MAT_A 2
 #define I2C_MAT_B 3
 #define I2C_MAT_C 4
-SoftwareSerial BTSerial(2,3); // RX | TX
+SoftwareSerial BTSerial(15,14); // RX | TX
 String string = "";
 void setup()
 {
   pinMode(13, OUTPUT);
   pinMode(9, OUTPUT);  // this pin will pull the HC-05 pin 34 (key pin) HIGH to switch module to AT mode
   digitalWrite(9, HIGH);
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Waiting for BT Comand:");
   BTSerial.begin(38400);
   Wire.begin();

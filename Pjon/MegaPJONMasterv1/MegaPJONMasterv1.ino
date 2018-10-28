@@ -5,7 +5,6 @@
    (Transfer speed: 16.949kBb or 2.11kB/s) */
 #include <SoftwareSerial.h>
 #include <PJONMaster.h>
-SoftwareSerial BTSerial(8, 9); // RX | TX for HC05 Module
 
 #define SWBB_RESPONSE_TIMEOUT 1500 /* Synchronous acknowledgement response timeout*/
 #define SWBB_BACK_OFF_DEGREE     4 // Set the back-off exponential degree (default 4)
@@ -24,7 +23,6 @@ JsonArray& matrix = root.createNestedArray("matrix");
 void setup() {
   Serial.begin(115200);
   Serial.println("Starting Host BT Connection");
-  BTSerial.begin(38400); //HC05
   bus.strategy.set_pin(12); //PJON 
   bus.debug = false;
   bus.set_receiver(receiver_function);
@@ -134,63 +132,9 @@ void loop() {
   }
   bus.receive(5000);
   bus.update();
-  if(BTSerial.available()){
-    Serial.print("BTBTBTBT");
-    while(BTSerial.available()){
-    char character = BTSerial.read(); // Receive a single character from the software serial port
-    string.concat(character); // Add the received character to the receive buffer
-    }
-  string.trim();
-  Serial.println(string);
-  String temp = string.substring(3);
-  char buff[temp.length()+1];
-  temp.toCharArray(buff, sizeof(buff));
-  for (auto value : serial) {
-    int id = value["id"];
-    Serial.print("Sent to serial ");
-    Serial.print(id);
-    Serial.println(buff);
-    bus.send_packet(id, bus_id, buff, sizeof(buff));    }
-  if (string.startsWith("LED")){
-    if(string.substring(3,4) == "X"){
-      for (auto value : strips) {
-      int id = value["id"];
-      bus.send_packet(id, bus_id, buff, sizeof(buff));
-      Serial.print("Sent to all Leds ");
-      Serial.println(buff);
-      }
-    }
-    else{
-      for (auto value : strips) {
-        if(value["name"] == string.substring(3,4)){
-          int id = value["id"];
-          bus.send_packet(id, bus_id, buff, sizeof(buff));
-          }
-      }
-    }
-  }
-  else if (string.startsWith("MAT")){
-    if(string.substring(3,4) == "X"){
-      for (auto value : matrix) {
-      int id = value["id"];
-      bus.send_packet(id, bus_id, buff, sizeof(buff));
-      }
-    }
-    else{
-      for (auto value : matrix) {
-        if(value["name"] == string.substring(3,4)){
-          int id = value["id"];
-          bus.send_packet(id, bus_id, buff, sizeof(buff));
-          }
-      }
-    }
-  }
-  if (string != ""){
-           Serial.println(string); //Output the message
-           string =""; //clear the buffer/message
-        }
-// Keep reading from Arduino Serial Monitor and send to HC-05
-  }
+}
+void relayMsg(char name, char *Msg){
+  //dothis
 }
 void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
   int i=0;  //internal function setup

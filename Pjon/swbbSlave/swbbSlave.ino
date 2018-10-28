@@ -3,16 +3,17 @@ uint8_t bus_id[] = {0, 0, 1, 53};
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED); // Force no id... 
 
 int packet;
-char content[] = "01234567890123456789"; // beleived redundant.. 
 bool acquired = false; // did we get an address? 
-
+bool debugMode = false;
+uint32_t t_millis;
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
+  const char * arr = payload;
+     String rootStr = "";
+  // Packet content
   Serial.print("Received: ");
-  // Dumps the payload to serial... Interpret your message here... 
-  for(uint16_t i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-    Serial.print(" ");
-  }
+  Serial.print(packet_info.sender_id);
+  Serial.print(" Packet: ");
+  Serial.print(arr);
   Serial.println();
   Serial.flush();
 };
@@ -32,6 +33,8 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       Serial.println("PJONSlave error: master-slave id release failed.");
     if(data == PJON_ID_REQUEST)
       Serial.println("PJONSlave error: master-slave id request failed.");
+      delay(500);
+      autoReconnect();
   }
   Serial.flush();
 };
@@ -56,12 +59,26 @@ void loop() {
     Serial.flush();
     acquired = true;
   }
+  if (debugMode == true){
+    if(millis() - t_millis > 5000) {
+      tellMasterAboutSelf();
+      t_millis = millis();
+    }
+  }
   bus.update();
   bus.receive(5000);
 };
 void tellMasterAboutSelf(){
-  char JSON = "{\"type\":\"SLAVE\",\"name\":\"SLAVE1\"}"; // enter the json to describe this slave here, note the \" to escape
-  bus.send_packet(254,JSON,sizeof(JSON));
+  const char * JSON = "{\"type\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
+  int Size = 0;
+    while (JSON[Size] != '\0') Size++;
+    if(bus.send_packet(254,JSON,Size) == PJON_ACK){
+    Serial.print("Registered With Master");
+    Serial.println(JSON);
+   }
+  else{
+    bus.send_packet(254,JSON,Size);
+  }
 };
 void autoReconnect(){
   acquired = false;
