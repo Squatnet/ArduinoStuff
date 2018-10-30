@@ -18,7 +18,7 @@
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 
 cLEDText ScrollingMsg;
-char TxtAncs[] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
+char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
 int textlength = 30;
 /*******************************************************************
  *  An Example of getting data back from the TwitterAPI            *
@@ -48,7 +48,7 @@ char password[] = "DDNFXPTMPD";  // your network key
 WiFiClientSecure client;
 TwitterApi api(client);
 
-unsigned long api_mtbs = 10000; //mean time between api requests
+unsigned long api_mtbs = 30000; //mean time between api requests
 unsigned long api_lasttime = 0;   //last time api request has been done
 bool firstTime = true;
 
@@ -99,7 +99,9 @@ void setup()
   bus.acquire_id_multi_master();
   ScrollingMsg.SetFont(MatriseFontData);
   ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
-  ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
+  int Size = 0;
+  while (TxtAncs[Size] != '\0') Size++;
+  ScrollingMsg.SetText((unsigned char *)TxtAncs, Size);
   ScrollingMsg.SetFrameRate(4);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0x00, 0xff);
 
@@ -126,7 +128,11 @@ void getMentions() {
       theText.concat(statuses_user_screen_name);  
         //Serial.println(theText); 
         theText.concat(" ");
-        while (theText.indexOf(";") != -1)theText.remove(theText.indexOf(";")-3,4);
+        while (theText.indexOf(";") != -1){ 
+          theText.replace("&gt;",">");
+          theText.replace("&lt;","<");
+          theText.replace(";",":");        
+        }
         clean(TxtAncs);
         Serial.println(theText);
         theText.toCharArray(TxtAncs, theText.length()+1);
@@ -205,8 +211,10 @@ void loop() {
   }
   bus.update();
   bus.receive(5000);
-  if (ScrollingMsg.UpdateText() == -1)
-    ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
+  if (ScrollingMsg.UpdateText() == -1){
+  int Size = 0;
+  while (TxtAncs[Size] != '\0') Size++;
+  ScrollingMsg.SetText((unsigned char *)TxtAncs,Size );}
   else
     FastLED.show();
 };
