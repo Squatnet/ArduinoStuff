@@ -1,12 +1,13 @@
 #include <PJONSlave.h>
 #include <TwitterApi.h>
 #include <Arduino.h>
+#define FASTLED_ESP8266_D1_PIN_ORDER
 #include <FastLED.h>
 #include <Wire.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
 #include <FontMatrise.h>
-#define LED_PIN        3
+#define LED_PIN        D2
 #define COLOR_ORDER    GRB
 #define CHIPSET        WS2812B
 #define MATRIX_WIDTH   32
@@ -47,7 +48,7 @@ char password[] = "DDNFXPTMPD";  // your network key
 WiFiClientSecure client;
 TwitterApi api(client);
 
-unsigned long api_mtbs = 60000; //mean time between api requests
+unsigned long api_mtbs = 10000; //mean time between api requests
 unsigned long api_lasttime = 0;   //last time api request has been done
 bool firstTime = true;
 
@@ -63,7 +64,6 @@ uint8_t bus_id[] = {0, 0, 1, 53};
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED);
 
 int packet;
-char content[] = "01234567890123456789";
 bool acquired = false;
 void setup()
 {
@@ -100,6 +100,7 @@ void setup()
   ScrollingMsg.SetFont(MatriseFontData);
   ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
   ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
+  ScrollingMsg.SetFrameRate(4);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0x00, 0xff);
 
   api.setBearerToken(BEARER_TOKEN);
@@ -123,11 +124,15 @@ void getMentions() {
       const char* statuses_user_screen_name = statuses_user["screen_name"]; // "dirtywastegash"
       theText.concat(" ");
       theText.concat(statuses_user_screen_name);  
-        Serial.println(theText); 
+        //Serial.println(theText); 
+        theText.concat(" ");
+        while (theText.indexOf(";") != -1)theText.remove(theText.indexOf(";")-3,4);
         clean(TxtAncs);
-        theText.toCharArray(TxtAncs, theText.length());
+        Serial.println(theText);
+        theText.toCharArray(TxtAncs, theText.length()+1);
         }
-      
+        jsonBuffer.clear();
+      yield();
       Serial.println("parsed Json");
       // Use Arduino Json to parse the data
     } else {
@@ -157,6 +162,7 @@ void clean(char *var) {
 }
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   Serial.print("Received: ");
+  yield();
   for(uint16_t i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
     Serial.print(" ");
