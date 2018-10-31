@@ -1,13 +1,3 @@
-// LEDcxFFFFFF 
-// c is channel 
-// x is pattern number
-// Valid x : 
-// 0 Off
-// 1-8 Patterns
-// S00 Seconds timeout
-// X0  Boolean automode
-// Color optional
-
 // Fastleds defines
 #include "FastLED.h"
 #define NUM_LEDS 29
@@ -27,6 +17,7 @@ CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0
 
 // PJON DEFINES
 #include <PJONSlave.h>
+#include<ArduinoJson.h>
 // Bus id definition
 uint8_t bus_id[] = {0, 0, 1, 53};
 // PJON object
@@ -41,17 +32,23 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 10;
-
-// Pjon Callbacks
-
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
-  Serial.print("Received: ");
-  for(uint16_t i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-    Serial.print(" ");
+  const char * arr = payload;
+  if(arr[0] == '{'){
+    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 60;
+    StaticJsonBuffer<bufferSize> jsonBuffer;
+    JsonObject& Msg = jsonBuffer.parseObject(arr);
+    if(Msg.success()){
+      Serial.print("Parse Success");
+      Msg.printTo(Serial);
+      if(Msg.containsKey("pattern"))x = Msg["pattern"];
+      if(Msg.containsKey("color"))ourCol = CRGB(Msg["color"].as<char*>());
+      if(Msg.containsKey("timeout"))autoSecs = Msg["timeout"];
+      if(Msg.containsKey("automode"))autoMode = Msg["automode"];
+      if(Msg.containsKey("poll"))respondToPoll();
+    }
+    else Serial.print("PARSE FAIL");
   }
-  Serial.println();
-  Serial.flush();
 };
 
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
@@ -74,7 +71,26 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   }
   Serial.flush();
 };
-
+void respondToPoll(){
+  String msg = "{\"pollreply\":\" \",\"pattern\":\"";
+  msg += String(x);
+  msg += "\",\"color\":[";
+  msg += String(ourCol.r);
+  msg += ",";
+  msg += String(ourCol.g);
+  msg += ",";
+  msg += String(ourCol.b);
+  msg += "],\"automode\":";
+  msg += String(autoMode);
+  msg += "\",\"autoSecs\":\"";
+  msg += String(autoSecs);
+  msg += "\"}";
+  char JSON[msg.length()+1];
+  msg.toCharArray(JSON,msg.length());
+    int Size = 0;
+    while (JSON[Size] != '\0') Size++;
+    if(bus.send_packet(254,JSON,Size) == PJON_ACK)Serial.print("SENT");
+}
 
 void setup() {
   Serial.begin(115200);
@@ -164,7 +180,7 @@ void loop() {
 }
 
 void tellMasterAboutSelf(){
-  const char * JSON = "{\"type\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
+  const char * JSON = "{\"register\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
     int Size = 0;
     while (JSON[Size] != '\0') Size++;
     if(bus.send_packet(254,JSON,Size) == PJON_ACK){

@@ -4,7 +4,7 @@
 #define I2C_MAT_A 2
 #define I2C_MAT_B 3
 #define I2C_MAT_C 4
-SoftwareSerial BTSerial(2,3); // RX | TX
+SoftwareSerial BTSerial(19,18); // RX | TX
 String string = "";
 void setup()
 {
