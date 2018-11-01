@@ -37,7 +37,7 @@ unsigned char displayTxt = {
 int iic = 0; // holder for i2c message
 String string = "";
 int timeSinceBt = 0;
-int autoMode = 0;
+int autoMode = 1;
 int autoSecs = 10;  
          
 void setup() {
@@ -51,19 +51,24 @@ void setup() {
   ScrollingMsg.SetFont(MatriseFontData); // or Robotron.
   ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
   ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS) - 1);
-  ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0x00, 0xff);
+  ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
   ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
-  delay(500);
+  ScrollingMsg.SetFrameRate(2);
   FastLED.showColor(CRGB::Red);
+  delay(500);
+  FastLED.showColor(CRGB::Green);
+  delay(500);
+  FastLED.showColor(CRGB::Blue);
+  delay(500);
   FastLED.show();
   Serial.println("SETUP");
 }
 
 typedef void (*PatternList[])();
-
 PatternList gPatterns = { turnOff, turnOn, theLights, rainbow, rainbowWithGlitter, confetti, sinelon, bpm, juggle, scrollText} ; 
-
+CRGB gColor[16] = { CRGB::White,CRGB::Red,CRGB::Blue,CRGB::Green,CRGB::Magenta,CRGB::Yellow,CRGB::Pink,CRGB::Brown,CRGB::BlueViolet,CRGB::AliceBlue,CRGB::BurlyWood,CRGB::Chartreuse,CRGB::Magenta,CRGB::DeepSkyBlue,CRGB::Pink,CRGB::Brown };
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
+uint8_t gCurrentColor = 0;
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 
 //***I2c Reveive event***
@@ -99,10 +104,15 @@ void receiveEvent(int howMany) {
       char charbuf[8];
       string.toCharArray(charbuf, 8);
       long int rgb = strtol(charbuf, 0, 16); //=>rgb=0x001234FE;
+      long int Srgb = rgb;
       byte r = (byte)(rgb >> 16);
+      uint16_t sR = (uint16_t)(Srgb >> 16);
       byte g = (byte)(rgb >> 8);
+      uint16_t sG = (uint16_t)(Srgb >> 8);
       byte b = (byte)(rgb);
+      uint16_t sB = (uint16_t)(Srgb);
       ourCol = CRGB(r, g, b);
+      ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, sR, sG, sB);
     }
   }
   string = "";
@@ -131,6 +141,14 @@ void loop() {
         timeSinceBt = 0;
         randX();
       }
+    }
+    EVERY_N_SECONDS( autoSecs*0.2 ) {
+      gCurrentColor++;
+      if(autoMode == 1) {
+      ourCol = gColor[gCurrentColor];
+      ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, ourCol.r, ourCol.g, ourCol.b);
+      }
+      if (gCurrentColor >= 16)gCurrentColor = 0;
     }
     FL(0,10){
       if(iic==i){
