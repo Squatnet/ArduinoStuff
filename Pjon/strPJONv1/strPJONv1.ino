@@ -49,6 +49,7 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
     }
     else Serial.print("PARSE FAIL");
   }
+  else Serial.println(arr);
 };
 
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
@@ -72,6 +73,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   Serial.flush();
 };
 void respondToPoll(){
+  Serial.print("Responding to poll request");
   String msg = "{\"pollreply\":\" \",\"pattern\":\"";
   msg += String(x);
   msg += "\",\"color\":[";
@@ -80,16 +82,18 @@ void respondToPoll(){
   msg += String(ourCol.g);
   msg += ",";
   msg += String(ourCol.b);
-  msg += "],\"automode\":";
+  msg += ",\"automode\":";
   msg += String(autoMode);
-  msg += "\",\"autoSecs\":\"";
+  msg += ",\"autosecs\":";
   msg += String(autoSecs);
-  msg += "\"}";
+  msg += "}";
+  Serial.println(msg);
   char JSON[msg.length()+1];
   msg.toCharArray(JSON,msg.length());
     int Size = 0;
     while (JSON[Size] != '\0') Size++;
-    if(bus.send_packet(254,JSON,Size) == PJON_ACK)Serial.print("SENT");
+    int err = bus.send_packet(254,JSON,Size);
+    Serial.print(err);
 }
 
 void setup() {

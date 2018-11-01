@@ -1,7 +1,10 @@
 #include <PJONSlave.h> 
+#define SWBB_RESPONSE_TIMEOUT 3000 /* Synchronous acknowledgement response timeout*/
+#define SWBB_BACK_OFF_DEGREE     4 // Set the back-off exponential degree (default 4)
+#define SWBB_MAX_ATTEMPTS       20 // Set the maximum sending attempts (default 20)
 uint8_t bus_id[] = {0, 0, 1, 53};
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED); // Force no id... 
-
+#include <ArduinoJson.h>
 int packet;
 bool acquired = false; // did we get an address? 
 bool debugMode = false;
@@ -16,6 +19,19 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   Serial.print(arr);
   Serial.println();
   Serial.flush();
+  if(arr[0] == '{'){
+    const size_t bufferSize = JSON_OBJECT_SIZE(8);
+    StaticJsonBuffer<bufferSize> ddBuffer;
+    JsonObject& Msg = ddBuffer.parseObject(arr);
+    if(Msg.success()){
+      Serial.print("Parse Success");
+      Msg.printTo(Serial);
+      Serial.println();
+      }
+    else{
+      Serial.println("Parse Failed");
+    }
+  }
 };
 
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
@@ -59,17 +75,19 @@ void loop() {
     Serial.flush();
     acquired = true;
   }
+  bus.receive(5000);
   if (debugMode == true){
     if(millis() - t_millis > 5000) {
       tellMasterAboutSelf();
       t_millis = millis();
     }
   }
+  yield();
   bus.update();
-  bus.receive(5000);
+  
 };
 void tellMasterAboutSelf(){
-  const char * JSON = "{\"type\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
+  const char * JSON = "{\"register\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
   int Size = 0;
     while (JSON[Size] != '\0') Size++;
     if(bus.send_packet(254,JSON,Size) == PJON_ACK){
@@ -79,6 +97,29 @@ void tellMasterAboutSelf(){
   else{
     bus.send_packet(254,JSON,Size);
   }
+};
+void respondToPoll(){
+  Serial.print("Responding to poll request");
+  String msg = "{\"pollreply\":\" \",\"pattern\":\"";
+  msg += String(6);
+  msg += "\",\"color\":[";
+  msg += String(255);
+  msg += ",";
+  msg += String(255);
+  msg += ",";
+  msg += String(255);
+  msg += ",\"automode\":";
+  msg += String(1);
+  msg += ",\"autosecs\":";
+  msg += String(30);
+  msg += "}";
+  Serial.println(msg);
+  char JSON[msg.length()+1];
+  msg.toCharArray(JSON,msg.length());
+    int Size = 0;
+    while (JSON[Size] != '\0') Size++;
+    int err = bus.send_packet(254,JSON,Size);
+    Serial.print(err);
 };
 void autoReconnect(){
   acquired = false;

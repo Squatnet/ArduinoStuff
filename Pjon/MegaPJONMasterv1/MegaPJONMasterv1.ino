@@ -3,7 +3,7 @@
    (Transfer speed: 16.949kBb or 2.11kB/s) */
 #include <SoftwareSerial.h>
 #include <PJONMaster.h>
-#define SWBB_RESPONSE_TIMEOUT 1500 /* Synchronous acknowledgement response timeout*/
+#define SWBB_RESPONSE_TIMEOUT 3000 /* Synchronous acknowledgement response timeout*/
 #define SWBB_BACK_OFF_DEGREE     4 // Set the back-off exponential degree (default 4)
 #define SWBB_MAX_ATTEMPTS       20 // Set the maximum sending attempts (default 20)
 uint8_t bus_id[4] = {0,0,1,53}; // aNCS Unique Bus ID :)
@@ -53,7 +53,7 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     msgParser(arr,packet_info.sender_id);
   
 };
-void msgParser(char *theMsg,int senderId){
+void msgParser(char *theMsg,uint8_t senderId){
     const char * arr = theMsg;
     if(arr[0]=='{'){
     const size_t bufferSize = JSON_OBJECT_SIZE(8);
@@ -68,36 +68,52 @@ void msgParser(char *theMsg,int senderId){
         registerDevice(Msg,senderId);
        }
        else if (Msg.containsKey("poll")){
-        if(Msg["poll"].is<unsigned int>())pollDevice(Msg["poll"]);
+        Serial.print("Poll key found :");
+        if(Msg["poll"].is<uint8_t>()){
+          Msg["poll"].printTo(Serial);
+          Serial.println(" ID");
+          int tmp = Msg["poll"].as<uint8_t>();
+          Serial.println(tmp);
+          pollDevice(tmp);
+        }
         else {
+          Serial.println();
           DynamicJsonBuffer ddbuff;
           const JsonVariant& tmp =  getDeviceByName(Msg["poll"],Msg["type"]);
           const JsonArray& list = tmp.as<JsonArray>();
          for (auto value : list) {
+          Serial.print("Polling device ");
+          value.printTo(Serial);
+          Serial.println();
           pollDevice(value);
          }
         }
        }
+       else if (Msg.containsKey("pollreply")){
+        Msg.printTo(Serial);
+       }
        else if (Msg.containsKey("control")){
-        
+        Msg.printTo(Serial);
        }
     }
     else {
         Serial.print("JsonParseError");
       }
+   
    ddBuffer.clear();
   }
   else Serial.print(arr);
+  Serial.println("Finished PARSE");
   };
-void registerDevice(JsonObject &Msg,int senderId){
-  Msg["type"].printTo(Serial);
+void registerDevice(JsonObject &Dev,uint8_t senderId){
+  Dev["register"].printTo(Serial);
         Serial.println();
-        if (Msg["type"] == "Strip"){
+        if (Dev["register"] == "Strip"){
           Serial.print("Got Str");
           JsonObject& singleDvc = strips.createNestedObject();
           if(singleDvc.success()){
             Serial.print("Added");
-            singleDvc["name"] = Msg["name"];
+            singleDvc["name"] = Dev["name"];
             singleDvc["id"] = senderId;
             singleDvc.printTo(Serial);
             strips.printTo(Serial);
@@ -105,24 +121,24 @@ void registerDevice(JsonObject &Msg,int senderId){
           else Serial.println("MEMORY ALLOCATION");
         }
         
-        else if (Msg["type"] == "Serial"){
+        else if (Dev["register"] == "Serial"){
            Serial.print("Got Serial");
           JsonObject& singleDvc = strips.createNestedObject();
           if(singleDvc.success()){
             Serial.print("Added");
-            singleDvc["name"] = Msg["name"];
+            singleDvc["name"] = Dev["name"];
             singleDvc["id"] = senderId;
             singleDvc.printTo(Serial);
             serial.printTo(Serial);
           }
           else Serial.println("MEMORY ALLOCATION");
         }
-        else if (Msg["type"] == "Matrix"){
+        else if (Dev["register"] == "Matrix"){
            Serial.print("Got Mat");
           JsonObject& singleDvc = strips.createNestedObject();
           if(singleDvc.success()){
             Serial.print("Added");
-            singleDvc["name"] = Msg["name"];
+            singleDvc["name"] = Dev["name"];
             singleDvc["id"] = senderId;
             singleDvc.printTo(Serial);
             matrix.printTo(Serial);
@@ -130,17 +146,18 @@ void registerDevice(JsonObject &Msg,int senderId){
           else Serial.println("MEMORY ALLOCATION");
         }
         else {
-          const char * v = Msg["type"];
+          const char * v = Dev["register"];
           Serial.print(v);
           }
 };
 JsonVariant getDeviceByName(char *data,char *type){
   const size_t bufferSize = JSON_ARRAY_SIZE(38);
-   DynamicJsonBuffer jsonBuffer(bufferSize);
-  JsonArray& devices = jsonBuffer.createArray();
+   DynamicJsonBuffer ArrBuffer(bufferSize);
+  JsonArray& devices = ArrBuffer.createArray();
   if (type == "Strips"){
     for (auto value : strips) {
-      if(value["name"] == data)devices.add(value["id"]);
+      const char * tmp = value;
+      if(tmp == data)devices.add(value["id"]);
     }
   }
   else if (type == "Matrix"){
@@ -159,13 +176,20 @@ JsonVariant getDeviceByName(char *data,char *type){
     }
   }
   else Serial.print("undefined type");
+  devices.printTo(Serial);
   return devices;
 }
-void pollDevice(int id){
-  char JSON[] = "{\"poll\":\" \"}";
+void pollDevice(uint8_t rid){
+  Serial.print("poll func - ID: ");
+  Serial.println(rid);
+  const char * JSON = "{\"poll\":\" \"";
     int Size = 0;
     while (JSON[Size] != '\0') Size++;
-    if(bus.send_packet(id,JSON,Size) == PJON_ACK)Serial.print("SENT");
+    Serial.print("Length - ");
+    Serial.println(Size);
+    Serial.print("response ");
+    Serial.println(bus.send_packet(rid,"{\"poll\":\" \"",11));
+    //if( == PJON_ACK)Serial.print("SENT");
 }
 void pollMany(JsonArray &arr){
   for (auto value : arr) {
