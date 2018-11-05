@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #define FASTLED_ESP8266_D1_PIN_ORDER
 #include <FastLED.h>
-#include <Wire.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
 #include <FontMatrise.h>
@@ -47,11 +46,11 @@ char password[] = "DDNFXPTMPD";  // your network key
 
 WiFiClientSecure client;
 TwitterApi api(client);
-
+CRGB gColor[16] = { CRGB::White,CRGB::Red,CRGB::Blue,CRGB::Green,CRGB::Magenta,CRGB::Yellow,CRGB::Pink,CRGB::Brown,CRGB::BlueViolet,CRGB::AliceBlue,CRGB::BurlyWood,CRGB::Chartreuse,CRGB::Magenta,CRGB::DeepSkyBlue,CRGB::Pink,CRGB::Brown };
 unsigned long api_mtbs = 30000; //mean time between api requests
 unsigned long api_lasttime = 0;   //last time api request has been done
 bool firstTime = true;
-
+uint8_t gCurrentColor = 0;
 //Inputs
 
 String screenName = "dirtywastegash";
@@ -81,6 +80,21 @@ void setup()
   // Attempt to connect to Wifi network:
   Serial.print("Connecting Wifi: ");
   Serial.println(ssid);
+  FastLED.setBrightness(64); // Limit Power Consumption 
+  FastLED.clear(true);
+  ScrollingMsg.SetFont(MatriseFontData); // or Robotron.
+  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
+  ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS) - 1);
+  ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
+  ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
+  ScrollingMsg.SetFrameRate(2);
+  FastLED.showColor(CRGB::Red);
+  delay(500);
+  FastLED.showColor(CRGB::Green);
+  delay(500);
+  FastLED.showColor(CRGB::Blue);
+  delay(500);
+  FastLED.show();
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
@@ -196,6 +210,14 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 };
 
 void loop() {
+  EVERY_N_SECONDS( autoSecs*0.2 ) {
+      gCurrentColor++;
+      if(autoMode == 1) {
+      ourCol = gColor[gCurrentColor];
+      ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, ourCol.r, ourCol.g, ourCol.b);
+      }
+      if (gCurrentColor >= 16)gCurrentColor = 0;
+    }
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
     Serial.print("Acquired device id: ");
     Serial.println(bus.device_id());

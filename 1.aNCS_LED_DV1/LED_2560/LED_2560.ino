@@ -1,4 +1,4 @@
-#include <FastLED.h>
+ #include <FastLED.h>
 #include <Wire.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
@@ -428,5 +428,3 @@ static void oceanStrobeDraw(
     }
   }
 }
-
-
