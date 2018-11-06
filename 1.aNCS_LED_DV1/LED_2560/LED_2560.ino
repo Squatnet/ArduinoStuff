@@ -1,8 +1,10 @@
- #include <FastLED.h>
+#include <FastLED.h>
 #include <Wire.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
 #include <FontMatrise.h>
+// CHANGE THIS FOR ALTERNATE MATRIX
+#define I2C_ADDR 2
 
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 
@@ -15,25 +17,13 @@
 #define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX
 #define FRAMES_PER_SECOND  120
 #define STROBE_BEATS_PER_MINUTE 97.5
-
-#define I2C_ADDR 2
 #define CONNECTED_STRIPS 1
 
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 cLEDText ScrollingMsg;
 CRGB tst[256];
 CRGB ourCol = CRGB(255, 255, 255);
-unsigned char TxtANCS[] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
-int textlength = 30;
-/*
-unsigned char txtLive[] = "";
-unsigned char displayTxt = {  
-    EFFECT_FRAME_RATE "\x02" 
-    EFFECT_HSV_AV "\x00\xff\xff\x40\x00\xff" 
-    EFFECT_SCROLL_LEFT ... // issue starts here - Consider various options
-  };
-  */
-
+char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
 int iic = 0; // holder for i2c message
 String string = "";
 int timeSinceBt = 0;
@@ -41,16 +31,15 @@ int autoMode = 1;
 int autoSecs = 10;  
          
 void setup() {
-  Wire.begin(2); //2,3,4 for A,B+C aNCS_2560 boards.
-  //Serial.begin(9600);
+  Wire.begin(I2C_ADDR); //2,3,4 for A,B+C aNCS_2560 boards.
   Wire.onReceive(receiveEvent);
-  Serial.begin(9600);
+  Serial.begin(115200);
   FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds[0], leds.Size());
   FastLED.setBrightness(64); // Limit Power Consumption 
   FastLED.clear(true);
   ScrollingMsg.SetFont(MatriseFontData); // or Robotron.
   ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
-  ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS) - 1);
+  ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
   ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
   ScrollingMsg.SetFrameRate(2);
@@ -94,8 +83,8 @@ void receiveEvent(int howMany) {
   else if (ss == "M") {
     Serial.print("Message = ");
     Serial.println(string);
-    clean(TxtANCS);
-    string.toCharArray(TxtANCS, sizeof(TxtANCS));
+    clean(TxtAncs);
+    string.toCharArray(TxtAncs, string.length());
     string = "";
   }
   else {
@@ -194,15 +183,12 @@ void rXY() {
 
 void scrollText(){
   if (ScrollingMsg.UpdateText() == -1) {// if end of text
-    ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS)+1); 
-    Serial.print("Scroll text");
-    for(int i=0;i<sizeof(TxtANCS)+1 ;i++){
-      Serial.write(TxtANCS[i]);
-      }
-      Serial.println("");
+    int Size = 0;
+    while (TxtAncs[Size] != '\0') Size++;
+      ScrollingMsg.SetText((unsigned char *)TxtAncs,Size);
   }
   else
-    return;
+    FastLED.show();
     }
 
 void solidWhite(){

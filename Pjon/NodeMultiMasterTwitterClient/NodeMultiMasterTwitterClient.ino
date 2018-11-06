@@ -18,7 +18,6 @@ cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 
 cLEDText ScrollingMsg;
 char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
-int textlength = 30;
 /*******************************************************************
  *  An Example of getting data back from the TwitterAPI            *
  *  https://github.com/witnessmenow/arduino-twitter-api            * 
@@ -46,6 +45,7 @@ char password[] = "DDNFXPTMPD";  // your network key
 
 WiFiClientSecure client;
 TwitterApi api(client);
+CRGB ourCol = CRGB::White;
 CRGB gColor[16] = { CRGB::White,CRGB::Red,CRGB::Blue,CRGB::Green,CRGB::Magenta,CRGB::Yellow,CRGB::Pink,CRGB::Brown,CRGB::BlueViolet,CRGB::AliceBlue,CRGB::BurlyWood,CRGB::Chartreuse,CRGB::Magenta,CRGB::DeepSkyBlue,CRGB::Pink,CRGB::Brown };
 unsigned long api_mtbs = 30000; //mean time between api requests
 unsigned long api_lasttime = 0;   //last time api request has been done
@@ -64,6 +64,8 @@ PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED);
 
 int packet;
 bool acquired = false;
+int autoSecs = 10;
+int autoMode = 0;
 void setup()
 {
   FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds[0], leds.Size());
@@ -84,7 +86,7 @@ void setup()
   FastLED.clear(true);
   ScrollingMsg.SetFont(MatriseFontData); // or Robotron.
   ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
-  ScrollingMsg.SetText((unsigned char *)TxtANCS, sizeof(TxtANCS) - 1);
+  ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
   ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
   ScrollingMsg.SetFrameRate(2);
