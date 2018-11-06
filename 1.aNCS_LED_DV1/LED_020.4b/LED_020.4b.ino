@@ -4,6 +4,8 @@
 // Valid x : 
 // 0 Off
 // 1-8 Patterns
+
+// cxzcz
 // S00 Seconds timeout
 // X0  Boolean automode
 // Color optional
