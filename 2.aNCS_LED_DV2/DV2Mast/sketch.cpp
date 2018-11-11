@@ -206,13 +206,38 @@ void parseMsg(int id, char *msg) {
           Serial.print(wizNetIn.namee);
           Serial.print(" id : ");
           Serial.println(wizNetIn.id);
-        }  x 
+        }
         else Serial.println("unknown type");
+          Serial.print("Doing poll request");
+          String pollmsg = "{\"poll\":\"";
+          char * grr = json["name"].as<char*>();
+          pollmsg.concat(grr);
+          pollmsg += "\",\"type\":\"";
+          char * raa = json["register"].as<char*>();
+          pollmsg.concat(raa);
+          pollmsg += "\0";
+         // pollmsg.trim();
+          pollmsg += "\"}";
+          Serial.print("This is what we are sending :");
+          Serial.println(pollmsg);
+          char pollReq[pollmsg.length()+1];
+          pollmsg.toCharArray(pollReq,pollmsg.length()+1);
+          int Size = 0;
+          while (pollReq[Size] != '\0') Size++;
+          Serial.print(Size);
+          Serial.println("  ");
+          bus.send(id,pollReq,pollmsg.length());
+          bus.update();
       }
       else if (json.containsKey("find")){
         int devId = findDeviceByName(json["type"],json["find"]);
         Serial.print("Found device with id ");
         Serial.println(devId);
+      }
+      else if (json.containsKey("poll")){
+        int dId;
+        if(json["poll"].is<int>()){dId = json["poll"];}
+        else {dId = findDeviceByName(json["type"],json["find"]);}
       }
     }
     else Serial.print("Parse Faile");

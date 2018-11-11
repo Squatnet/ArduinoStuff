@@ -79,9 +79,9 @@ void loop()
   if (Serial.available())
     BTSerial.write(Serial.read());
 }
-void sendMatrix(){
+void sendMatrix(){  //// Probably here that is issue ?? 
     String buff = string.substring(4);
-    char buffer[buff.length()];
+    char buffer[buff.length()+1];
     buff.toCharArray(buffer, buff.length());
     Wire.write(buffer);
     Wire.endTransmission();

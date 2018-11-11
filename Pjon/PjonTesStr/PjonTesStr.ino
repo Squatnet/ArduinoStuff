@@ -1,4 +1,5 @@
-// Fastleds defines
+// PJON DEFINES //
+#include <PJON.h>
 #include "FastLED.h"
 #define NUM_LEDS 29
 #define DATA_PIN 2
@@ -16,14 +17,15 @@ CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 
 // PJON DEFINES
-#include <PJONSlave.h>
+#include <PJON.h>
 #include<ArduinoJson.h>
 // Bus id definition
 uint8_t bus_id[] = {0, 0, 1, 53};
 // PJON object
-PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED);
+PJON<SoftwareBitBang> bus(bus_id, 2);
 int packet;
 bool acquired = false;
+
 
 // internal vars
 int x = 0; // holder for i2c message
@@ -32,6 +34,7 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 10;
+
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   const char * arr = payload;
   if(arr[0] == '{'){
@@ -51,26 +54,22 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   }
   else Serial.println(arr);
 };
-
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
-    Serial.print("lost device ");
-    Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    Serial.print("Connection with device ID ");
+    Serial.print(bus.packets[data].content[0], DEC);
+    Serial.println(" is lost.");
   }
-  if(code == PJON_ID_ACQUISITION_FAIL) {
-    if(data == PJON_ID_ACQUIRE)
-      Serial.println("ERR: MM addressing failed.");
-    if(data == PJON_ID_CONFIRM)
-      Serial.println("ERR: slave id conf failed.");
-    if(data == PJON_ID_NEGATE)
-      Serial.println("ERR: id release failed.");
-    if(data == PJON_ID_REQUEST){
-      Serial.println("ERR: id request failed.");
-      delay(160);
-      bus.acquire_id_master_slave();
-    }
+  if(code == PJON_PACKETS_BUFFER_FULL) {
+    Serial.print("Packet buffer is full, has now a length of ");
+    Serial.println(data);
+    Serial.println("Possible wrong bus configuration!");
+    Serial.println("higher PJON_MAX_PACKETS if necessary.");
   }
-  Serial.flush();
+  if(code == PJON_CONTENT_TOO_LONG) {
+    Serial.print("Content is too long, length: ");
+    Serial.println(data);
+  }
 };
 void respondToPoll(){
   Serial.print("Responding to poll request");
@@ -95,15 +94,27 @@ void respondToPoll(){
     int err = bus.send_packet(254,JSON,Size);
     Serial.print(err);
 }
-
+void tellMasterAboutSelf(){
+  const char * JSON = "{\"register\":\"Strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
+    int Size = 0;
+    while (JSON[Size] != '\0') Size++;
+    if(bus.send_packet(1,JSON,Size) == PJON_ACK){
+    Serial.println("Hi MOM");
+    Serial.print(JSON);
+   }
+  else{
+    Serial.println("failed");
+  }
+};
 void setup() {
-  Serial.begin(115200);
-  bus.set_error(error_handler);
-  bus.set_receiver(receiver_handler);
+  Serial.begin(9600);
+  Serial.println("Setup");
   bus.strategy.set_pin(12);
+  bus.set_receiver(receiver_handler);
+  bus.set_error(error_handler);
   bus.begin();
-  delay(160);
-  bus.acquire_id_master_slave();
+  tellMasterAboutSelf();
+  acquired = true;
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
@@ -118,83 +129,12 @@ void setup() {
     FastLED.delay(300);
     i++;
   }
-
 }
 void randX() {
   if (autoMode == 1) {
     x = random(2, 9);
   }
 }
-void loop() {
-  EVERY_N_MILLISECONDS(30) {
-    gHue++;
-  }
-  EVERY_N_SECONDS(1) {
-    timeSinceBt++;
-    if (timeSinceBt == autoSecs) {
-      timeSinceBt = 0;
-      randX();
-    }
-  }
-  switch (x) {
-    case 0:
-      turnOff();
-      break;
-    case 1:
-      turnOn();
-      break;
-    case 2:
-      theLights();
-      break;
-    case 3:
-      rainbow();
-      break;
-    case 4:
-      rainbowWithGlitter();
-      break;
-    case 5:
-      confetti();
-      break;
-    case 6:
-      sinelon();
-      break;
-    case 7:
-      bpm();
-      break;
-    case 8:
-      juggle();
-      break;
-
-  }
-  //call function
-  copyLeds();
-  if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
-    Serial.print("Got device id: ");
-    Serial.println(bus.device_id());
-    delay(160);
-    tellMasterAboutSelf();
-    acquired = true;
-  }
-  bus.update();
-  bus.receive(5000);
-  FastLED.show();
-  FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
-
-  //  EVERY_N_MILLISECONDS( 20 )
-}
-
-void tellMasterAboutSelf(){
-  const char * JSON = "{\"register\":\"strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
-    int Size = 0;
-    while (JSON[Size] != '\0') Size++;
-    if(bus.send_packet(254,JSON,Size) == PJON_ACK){
-    Serial.println("Hi MOM");
-    Serial.print(JSON);
-   }
-  else{
-    Serial.println("failed");
-  }
-};
 void copyLeds() {
   ///for (int i = 0; i < NUM_LEDS; i++) 
   FL(0,NUM_LEDS){
@@ -274,4 +214,55 @@ void juggle() {
     ledsA[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= CHSV(dothue, 200, 255);
     dothue += 32;
   }
+}
+void loop() {
+  EVERY_N_MILLISECONDS(30) {
+    gHue++;
+  }
+  EVERY_N_SECONDS(1) {
+    timeSinceBt++;
+    if (timeSinceBt == autoSecs) {
+      timeSinceBt = 0;
+      randX();
+    }
+  }
+  switch (x) {
+    case 0:
+      turnOff();
+      break;
+    case 1:
+      turnOn();
+      break;
+    case 2:
+      theLights();
+      break;
+    case 3:
+      rainbow();
+      break;
+    case 4:
+      rainbowWithGlitter();
+      break;
+    case 5:
+      confetti();
+      break;
+    case 6:
+      sinelon();
+      break;
+    case 7:
+      bpm();
+      break;
+    case 8:
+      juggle();
+      break;
+
+  }
+  //call function
+  yield();
+  copyLeds();
+  bus.update();
+  bus.receive(5000);
+  FastLED.show();
+  FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
+
+  //  EVERY_N_MILLISECONDS( 20 )
 }
