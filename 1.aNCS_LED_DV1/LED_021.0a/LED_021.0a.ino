@@ -29,20 +29,23 @@ void loop()
     int i2cNum = 0;
     if (which == "A")i2cNum = I2C_MAT_A;
     else if (which == "B")i2cNum = I2C_MAT_B;
-    else if (which == "C")i2cNum = I2C_MAT_C;    
+    else if (which == "C")i2cNum = I2C_MAT_C;   
+    /// Anything else leaves i2cNum as 0  
     Serial.println(which);
     Serial.println(string.substring(4));
-    if (i2cNum != 0){
+    if (i2cNum != 0){ // Send to single matrix
       Wire.beginTransmission(i2cNum);
       sendMatrix();
+      string = "";  // Delete string after sending to single matrix
     }
-    else {
+    else { // Send to all matrix
       Wire.beginTransmission(2);
       sendMatrix();
       Wire.beginTransmission(3);
       sendMatrix();
       Wire.beginTransmission(4);
       sendMatrix();
+      string = ""; // Delete string after sending to multiple matrices      
     }
    }
    if (string.startsWith("LED"))
@@ -61,20 +64,20 @@ void loop()
     string = "";
    }
    if (string.startsWith("ALL")){
-      Wire.beginTransmission(1);
+      Wire.beginTransmission(1); // LEDS
       sendMatrix();
-      Wire.beginTransmission(2);
+      Wire.beginTransmission(2); // MAT A
       sendMatrix();
-      Wire.beginTransmission(3);
+      Wire.beginTransmission(3); // MAT B
       sendMatrix();
-      Wire.beginTransmission(4);
+      Wire.beginTransmission(4); // MAT C
       sendMatrix();
+      string = ""; // Delete string after sending ALL
    }
    if (string != ""){
             Serial.println(string); //Output the message
            string =""; //clear the buffer/message
         }
-
 // Keep reading from Arduino Serial Monitor and send to HC-05
   if (Serial.available())
     BTSerial.write(Serial.read());
@@ -82,10 +85,10 @@ void loop()
 void sendMatrix(){  //// Probably here that is issue ?? 
     String buff = string.substring(4);
     char buffer[buff.length()+1];
-    buff.toCharArray(buffer, buff.length());
+    buff.toCharArray(buffer, buff.length()+1);
     Wire.write(buffer);
     Wire.endTransmission();
     delay(500);
     digitalWrite(13,LOW);
-    string = "";
+      /// issue will be here as we only have a string object once, then we make it ""; 
       }
