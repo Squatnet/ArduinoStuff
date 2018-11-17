@@ -4,7 +4,7 @@
 #include <LEDText.h>
 #include <FontMatrise.h>
 // CHANGE THIS FOR ALTERNATE MATRIX
-#define I2C_ADDR 2
+#define I2C_ADDR 3
 
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 
