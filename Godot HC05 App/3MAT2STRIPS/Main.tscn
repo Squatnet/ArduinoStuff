@@ -20,7 +20,7 @@ size_flags_horizontal = 1
 size_flags_vertical = 1
 script = ExtResource( 1 )
 __meta__ = {
-"_edit_horizontal_guides_": [ 1761.41, 360.0, 90.0, 270.0, 180.0 ],
+"_edit_horizontal_guides_": [ 1761.41, 360.0, 90.0, 270.0, 180.0, -165.0 ],
 "_edit_vertical_guides_": [ 540.0, 1080.0, 0.0 ]
 }
 
@@ -334,7 +334,6 @@ _sections_unfolded = [ "Rect" ]
 
 [node name="MATB" parent="MATB" index="0" instance=ExtResource( 3 )]
 
-visible = false
 margin_left = -292.0
 margin_top = 75.0
 margin_right = 728.0

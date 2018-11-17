@@ -89,6 +89,7 @@ void receiveEvent(int howMany) {
   }
   else {
     iic = ss.toInt();
+    turnOff(); // Clear the fastleds array; POossible fix for 22
     if (string.length() == 6) {
       char charbuf[8];
       string.toCharArray(charbuf, 8);
