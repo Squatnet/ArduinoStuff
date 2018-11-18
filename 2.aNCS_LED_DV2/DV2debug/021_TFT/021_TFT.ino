@@ -1,3 +1,6 @@
+// 021/TFT with PJON (12) 
+// Aim: To display network information collected by master and sensor information collected by network.
+
 #include <PJON.h>
 
 #include <Adafruit_GFX.h>
@@ -34,6 +37,11 @@ MCUFRIEND_kbv tft; // assign tft mcufriend related stuff to an alias - tft
 void progmemPrint(const char *str);
 void progmemPrintln(const char *str);
 
+// the following definition will be removed and the string length will be counted instead using += operator) Debug only!
+#define COUNT 20 // CALIBRATE THIS NUMBER TO DETERMINE WHEN RESET SCRIPT KICKS IN (after how many messages received) 
+int counter = 0;
+bool flag = 0;
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Setup Start");
@@ -64,7 +72,16 @@ void loop() {
   bus.update();
 }
 
-unsigned long txt(uint8_t *payload,uint16_t length,int sender) { // make this receive char* or string whatever :) have fun
+void resetTxt(){ //dirty solution to avoid scrolling text. test.
+  flag=!flag; // swap flag
+  Serial.println("Flag =     " + flag );
+  int w = tft.width(); // find width
+  int a[2] = {90,265}; //choose start point (made to be adaptable)
+  tft.fillRect(0,a[flag],w,175,BLACK); // draw black box @ 90 or 265
+  tft.setCursor(0,a[flag]); // reset cursor to print
+}
+
+unsigned long txt(uint8_t *payload,uint16_t length,int sender) { 
     unsigned long start;
     tft.setTextColor(WHITE,BLACK);
     tft.setTextSize(1);
@@ -75,15 +92,22 @@ unsigned long txt(uint8_t *payload,uint16_t length,int sender) { // make this re
     tft.print(" sender: ");
     tft.println(sender);
   return micros() - start;
+  //dirty code starts, there is a better way 4sure, will add to issues list
+  counter++; //add one to counter every time message printed 
+  if(counter>=COUNT){ //after a certain amount of messages...
+    resetTxt(); // reset
+    counter=0; // reset counter
+    Serial.println("Counter =      " + counter );
+  }
 }
 
 void doHeader(){
     tft.setTextColor(WHITE);
     tft.setTextSize(2); tft.println(" autoNoiseCreationStation");
     tft.setTextColor(MAGENTA);
-    tft.setTextSize(1); tft.print("DEV HUB #1 - ");
+    tft.setTextSize(1); tft.print("DEV HUB #2 - ");
     tft.setTextColor(RED);
-    tft.setTextSize(1); tft.println("Interactive Omnipresent Lighting Network ");
+    tft.setTextSize(1); tft.println(" Omnipresent Interactive Lighting Network ");
 }
 void doFooter(){
       //FOOTER
@@ -96,7 +120,7 @@ void doFooter(){
     tft.setTextColor(GREEN);
     tft.print("PJON NETWORK TEST PLATFORM - DEMONSTRATION");
     tft.setTextColor(RED);;
-    tft.println("       V0.1");
+    tft.println("       V0.5");
      tft.setCursor(0,50);
 }
 unsigned long menuScreen() {
