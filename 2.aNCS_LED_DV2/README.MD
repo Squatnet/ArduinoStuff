@@ -6,7 +6,7 @@ DV2 Host DEVBOX complete.
 
 Network comprises of 5 MCU's:
 
-1x 020/TFT - Uno with TFT shield.
+1x 021/TFT - Uno with TFT shield.
 
 1x 022/0a - ProMini with HC05 and 3 LED's (2,3,4)
 
