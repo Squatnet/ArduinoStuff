@@ -62,21 +62,11 @@ void loop() {
       menu(2); // run menu LED     
     } 
   }
-
-    if (string.startsWith("M")){
-    if(string.substring(1,2) == "A") { // A/B/C
-      bus.send_packet(30, bus_id, "MA", 2); // send R recognition of Menu selection       
-    } 
-    if(string.substring(1,2) == "B") { // A/B/C
-      bus.send_packet(30, bus_id, "MB", 2); // send R recognition of Menu selection      
-    } 
-    if(string.substring(1,2) == "C") { // A/B/C
-      bus.send_packet(30, bus_id, "MC", 2); // send R recognition of Menu selection       
-    } 
-  }
   if(string.startsWith("R")){
     string.remove(0,1);
-    
+    char buff[string.length()+1];
+    string.toCharArray(buff,string.length());
+    bus.send_packet(30,buff,string.length()+1);
   }
   if (string != ""){
             Serial.println(string); //Output the message to serial
