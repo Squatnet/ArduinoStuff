@@ -74,7 +74,10 @@ void loop() {
       bus.send_packet(30, bus_id, "MC", 2); // send R recognition of Menu selection       
     } 
   }
-  
+  if(string.startsWith("R")){
+    string.remove(0,1);
+    
+  }
   if (string != ""){
             Serial.println(string); //Output the message to serial
             //bus.send_packet(10, bus_id, "Hi!", 3);
@@ -86,5 +89,3 @@ void loop() {
   if (Serial.available())
     BTSerial.write(Serial.read());
 }
-
-

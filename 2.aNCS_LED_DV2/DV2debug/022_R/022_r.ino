@@ -7,7 +7,7 @@
 uint8_t bus_id[4] = {0,0,1,53};
 // <Strategy name> bus(selected device id)
 PJON<SoftwareBitBang> bus(bus_id, 30); // 0,0,1,53::30
-  //PJON<SoftwareBitBang> bus2(1); // 0,0,0,1::1
+PJON<SoftwareBitBang> bus2(1); // 0,0,0,1::1
 #define LPIN 3 // Latch
 #define CPIN 4 // Clock
 #define DPIN 2 // Data
@@ -29,7 +29,7 @@ int b = 0;
 
 void aR(int bb){
   val[bb] = map(analogRead(bb), 0, 1023, 0, 255); // if menu.x==# map to x values
-  if(valM[bb] > (val[bb] + 2) | valM[bb] < (val[bb] - 2 )) { //if memory if greater than or less than value +- a little bit to allow a buffer for loose readings
+  if(valM[bb] > (val[bb] + 3) | valM[bb] < (val[bb] - 3 )) { //if memory if greater than or less than value +- a little bit to allow a buffer for loose readings
     if(mSel==0) {
       if(bb==0){      string = "Red";      }
       if(bb==1){      string = "Green";    }
@@ -74,11 +74,11 @@ void setup() {
 //  bus.set_error(error_handler);
     //bus2.set_error(error_handler);
   bus.set_receiver(receiver_function);
-    //bus2.set_receiver(receiver_function_2);
+  bus2.set_receiver(receiver_function_2);
   bus.strategy.set_pin(12); // main bus
-    //bus.strategy.set_pins(7); // sub bus
+  bus.strategy.set_pins(7); // sub bus
   bus.begin();
-    //bus2.begin();
+  bus2.begin();
   hc595(11);
   delay(100);
   hc595(12);
@@ -110,60 +110,63 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 */
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   const char * arr = payload;
-  if(payload[0]=='M') {
-    if(arr[1]=='A')mSel=1;
-    if(payload[1]=='B')mSel=0;
-    if(payload[1]=='C')hc595(3);
-    if(payload[1]=='D')hc595(4);
-    if(payload[1]=='E')hc595(5);
-    if(payload[1]=='F')hc595(6);
-  }
-  /*
   String str = "";
   str.concat(arr);
   String SS = str.substring(0,1);
-  if(SS == "P"){
+  str.remove(0,1);
+  if(SS=="M") {
+    String SSS = str.substring(0,1);
     str.remove(0,1);
-    pulse = str.toInt();
+    if(SSS=="A")mSel=0;
+    if(SSS=="B")mSel=1;
+    if(SSS=="C")mSel=2;
+    if(SSS=="D")mSel=3;
+    if(SSS=="E")mSel=4;
+    if(SSS=="F")mSel=5;
   }
-  else if(SS == "X"){
+  if(SS == "R"){
+    String SSS = str.substring(0,1);
     str.remove(0,1);
-    ptrn = str.substring(0,2).toInt();
-    str.remove(0,2);
-    if (str.length() == 6) {
-      char charbuf[8];
-      str.toCharArray(charbuf, 8);
-      long int rgb = strtol(charbuf, 0, 16); //=>rgb=0x001234FE;
-      byte red = (byte)(rgb >> 16);
-      byte grn = (byte)(rgb >> 8);
-      byte blu = (byte)(rgb);
-      r = int(red);
-      g = int(grn);
-      b = int(blu);
-    }
+    if(SSS=="A")hc595(0);
+    if(SSS=="B")hc595(1);
+    if(SSS=="C")hc595(2);
+    if(SSS=="D")hc595(3);
+    if(SSS=="E")hc595(4);
+    if(SSS=="F")hc595(5);
   }
-  else if(SS == "M"){
-   str.remove(0,1);
-   hc595(str.toInt());  
+  if(SS == "L"){
+    String SSS = str.substring(0,1);
+    str.remove(0,1);
+    if(SSS=="A")sendLED(0,str);
+    if(SSS=="B")sendLED(1,str);
+    if(SSS=="C")sendLED(2,str);
+    if(SSS=="D")sendLED(3,str);
+    if(SSS=="E")sendLED(4,str);
+    if(SSS=="F")sendLED(5,str);
   }
-  else{
- 
-  }
-  */
+  
 };
-/*
 void receiver_function_2(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   const char * arr = payload;
+  bus.send_packet(10,arr,length);
 };
-*/
 void loop() {
   aR(0);
   aR(1);
   aR(2);
   bus.receive(5000);
+  bus2.receive(5000);
   bus.update();
+  bus2.update();
   }
-
+void sendLED(int to,String data){
+  to++;
+  char buff[data.length()+1];
+  data.toCharArray(buff,data.length());
+  int i =0;
+  while(buff[i] != '\0')i++;
+  bus2.send_packet(to,buff,i+1);
+}
 void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
   int i=0;  //internal function setup
   int pinState;

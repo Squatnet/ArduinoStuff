@@ -27,7 +27,7 @@ int x = 0; // holder for pattern message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
-int autoMode = 1;
+int autoMode = 0;
 int autoSecs = 10;
 
 void setup() {
