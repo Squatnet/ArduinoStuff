@@ -155,7 +155,7 @@ void loop() {
   aR(1);
   aR(2);
   bus.receive(5000);
-  bus2.receive(5000);
+  bus2.receive(1000);
   bus.update();
   bus2.update();
   }
@@ -163,9 +163,9 @@ void sendLED(int to,String data){
   to++;
   char buff[data.length()+1];
   data.toCharArray(buff,data.length());
-  int i =0;
-  while(buff[i] != '\0')i++;
-  bus2.send_packet(to,buff,i+1);
+  //int i =0;
+  //while(buff[i] != '\0')i++;
+  bus2.send_packet(to,buff,data.length()+1);
 }
 void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
   int i=0;  //internal function setup
