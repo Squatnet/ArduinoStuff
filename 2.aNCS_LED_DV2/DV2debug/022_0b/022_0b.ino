@@ -9,7 +9,7 @@
 
 #define fL(x,a) for(int x=0;x<a;x++)
 
-SoftwareSerial BTSerial(11, 10); // RX | TX for HC05 Module
+SoftwareSerial BTSerial(10, 11); // RX | TX for HC05 Module
 
 #define SWBB_RESPONSE_TIMEOUT 1500 /* Synchronous acknowledgement response timeout*/
 #define SWBB_BACK_OFF_DEGREE     4 // Set the back-off exponential degree (default 4)
@@ -61,10 +61,24 @@ void loop() {
       menu(2); // run menu LED     
     } 
   }
+
+    if (string.startsWith("M")){
+    if(string.substring(1,2) == "A") { // A/B/C
+      bus.send_packet(30, bus_id, "MA", 2); // send R recognition of Menu selection       
+    } 
+    if(string.substring(1,2) == "B") { // A/B/C
+      bus.send_packet(30, bus_id, "MB", 2); // send R recognition of Menu selection      
+    } 
+    if(string.substring(1,2) == "C") { // A/B/C
+      bus.send_packet(30, bus_id, "MC", 2); // send R recognition of Menu selection       
+    } 
+  }
+  
   if (string != ""){
             Serial.println(string); //Output the message to serial
             //bus.send_packet(10, bus_id, "Hi!", 3);
             bus.send_packet(10, bus_id, strS, sizeof(strS)); // send the string to TFT
+            //bus.send_packet(30, bus_id, strS, sizeof(strS)); // send the string to 022_R
             string =""; //clear the buffer/message
         }
  bus.update(); // update and prepare to send in loop

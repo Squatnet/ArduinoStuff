@@ -1,7 +1,5 @@
 #include <PJON.h>
 #include "FastLED.h"
-#include <Wire.h>
-
 #define fL(x,aa,bb) for (int x = aa; x < bb; x++)
 
 #define NUM_LEDS 29
@@ -22,8 +20,8 @@ CRGB ledsD[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 
-uint8_t bus_id[] = {0, 0, 1, 53};
-PJON<SoftwareBitBang> bus(bus_id, 2);
+uint8_t bus_id[] = {0, 0, 0, 0};
+PJON<SoftwareBitBang> bus(bus_id, 3);
 
 int x = 0; // holder for pattern message
 String string = "";
