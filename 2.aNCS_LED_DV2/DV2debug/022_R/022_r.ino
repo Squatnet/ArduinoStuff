@@ -7,7 +7,7 @@
 uint8_t bus_id[4] = {0,0,1,53};
 // <Strategy name> bus(selected device id)
 PJON<SoftwareBitBang> bus(bus_id, 30); // 0,0,1,53::30
-PJON<SoftwareBitBang> bus2(1); // 0,0,0,1::1
+//PJON<SoftwareBitBang> bus2(1); // 0,0,0,1::1
 #define LPIN 3 // Latch
 #define CPIN 4 // Clock
 #define DPIN 2 // Data
@@ -74,11 +74,11 @@ void setup() {
 //  bus.set_error(error_handler);
     //bus2.set_error(error_handler);
   bus.set_receiver(receiver_function);
-  bus2.set_receiver(receiver_function_2);
+//  bus2.set_receiver(receiver_function_2);
   bus.strategy.set_pin(12); // main bus
-  bus.strategy.set_pins(7); // sub bus
+//  bus.strategy.set_pins(7); // sub bus
   bus.begin();
-  bus2.begin();
+//  bus2.begin();
   hc595(11);
   delay(100);
   hc595(12);
@@ -146,18 +146,19 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   }
   
 };
+/*
 void receiver_function_2(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   const char * arr = payload;
   bus.send_packet(10,arr,length);
-};
+};*/
 void loop() {
   aR(0);
   aR(1);
   aR(2);
   bus.receive(5000);
-  bus2.receive(1000);
+ // bus2.receive(1000);
   bus.update();
-  bus2.update();
+ // bus2.update();
   }
 void sendLED(int to,String data){
   to++;
@@ -165,7 +166,7 @@ void sendLED(int to,String data){
   data.toCharArray(buff,data.length());
   //int i =0;
   //while(buff[i] != '\0')i++;
-  bus2.send_packet(to,buff,data.length()+1);
+ bus.send_packet(10,buff,data.length()+1);
 }
 void shiftOut(int myDataPin, int myClockPin, byte myDataOut) {
   int i=0;  //internal function setup
