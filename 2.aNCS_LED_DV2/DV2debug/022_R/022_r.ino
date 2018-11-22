@@ -29,7 +29,7 @@ int b = 0;
 
 void aR(int bb){
   val[bb] = map(analogRead(bb), 0, 1023, 0, 255); // if menu.x==# map to x values
-  if(valM[bb] > (val[bb] + 1) | valM[bb] < (val[bb] - 1 )) { //if memory if greater than or less than value +- a little bit to allow a buffer for loose readings
+  if(valM[bb] > (val[bb] + 2) | valM[bb] < (val[bb] - 2 )) { //if memory if greater than or less than value +- a little bit to allow a buffer for loose readings
     if(mSel==0) {
       if(bb==0){      string = "Red";      }
       if(bb==1){      string = "Green";    }

@@ -11,6 +11,8 @@
 
 SoftwareSerial BTSerial(10, 11); // RX | TX for HC05 Module
 
+bool menuF[]  = {0,0,0};
+
 #define SWBB_RESPONSE_TIMEOUT 1500 /* Synchronous acknowledgement response timeout*/
 #define SWBB_BACK_OFF_DEGREE     4 // Set the back-off exponential degree (default 4)
 #define SWBB_MAX_ATTEMPTS       20 // Set the maximum sending attempts (default 20)
@@ -25,9 +27,8 @@ int leds[] = {2,3,4};
 bool IO[3] = {0,0,0};
 
 void menu(int a){
-  if(IO[a]==1)IO[a]=0;
-  else IO[a]=1;
-  fL(i,3){ digitalWrite(leds[i] , IO[i]); }
+  menuF[a] = !menuF[a];
+  fL(i,3){ digitalWrite(leds[i] , menuF[i]); }
 } 
 
 void setup() {
