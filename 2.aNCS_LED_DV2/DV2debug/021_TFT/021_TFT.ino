@@ -36,6 +36,8 @@ MCUFRIEND_kbv tft; // assign tft mcufriend related stuff to an alias - tft
 
 void progmemPrint(const char *str);
 void progmemPrintln(const char *str);
+//height of font, top of text, amount of lines, scroll function
+int16_t ht = 8, top = 5, line, lines = 30, scroll;
 
 // the following definition will be removed and the string length will be counted instead using += operator) Debug only!
 #define COUNT 200 // CALIBRATE THIS NUMBER TO DETERMINE WHEN RESET SCRIPT KICKS IN (after how many messages received) 
@@ -73,6 +75,8 @@ void loop() {
   bus.update();
 }
 
+
+/*
 void resetTxt(){ //dirty solution to avoid scrolling text. test.
   
   int w = tft.width(); // find width
@@ -84,26 +88,30 @@ void resetTxt(){ //dirty solution to avoid scrolling text. test.
       tft.fillRect(0,90,w,175,BLACK); // draw black box @ 90 or 265     
       tft.setCursor(0,90); // reset cursor to print
    }
-  
 }
+*/
 
 unsigned long txt(uint8_t *payload,uint16_t length,int sender) { 
     unsigned long start;
     tft.setTextColor(WHITE,BLACK);
-    tft.setTextSize(1);
+    tft.setCursor(0, (scroll + top) * ht);
+    if (++scroll >= lines) scroll = 0;
+    tft.vertScroll(top * ht, lines * ht, (scroll) * ht);
+    tft.setTextSize(1); // System font is 8 pixels.  ht = 8*2=16
     String newline = "";
      for(uint8_t i = 0; i < length; i++) {
       tft.print(char( payload[i]));
     }
     tft.print(" sender: ");
     tft.println(sender);
-    counter++;
-    if(counter>=21){ //after the string reaches a certain length....
-      flag=!flag; // swap flag
-      resetTxt();
+ //   counter++;
+ //   if(counter>=21){ //after the string reaches a certain length....
+ //     flag=!flag; // swap flag
+//      resetTxt();
       //menuScreen(); // reset
-      counter=0; // reset counter
-    }
+ //     counter=0; // reset counter
+      line++;
+    
   return micros() - start;
 }
 

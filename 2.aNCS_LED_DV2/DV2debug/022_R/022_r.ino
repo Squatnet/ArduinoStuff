@@ -139,12 +139,12 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   if(SS == "L"){
     String SSS = str.substring(0,1);
     str.remove(0,1);
-    if(SSS=="A")sendLED(0,str);
-    if(SSS=="B")sendLED(1,str);
-    if(SSS=="C")sendLED(2,str);
-    if(SSS=="D")sendLED(3,str);
-    if(SSS=="E")sendLED(4,str);
-    if(SSS=="F")sendLED(5,str);
+    if(SSS=="A")sendLED(1,str);
+    if(SSS=="B")sendLED(2,str);
+    if(SSS=="C")sendLED(3,str);
+    if(SSS=="D")sendLED(4,str);
+    if(SSS=="E")sendLED(5,str);
+    if(SSS=="F")sendLED(6,str);
   }
   
 };
