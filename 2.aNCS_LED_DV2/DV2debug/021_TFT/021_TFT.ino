@@ -38,13 +38,14 @@ void progmemPrint(const char *str);
 void progmemPrintln(const char *str);
 
 // the following definition will be removed and the string length will be counted instead using += operator) Debug only!
-#define COUNT 20 // CALIBRATE THIS NUMBER TO DETERMINE WHEN RESET SCRIPT KICKS IN (after how many messages received) 
+#define COUNT 200 // CALIBRATE THIS NUMBER TO DETERMINE WHEN RESET SCRIPT KICKS IN (after how many messages received) 
 int counter = 0;
-bool flag = 0;
+uint16_t len = 0 ;
+bool flag;
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Setup Start");
+  //Serial.println("Setup Start");
   bus.strategy.set_pin(12);
   bus.set_receiver(receiver_function);
   bus.begin();
@@ -52,7 +53,7 @@ void setup() {
   uint16_t ID = tft.readID();
     tft.begin(ID);
     menuScreen();
-  Serial.println("Setup Complete");  
+  //Serial.println("Setup Complete");  
 }
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
      if(payload[0] != '\0'){ // if the payload isn't null
@@ -73,12 +74,17 @@ void loop() {
 }
 
 void resetTxt(){ //dirty solution to avoid scrolling text. test.
-  flag=!flag; // swap flag
-  Serial.println("Flag =     " + flag );
+  
   int w = tft.width(); // find width
-  int a[2] = {90,265}; //choose start point (made to be adaptable)
-  tft.fillRect(0,a[flag],w,175,BLACK); // draw black box @ 90 or 265
-  tft.setCursor(0,a[flag]); // reset cursor to print
+    if(flag==1){
+      tft.fillRect(0,275,w,175,BLACK); // draw black box @ 90 or 265
+      tft.setCursor(0,275); // reset cursor to print
+    }
+   else if (flag == 0 ) {
+      tft.fillRect(0,90,w,175,BLACK); // draw black box @ 90 or 265     
+      tft.setCursor(0,90); // reset cursor to print
+   }
+  
 }
 
 unsigned long txt(uint8_t *payload,uint16_t length,int sender) { 
@@ -91,14 +97,14 @@ unsigned long txt(uint8_t *payload,uint16_t length,int sender) {
     }
     tft.print(" sender: ");
     tft.println(sender);
+    counter++;
+    if(counter>=21){ //after the string reaches a certain length....
+      flag=!flag; // swap flag
+      resetTxt();
+      //menuScreen(); // reset
+      counter=0; // reset counter
+    }
   return micros() - start;
-  //dirty code starts, there is a better way 4sure, will add to issues list
-  counter++; //add one to counter every time message printed 
-  if(counter>=COUNT){ //after a certain amount of messages...
-    resetTxt(); // reset
-    counter=0; // reset counter
-    Serial.println("Counter =      " + counter );
-  }
 }
 
 void doHeader(){
