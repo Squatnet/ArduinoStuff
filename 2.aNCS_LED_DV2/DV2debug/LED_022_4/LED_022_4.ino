@@ -20,8 +20,8 @@ CRGB ledsD[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 
-uint8_t bus_id[] = {0, 0, 0, 0};
-PJON<SoftwareBitBang> bus(bus_id, 2);
+uint8_t bus_id[] = {0, 0, 0, 1};
+PJON<SoftwareBitBang> bus(bus_id, 3);
 
 int x = 0; // holder for pattern message
 String string = "";
@@ -29,10 +29,11 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 0;
 int autoSecs = 10;
-
+bool sndMsg = 0;
+ 
 void setup() {
-  Serial.begin(9600);
-  Serial.println("Ready for i2c");
+ // Serial.begin(9600);
+  //Serial.println("Ready for i2c");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
@@ -52,22 +53,23 @@ void setup() {
 
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   const char * arr = payload;
-  Serial.println(arr);
+  sndMsg=1;
+  //Serial.println(arr);
   timeSinceBt = 0;
   String str = arr;
-  Serial.println(str);
+  //Serial.println(str);
   str.trim();
   String strB = string.substring(0, 1);
   str.remove(0, 1);
   if (strB == "X") {
     autoMode = str.toInt(); // set autoMode IO
-    Serial.print("AUTO");
-    Serial.print(autoMode);
+    //Serial.print("AUTO");
+    //Serial.print(autoMode);
   }
   else if (strB == "S") {
     autoSecs = str.toInt(); // set seconds value
-    Serial.print("AUTOSECS = ");
-    Serial.println(autoSecs);
+    //Serial.print("AUTOSECS = ");
+    //Serial.println(autoSecs);
   }
   else {
     x = strB.toInt(); // pattern choice 
@@ -87,8 +89,8 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
 void randX() {
   if (autoMode == 1) {
     x = random(2, 10);
-    Serial.print("RANDOM ");
-    Serial.println(x);
+    //Serial.print("RANDOM ");
+    //Serial.println(x);
   }
 }
 void loop() {
@@ -102,6 +104,11 @@ void loop() {
       randX();
     }
   }
+  if(sndMsg==1){
+    bus.send_packet(1,"OK", 2);
+    sndMsg=0;
+  }
+  
   switch (x) {
     case 0:
       turnOff();

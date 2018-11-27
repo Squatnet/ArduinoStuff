@@ -59,8 +59,9 @@ void setup() {
 }
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
      if(payload[0] != '\0'){ // if the payload isn't null
+      const char arr = payload;
       uint8_t id = packet_info.sender_id; //prepare the packet ...
-        txt(payload,length,id); // ... and send to the TFT
+        txt(arr,length,id); // ... and send to the TFT
           /*
           for(uint8_t i = 0; i < length; i++) {
             Serial.print(char( payload[i]));
@@ -99,8 +100,10 @@ unsigned long txt(uint8_t *payload,uint16_t length,int sender) {
     tft.vertScroll(top * ht, lines * ht, (scroll) * ht);
     tft.setTextSize(1); // System font is 8 pixels.  ht = 8*2=16
     String newline = "";
-     for(uint8_t i = 0; i < length; i++) {
+    uint8_t i = 0; 
+     while(i != '\0') {
       tft.print(char( payload[i]));
+      i++;
     }
     tft.print(" sender: ");
     tft.println(sender);
