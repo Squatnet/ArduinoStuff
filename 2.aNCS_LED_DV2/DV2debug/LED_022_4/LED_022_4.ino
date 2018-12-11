@@ -20,8 +20,8 @@ CRGB ledsD[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 
-uint8_t bus_id[] = {0, 0, 0, 1};
-PJON<SoftwareBitBang> bus(bus_id, 3);
+uint8_t bus_id[] = {0, 0, 1, 53}; //  BACK to our Unique ID. One NETWORK , ONE ID - Making ANCS GREAT AGAIN
+PJON<SoftwareBitBang> bus(bus_id, 32);
 
 int x = 0; // holder for pattern message
 String string = "";
@@ -105,7 +105,7 @@ void loop() {
     }
   }
   if(sndMsg==1){
-    bus.send_packet(1,"OK", 2);
+    bus.send_packet(10,"OK", 2);
     sndMsg=0;
   }
   

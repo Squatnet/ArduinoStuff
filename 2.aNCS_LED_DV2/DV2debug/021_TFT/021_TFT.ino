@@ -37,7 +37,7 @@ MCUFRIEND_kbv tft; // assign tft mcufriend related stuff to an alias - tft
 void progmemPrint(const char *str);
 void progmemPrintln(const char *str);
 //height of font, top of text, amount of lines, scroll function
-int16_t ht = 8, top = 5, line, lines = 30, scroll;
+int16_t ht = 8, top = 5, line, lines = 45, scroll;
 
 // the following definition will be removed and the string length will be counted instead using += operator) Debug only!
 #define COUNT 200 // CALIBRATE THIS NUMBER TO DETERMINE WHEN RESET SCRIPT KICKS IN (after how many messages received) 

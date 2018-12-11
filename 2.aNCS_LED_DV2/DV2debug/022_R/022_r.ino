@@ -5,10 +5,7 @@
 #define fL(x,a,b) for(int x=a;x<b;x++)
 #include <PJON.h>
 uint8_t bus_id[4] = {0,0,1,53};
-uint8_t bus_id2[4] = {0,0,0,1};
-// <Strategy name> bus(selected device id)
 PJON<SoftwareBitBang> bus(bus_id, 30); // 0,0,1,53::30
-//PJON<SoftwareBitBang> bus2(bus_id2, 1); // 0,0,0,1::1
 #define LPIN 3 // Latch
 #define CPIN 4 // Clock
 #define DPIN 2 // Data
@@ -20,7 +17,7 @@ byte dataArray[15]; //LED Array Type 1
 String string = "";
 String fStr = "";
 char aStr[30];
-int mSel ;
+int mSel = 0;
 int ptrn = 0;
 int pulse = 0;
 int r = 0;
@@ -77,15 +74,9 @@ void setup() {
   dataArray[12] = 0b01000010;
   dataArray[13] = 0b00100100;
   dataArray[14] = 0b00011000;
-  // Init PJON
-//  bus.set_error(error_handler);
-    //bus2.set_error(error_handler);
   bus.set_receiver(receiver_function);
-  //bus2.set_receiver(receiver_function_2);
   bus.strategy.set_pin(12); // main bus
-//  bus.strategy.set_pins(7); // sub bus
   bus.begin();
-  //bus2.begin();
   hc595(11);
   delay(100);
   hc595(12);
@@ -100,20 +91,14 @@ void setup() {
 /*
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
-    Serial.print("Connection with device ID ");
-    Serial.print(bus.packets[data].content[0], DEC);
-    Serial.println(" is lost.");
-  }
+    
+      }
   if(code == PJON_PACKETS_BUFFER_FULL) {
-    Serial.print("Packet buffer is full, has now a length of ");
-    Serial.println(data, DEC);
-    Serial.println("Possible wrong bus configuration!");
-    Serial.println("higher PJON_MAX_PACKETS if necessary.");
-  }
+    
+    }
   if(code == PJON_CONTENT_TOO_LONG) {
-    Serial.print("Content is too long, length: ");
-    Serial.println(data);
-  }
+    
+    }
 };
 */
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
@@ -126,10 +111,7 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   if(SS=="M") {
     //Serial.println( mSel);
     String SSS = str.substring(0,1);
-    //Serial.println("HEre" + SSS);
-    
     str.remove(0,1);
-    //Serial.println( "here again" + SSS);
     if(SSS=="A") mSel = 0;
     if(SSS=="B") mSel = 1;
     if(SSS=="C") mSel = 2;
@@ -155,8 +137,8 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     //Serial.println("Call LEDS");
    // Serial.println("String = " + str);
     str.remove(0,1);
-    if(SSS=="A")ledNum = 1;
-    if(SSS=="B")ledNum = 2;
+    if(SSS=="A")ledNum = 31;
+    if(SSS=="B")ledNum = 32;
     if(SSS=="C")ledNum = 3;
     if(SSS=="D")ledNum = 4;
     if(SSS=="E")ledNum = 5;
@@ -178,37 +160,24 @@ void debugSender(){
   bus.send_packet(10, bus_id, buffe, debug.length()+1);
   debug = "";
 }
-/*void receiver_function_2(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
-  const char * arr = payload;
-  String str2 = "";
-  str2.concat(arr);
-  bus.send_packet(10,arr,length);
-    //Serial.println("Just Received : " + str2);
-};
-*/
+
 void loop() {
   aR(0);
   aR(1);
   aR(2);
   if(flag1 == 1) debugSender();
   if (flag2 == 1) sendLED();
-  //hc595(6);
   bus.receive(5000);
-  //bus2.receive(100);
   bus.update();
-  //hc595(0);
-  //bus2.update();
-  //Serial.println("Gimme Datt LOOP");
   }
 void sendLED(){
-  ledNum++; 
   flag2 = 0;
   char buff[ledMsg.length()+1];
   ledMsg.toCharArray(buff,ledMsg.length()+1);
   //int i =0;
   //while(buff[i] != '\0')i++;
  bus.send_packet(10,bus_id,buff,ledMsg.length());
- bus.send_packet(ledNum, bus_id2, buff, ledMsg.length());
+ bus.send_packet(ledNum,bus_id,buff,ledMsg.length());
  //Serial.println(data + "sendLED");
  ledMsg = "";
  
