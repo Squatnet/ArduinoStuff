@@ -51,6 +51,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
     Serial.print("Connection lost with device ");
     Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    bus.acquire_id_master_slave();
   }
   if(code == PJON_ID_ACQUISITION_FAIL) {
     if(data == PJON_ID_ACQUIRE)
@@ -69,13 +70,13 @@ void setup() {
   Serial.begin(115200);
   bus.set_error(error_handler);
   Serial.println("Setup");
-  delay(160);
+  delay(10060);
   bus.strategy.set_pin(12);
   bus.set_receiver(receiver_function);
   bus.acquire_id_master_slave();
   bus.begin();
   delay(160);
-  Serial.print("Bus init");
+  Serial.print("Bus init ");
   Serial.println(bus.device_id());
   //bus.send(1, "B", 1);
  uint16_t ID = tft.readID();
@@ -96,6 +97,7 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     }
 }
 void loop() {
+  if(bus.device_id() == 255)bus.acquire_id_master_slave();
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
     Serial.print("Acquired device id: ");
     Serial.println(bus.device_id());
@@ -145,7 +147,10 @@ void doFooter(){
      tft.setCursor(0,50);
 }
 void tellMasterAboutSelf(){
-  bus.send_packet(254,"SMonitor",8);
+  String newPkt = "Reg,Term,MasterTerm";
+  const char pkt[newPkt.length()+1];
+  newPkt.toCharArray(pkt,newPkt.length());
+  bus.send_packet(254,pkt,newPkt.length()+1);
 }
 unsigned long menuScreen() {
     unsigned long start;
@@ -163,5 +168,3 @@ unsigned long menuScreen() {
  tft.setCursor(0, 90);
     return micros() - start;
 }
-
-

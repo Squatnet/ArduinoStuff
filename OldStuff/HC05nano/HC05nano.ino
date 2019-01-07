@@ -1,7 +1,7 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
 
-SoftwareSerial BTSerial(10, 11); // RX | TX
+SoftwareSerial BTSerial(11, 10); // RX | TX
 String string = "";
 String string2 = "LED";
 void setup()
@@ -12,7 +12,7 @@ void setup()
   digitalWrite(9, HIGH);
   Serial.println("Enter a command");
   BTSerial.begin(38400);
-  //BTSerial.write("AT+BAUD6");
+  BTSerial.write("HELLOO");
   Wire.begin();
 }
 

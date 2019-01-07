@@ -1,14 +1,6 @@
-// LEDcxFFFFFF
-// c is channel
-// x is pattern number
-// Valid x :
-// 0 Off
-// 1-8 Patterns
-
-// cxzcz
-// S00 Seconds timeout
-// X0  Boolean automode
-// Color optional
+#include <pt.h> // ProtoThread Library
+#include <clock.h> // Library for the CLOCK_SECOND constant
+#include <timer.h> // Libery for the timer
 #include "FastLED.h"
 #include <SoftwareSerial.h>
 #define NUM_LEDS 28
@@ -35,7 +27,12 @@ int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 10;
 int DoLeds = 1;
-void setup() {
+static struct pt ptLed;
+static struct pt ptBt;
+void setup(){
+  // Init both instances
+  PT_INIT(&ptLed); //Leds thread
+  PT_INIT(&ptBt); //Touch thread
   BT.begin(38400);
   Serial.begin(115200);
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
@@ -52,7 +49,6 @@ void setup() {
     FastLED.delay(300);
     i++;
   }
-
 }
 void randX() {
   if (autoMode == 1) {
@@ -61,29 +57,17 @@ void randX() {
     Serial.println(x);
   }
 }
-void loop() {
-  while (BT.available()) {
-    char character = BT.read(); // Receive a single character from the software serial port
-    string.concat(character); // Add the received character to the receive buffer
-    Serial.print(character);
-  }
-/*  while (Serial.available()) {
-    char character = Serial.read(); // Receive a single character from the software serial port
-    string.concat(character); // Add the received character to the receive buffer
-  } */
-  EVERY_N_SECONDS(1) {
-    timeSinceBt++;
-    if (timeSinceBt == autoSecs) {
-      timeSinceBt = 0;
-      randX();
-    }
-  }
-  string.trim();
-  if (string != ""){
-    parseString(string);
-    string="";
-  }
-  switch (x) {
+static PT_THREAD(runLeds(struct pt *pt)){
+  static struct timer t; // timer of protothread
+  PT_BEGIN(pt);
+  timer_set(&t, 0.05*CLOCK_SECOND); // set the timer to expire
+                                 // in 1 second
+  
+  // while loop, like loop() of arduino
+  while(1){
+    // wait until the timer expire
+    PT_WAIT_UNTIL(pt, timer_expired(&t));
+    switch (x) {
     case 0:
       turnOff();
       break;
@@ -120,6 +104,52 @@ void loop() {
   FastLED.show();
   //FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
   
+       }
+  PT_END(pt); // End of the protothread
+}
+
+static PT_THREAD(runBt(struct pt *pt)){
+   static struct timer t; // timer of protothread
+  PT_BEGIN(pt); // Begin the protothread
+    timer_set(&t, 0.05*CLOCK_SECOND); // set the timer to expire
+                                 // in 1 second
+   
+  while(1){
+    PT_WAIT_UNTIL(pt, timer_expired(&t));
+    while (BT.available()) {
+    char character = BT.read(); // Receive a single character from the software serial port
+    string.concat(character); // Add the received character to the receive buffer
+    Serial.print(character);
+  }
+/*  while (Serial.available()) {
+    char character = Serial.read(); // Receive a single character from the software serial port
+    string.concat(character); // Add the received character to the receive buffer
+  } */
+  EVERY_N_SECONDS(1) {
+    timeSinceBt++;
+    if (timeSinceBt == autoSecs) {
+      timeSinceBt = 0;
+      randX();
+    }
+  }
+  string.trim();
+  if (string != ""){
+    parseString(string);
+    string="";
+  }
+ timer_reset(&t);
+  }
+  
+  PT_END(pt); // End of the protothread
+}
+
+void loop(){
+  // The calls of both protothreads
+  runLeds(&ptLed);
+  runBt(&ptBt);
+  
+  // The call of protothread functions should be periodically
+  // the system won't call it automatically
 }
 void parseString(String msg){
   while (msg.length() != 0){
