@@ -5,10 +5,10 @@
 #define MASTER_LED 22
 #define PJON_ISSUE_LED 24
 
-uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
+uint8_t bus_id[4] = {0, 0, 0, 1}; // aNCS Unique Bus ID :)
 uint32_t t_millis;
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
-SoftwareSerial hc05(10,11); // rx, tx
+SoftwareSerial hc05(23,22); // rx, tx
 /* ALLOWED IDS
     1 = Master
     2 - 100 = Trees
@@ -324,7 +324,7 @@ void setup() {
   bus.set_receiver(receiver_function);
   bus.set_error(error_handler);
   bus.begin();
-  digitalWrite(MASTER_LED,HIGH);
+  //digitalWrite(MASTER_LED,HIGH);
   //if (bus.debug)bus.send_repeatedly(PJON_BROADCAST, "Master says hi!", 15, 2500000);
   t_millis = millis();
 }

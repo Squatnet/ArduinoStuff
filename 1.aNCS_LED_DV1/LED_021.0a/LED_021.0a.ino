@@ -4,7 +4,7 @@
 #define I2C_MAT_A 2
 #define I2C_MAT_B 3
 #define I2C_MAT_C 4
-SoftwareSerial BTSerial(15,14); // RX | TX
+SoftwareSerial BTSerial(23,22); // RX | TX
 String string = "";
 void setup()
 {
@@ -14,6 +14,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("Waiting for BT Comand:");
   BTSerial.begin(38400);
+  BTSerial.write("HI!");
   Wire.begin();
 }
 void loop()
