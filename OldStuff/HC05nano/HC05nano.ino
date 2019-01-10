@@ -1,7 +1,7 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
 
-SoftwareSerial BTSerial(23, 22); // RX | TX
+SoftwareSerial BTSerial(10, 11); // RX | TX
 String string = "";
 String string2 = "LED";
 void setup()

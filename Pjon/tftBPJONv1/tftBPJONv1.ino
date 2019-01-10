@@ -29,7 +29,7 @@ MCUFRIEND_kbv tft; // assign tft mcufriend related stuff to an alias - tft
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
-
+void(* resetFunc) (void) = 0;
 void progmemPrint(const char *str);
 void progmemPrintln(const char *str);
 int ourID = 255;
@@ -51,7 +51,9 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
     Serial.print("Connection lost with device ");
     Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    delay(1000);
     bus.acquire_id_master_slave();
+    acquired = false;
   }
   if(code == PJON_ID_ACQUISITION_FAIL) {
     if(data == PJON_ID_ACQUIRE)
@@ -62,7 +64,17 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       Serial.println("PJONSlave error: master-slave id release failed.");
     if(data == PJON_ID_REQUEST)
       Serial.println("PJONSlave error: master-slave id request failed.");
-  }
+      delay(400);
+      if (millis() > 15000){
+        Serial.println("Resetting due to no ID");
+        delay(300);
+        resetFunc();
+        }
+      bus.acquire_id_master_slave();
+      acquired = false;
+      delay(160);
+     
+ }
   Serial.flush();
 };
 
@@ -70,7 +82,7 @@ void setup() {
   Serial.begin(115200);
   bus.set_error(error_handler);
   Serial.println("Setup");
-  delay(10060);
+  delay(1060);
   bus.strategy.set_pin(12);
   bus.set_receiver(receiver_function);
   bus.acquire_id_master_slave();
@@ -97,7 +109,13 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     }
 }
 void loop() {
-  if(bus.device_id() == 255)bus.acquire_id_master_slave();
+  if (bus.device_id() == PJON_NOT_ASSIGNED){
+    if (millis() > 5000){
+      Serial.println("Resetting due to no ID");
+      delay(300);
+      resetFunc();
+    }
+  }
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
     Serial.print("Acquired device id: ");
     Serial.println(bus.device_id());
