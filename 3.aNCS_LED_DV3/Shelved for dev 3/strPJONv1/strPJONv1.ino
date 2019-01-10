@@ -31,12 +31,52 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 10;
+bool ack = false;
 void(* resetFunc) (void) = 0;
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   const char * arr = payload;
-  //////////Serial.println(arr);
+  string.concat(arr);
+  if string.startsWith("ack"){
+    ack = true;
+    string = "";
+  }
+  else parser();
 };
-
+void parser(){
+  while(string.length() >= 1){
+    String subs = string.substring(0,string.indexOf(","));
+    string.remove(0,string.indexOf(0,string.indexOf(",")+1);
+    if (subs.startsWith("ptn")){
+      String ptn = string.substring(0,string.indexOf(","));
+      x = ptn.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1);
+    }
+    if (subs.startsWith("atm")){
+      String atm = string.substring(0,string.indexOf(","));
+      autoMode = atm.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1);
+    }
+    if (subs.startsWith("ats")){
+      String ats = string.substring(0,string.indexOf(","));
+      autoSecs = ats.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1);
+    }
+    if (subs.startsWith("col")){
+      String r = string.substring(0,string.indexOf(","));
+      ourCol.r = r.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1);
+      String b = string.substring(0,string.indexOf(","));
+      ourCol.b = b.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1);
+      String g = string.substring(0,string.indexOf(","));
+      ourCol.g = g.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1);
+    }
+  }
+  Serial.print("STR = ");
+  Serial.println(string);
+  string = "";
+}
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
     //Serial.print("lost device ");
@@ -173,6 +213,7 @@ void loop() {
     tellMasterAboutSelf();
     acquired = true;
   }
+  if(!ack)tellMasterAboutSelf();
   bus.update();
   bus.receive(5000);
   FastLED.show();
