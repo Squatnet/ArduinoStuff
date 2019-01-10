@@ -203,6 +203,9 @@ void regDev(int id, String reg){
       Serial.print(" id : ");
       Serial.println(wizNetIn.id);
   }
+  msgSwitch = 1;
+  msgToSend = "ack";
+  msgSendId = id;
 }
 void parseMsg(int id, String msg) {
   Serial.println("#msgparser");
