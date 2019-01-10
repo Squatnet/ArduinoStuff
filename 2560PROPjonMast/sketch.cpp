@@ -138,7 +138,7 @@ void sendMessage(){
 void regDev(int id, String reg){
   if( reg.startsWith("Str")){
     Serial.print(reg);
-      reg.remove(0,4);
+      reg.remove(0,reg.indexOf(',')+1);
       Serial.println(reg);
       strips[numStrip].id = id;
       strips[numStrip].namee = reg;
@@ -152,7 +152,7 @@ void regDev(int id, String reg){
   }
   else if( reg.startsWith("Mat")){
     Serial.print(reg);
-      reg.remove(0,4);
+      reg.remove(0,reg.indexOf(',')+1);
       Serial.println(reg);
       matrix[numMatrix].id = id;
       matrix[numMatrix].namee = reg;
@@ -166,7 +166,7 @@ void regDev(int id, String reg){
   }
   else if( reg.startsWith("Ter")){
     Serial.print(reg);
-      reg.remove(0,4);
+      reg.remove(0,reg.indexOf(',')+1);
       Serial.println(reg);
       term[numTerm].id = id;
       term[numTerm].namee = reg;
@@ -180,7 +180,7 @@ void regDev(int id, String reg){
   }
   else if( reg.startsWith("Rou")){
     Serial.print(reg);
-      reg.remove(0,4);
+      reg.remove(0,reg.indexOf(',')+1);
       Serial.println(reg);
       router[numRouter].id = id;
       router[numRouter].namee = reg;
@@ -194,7 +194,7 @@ void regDev(int id, String reg){
   }
   else if( reg.startsWith("WNI")){
     Serial.print(reg);
-    reg.remove(0,4);
+    reg.remove(0,reg.indexOf(',')+1);
       Serial.println(reg);
       wizNetIn.id = id;
       wizNetIn.namee = reg;

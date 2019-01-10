@@ -52,8 +52,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
     Serial.print("Connection lost with device ");
     Serial.println((uint8_t)bus.packets[data].content[0], DEC);
     delay(1000);
-    bus.acquire_id_master_slave();
-    acquired = false;
+    resetFunc();
   }
   if(code == PJON_ID_ACQUISITION_FAIL) {
     if(data == PJON_ID_ACQUIRE)
@@ -109,13 +108,6 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     }
 }
 void loop() {
-  if (bus.device_id() == PJON_NOT_ASSIGNED){
-    if (millis() > 5000){
-      Serial.println("Resetting due to no ID");
-      delay(300);
-      resetFunc();
-    }
-  }
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
     Serial.print("Acquired device id: ");
     Serial.println(bus.device_id());
