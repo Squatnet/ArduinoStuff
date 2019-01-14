@@ -11,11 +11,11 @@
 // Color optional
 #include "FastLED.h"
 #include <Wire.h>
-#define NUM_LEDS 58
+#define NUM_LEDS 112
 #define DATA_PIN 2
 #define DATA_PIN_2 3
-#define DATA_PIN_3 4
-#define DATA_PIN_4 5
+//#define DATA_PIN_3 4
+//#define DATA_PIN_4 5
 #define FRAMES_PER_SECOND  120
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
@@ -24,8 +24,8 @@
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 CRGB ledsA[NUM_LEDS];
 CRGB ledsB[NUM_LEDS];
-CRGB ledsC[NUM_LEDS];
-CRGB ledsD[NUM_LEDS];
+//CRGB ledsC[NUM_LEDS];
+//CRGB ledsD[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 int x = 0; // holder for i2c message
@@ -42,8 +42,8 @@ void setup() {
   Serial.println("Ready for i2c");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(ledsD, NUM_LEDS);
+  //FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
+  //FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(ledsD, NUM_LEDS);
   FastLED.setBrightness(128);
   int i = 0;
   while (i < 4) {
@@ -181,8 +181,8 @@ void copyLeds() {
   ///for (int i = 0; i < NUM_LEDS; i++) 
   FL(0,NUM_LEDS){
     ledsB[i] = ledsA[i];
-    ledsC[i] = ledsA[i];
-    ledsD[i] = ledsA[i];
+  //  ledsC[i] = ledsA[i];
+  //  ledsD[i] = ledsA[i];
   }
 }
 void turnOff() {
