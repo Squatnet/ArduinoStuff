@@ -1,0 +1,27 @@
+C:\Program Files (x86)\Arduino
+
+//This NppExec script sets the com port of your Arduino IDE
+//By Josh Miele -- June 27, 2016
+//The Blind Arduino Project
+//http://blarbl.blogspot.com
+set arduino_path = C:\Program Files (x86)\Arduino //the path to your Arduino IDE.
+//put up a dialog box requesting com port name
+inputbox "Please enter the COM port of your Arduino (e.g., com5):" //gets com port value
+//use result to set port value doesn't verify
+cmd /c "$(arduino_path)" --port $(input)
+npp_console 0 //hide the console
+
+//This NppExec script compiles and uploads the current Arduino sketch in Npp
+//By Josh Miele -- June 27, 2016
+//The Blind Arduino Project
+//http://blarbl.blogspot.com
+//Set where the output goes. Make sure you have write privileges
+set arduino_output = "c:\temp\arduino messages.txt" 
+//Set location of Arduino executable. 
+set arduino_path = C:\Program Files (x86)\Arduino\arduino_debug 
+npp_save //save current file before uploading
+//Compile and upload sketch in current Npp window and send stdOut and stdErr to arduino_output
+cmd /c "$(arduino_path)" --upload $(full_current_path)>$(arduino_output) 2>&1
+npp_console 0 //hide the console
+//show the results of the compile/upload in Npp window
+npp_open $(arduino_output)
