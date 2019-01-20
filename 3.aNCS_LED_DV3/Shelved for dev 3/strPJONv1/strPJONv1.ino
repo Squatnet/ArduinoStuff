@@ -130,13 +130,13 @@ void respondToPoll(){
     //Serial.print(err);
 }
 void setup() {
+  delay(4000);
   //Serial.begin(115200);
   bus.set_error(error_handler);
   bus.set_receiver(receiver_handler);
   bus.strategy.set_pin(12);
   bus.acquire_id_master_slave();
   bus.begin();
-  delay(4000);
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
@@ -207,12 +207,15 @@ void loop() {
   }
   //call function
   copyLeds();
-  if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
-    //Serial.print("Got device id: ");
-    //Serial.println(bus.device_id());
+  if(ourID == 255 && millis() > 15000){
+   // Serial.println("NO ID AFTER 15000");
+    delay(160);
     resetFunc();
   }
-  //if(!ack)tellMasterAboutSelf();
+  if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
+    acquired = true;
+    tellMasterAboutSelf();
+  }
   bus.update();
   bus.receive(5000);
   FastLED.show();
