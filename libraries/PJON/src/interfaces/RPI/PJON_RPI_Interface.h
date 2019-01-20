@@ -19,23 +19,17 @@
 #pragma once
 
 #if defined(RPI)
-  #include <cinttypes>
-  #include <cstdlib>
-  #include <cstring>
+  #include <inttypes.h>
+  #include <stdlib.h>
+  #include <string.h>
   #include <wiringPi.h>
   #include <wiringSerial.h>
-
-  /* Generic constants ---------------------------------------------------- */
 
   #ifndef A0
     #define A0 0
   #endif
 
-  #ifndef LED_BUILTIN
-    #define LED_BUILTIN -1
-  #endif
-
-  /* Fallback to WiringPi core functions ---------------------------------- */
+  /* Fallback to WiringPi core functions ------------------------------------ */
 
   #if !defined(PJON_ANALOG_READ)
     #define PJON_ANALOG_READ(P) analogRead(P)
@@ -74,10 +68,6 @@
 
   /* Serial ----------------------------------------------------------------- */
 
-  #ifndef PJON_SERIAL_TYPE
-    #define PJON_SERIAL_TYPE int16_t
-  #endif
-
   #ifndef PJON_SERIAL_AVAILABLE
     #define PJON_SERIAL_AVAILABLE(S) serialDataAvail(S)
   #endif
@@ -102,10 +92,6 @@
   #endif
 
   /* Timing ----------------------------------------------------------------- */
-
-  #ifndef PJON_DELAY
-    #define PJON_DELAY delay
-  #endif
 
   #ifndef PJON_DELAY_MICROSECONDS
     #define PJON_DELAY_MICROSECONDS delayMicroseconds

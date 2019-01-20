@@ -74,17 +74,11 @@
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_value_ms));
   }
 
-  /* Generic constants ---------------------------------------------------- */
-
   #ifndef A0
     #define A0 0
   #endif
 
-  #ifndef LED_BUILTIN
-    #define LED_BUILTIN -1
-  #endif
-
-  /* LINUX IO system calls ------------------------------------------------ */
+  /* LINUX IO functions -------------------------------- */
 
   #if !defined(PJON_ANALOG_READ)
     #define PJON_ANALOG_READ(P) 0
@@ -106,7 +100,7 @@
     #define PJON_IO_PULL_DOWN(P)
   #endif
 
-  /* Random --------------------------------------------------------------- */
+  /* Random ----------------------------------------------------------------- */
 
   #ifndef PJON_RANDOM
     #define PJON_RANDOM(randMax) (int)((1.0 + randMax) * rand() / ( RAND_MAX + 1.0 ) )
@@ -118,11 +112,10 @@
     #define PJON_RANDOM_SEED srand
   #endif
 
-  /* Timing --------------------------------------------------------------- */
 
-  #ifndef PJON_DELAY
-    #define PJON_DELAY delay
-  #endif
+  /* Serial ----------------------------------------------------------------- */
+
+  /* Timing ----------------------------------------------------------------- */
 
   #ifndef PJON_DELAY_MICROSECONDS
     #define PJON_DELAY_MICROSECONDS delayMicroseconds

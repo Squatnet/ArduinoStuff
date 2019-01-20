@@ -14,22 +14,22 @@ PJON<SoftwareBitBang> bus(bus_id_B, 2);
 
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST)
-    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(13, HIGH);
   // Light up LED 13 if a packet transmission failed
 }
 
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   if(payload[0] == 'B') {
-    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(13, HIGH);
     delay(30);
-    digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(13, LOW);
   }
 }
 
 void setup() {
   // Initialize LED 13 to be off
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);
 
   bus.set_error(error_handler);
   bus.set_receiver(receiver_function);

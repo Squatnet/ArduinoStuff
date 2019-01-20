@@ -1,11 +1,7 @@
 #pragma once
 
 #ifdef PJON_ESP
-  #if defined(ESP32)
-    #include <WiFi.h>
-  #else
-    #include <ESP8266WiFi.h>
-  #endif
+  #include <ESP8266WiFi.h>
   #include <WiFiUdp.h>
   #define PJON_ESP
 #else
@@ -48,11 +44,7 @@ public:
   void send_string(uint8_t *string, uint16_t length, IPAddress remote_ip, uint16_t remote_port) {
     if(length > 0) {
       udp.beginPacket(remote_ip, remote_port);
-      #if defined(ESP32)
-        udp.write((const unsigned char*) &_magic_header, 4);
-      #else
-        udp.write((const char*) &_magic_header, 4);
-      #endif
+      udp.write((const char*) &_magic_header, 4);
       udp.write(string, length);
       udp.endPacket();
     }

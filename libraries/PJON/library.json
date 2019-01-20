@@ -15,7 +15,7 @@
     "type": "git",
     "url": "https://github.com/gioblu/PJON.git"
   },
-  "version": "11.1",
+  "version": "11.0",
   "examples": [
     "examples/*/*/*/*/*.ino",
     "examples/*/*/*/*/*.h",
@@ -32,11 +32,9 @@
     "atmelavr",
     "atmelsam",
     "espressif8266",
-    "espressif32",
     "teensy",
     "linux_x86_64",
-    "windows_x86",
-    "ststm32"
+    "windows_x86"
   ],
   "build" : {
     "flags": "-std=c++11"

@@ -1,10 +1,10 @@
 
 // For printf used below
-#include <cstdio>
+#include <stdio.h>
 // PJON library
-#include <cinttypes>
-#include <cstdlib>
-#include <cstring>
+#include <inttypes.h>
+#include <stdlib.h>
+#include <string.h>
 // RPI serial interface
 #include <wiringPi.h>
 #include <wiringSerial.h>
@@ -20,7 +20,7 @@
    physical distance and or if transmitting long packets. */
 
 #define PJON_INCLUDE_TS true // Include only ThroughSerial
-#include <PJON.h>
+#include "PJON/PJON.h"
 
 int main() {
   printf("PJON instantiation... \n");

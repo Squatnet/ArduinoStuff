@@ -4,8 +4,8 @@
 PJON<AnalogSampling> bus(45);
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW); // Initialize LED 13 to be off
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW); // Initialize LED 13 to be off
 
   /* Use internal 1.1v analog reference (not available on Arduino Mega)
   DEFAULT: Default analog reference 5v (5v Arduino boards) or 3.3v (3.3V Arduino boards)
@@ -22,7 +22,7 @@ void setup() {
 
 void loop() {
   if(bus.send_packet(44, "B",1) == PJON_ACK)
-    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(13, HIGH);
   delay(5);
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(13, LOW);
 };
