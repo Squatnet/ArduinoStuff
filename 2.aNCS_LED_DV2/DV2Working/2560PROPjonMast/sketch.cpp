@@ -461,10 +461,16 @@ void setup() {
   bus.set_receiver(receiver_function);
   bus.set_error(error_handler);
   bus.begin();
+  for (uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
+      if (bus.ids[i].state) {
+        bus.send(i,"Rst,",5);
+      }
+  }
+  bus.update();
   //digitalWrite(MASTER_LED,HIGH);
   //if (bus.debug)bus.send_repeatedly(PJON_BROADCAST, "Master says hi!", 15, 2500000);
   t_millis = millis();
-}
+  }
 void loop() {
   if(bus.debug)digitalWrite(PJON_ISSUE_LED,HIGH);
   if (millis() - t_millis > 10000) {

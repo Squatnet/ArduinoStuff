@@ -107,6 +107,7 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
       const char * arr = payload;
       st.concat(arr);
       if (st.startsWith("ack")){tft.println("Registered Successfully With MASTER");}
+      if (st.startsWith("Rst")){resetFunc();}
       else{ mScreen(arr,length,id);
      for(uint8_t i = 0; i < length; i++) {
       Serial.print(char( payload[i]));
