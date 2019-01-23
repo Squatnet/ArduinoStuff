@@ -109,6 +109,7 @@ void setup() {  // SETUP
   bus.acquire_id_master_slave(); //get an id
   Serial.print(". ");
   Serial.println("Done!!!");
+  t_millis = millis();
   // SETUP FINISHES
 }
 
