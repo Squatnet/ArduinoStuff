@@ -1,3 +1,13 @@
+// Varidaic Debug Macro //
+#define DEBUG   //Comment this line to disable Debug output
+#ifdef DEBUG    // Debug is on
+  #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
+  #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
+#else // Debug is off
+  #define DPRINT(...)     //Nothing Happens
+  #define DPRINTLN(...)   //Nothing Happens
+#endif // end macro
+
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
 #include <PJONSlave.h>  // we are inslave mode .
@@ -17,29 +27,29 @@ void(* resetFunc) (void) = 0; // Software reset hack
 // PJON error handling 
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) { // Master is gone !!
-    Serial.print("Connection lost with device ");
-    Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    DPRINT("Connection lost with device ");
+    DPRINTLN((uint8_t)bus.packets[data].content[0], DEC);
     delay(1000); // wait a second
     resetFunc(); // Reset
   }
   if(code == PJON_ID_ACQUISITION_FAIL) { // Didnt get an addres... !
     if(data == PJON_ID_ACQUIRE) {
-      Serial.println("PJONSlave error: multi-master addressing failed.");
+      DPRINTLN("PJONSlave error: multi-master addressing failed.");
       // Didnt get id in Multi-Master environment
       delay(1000);
       resetFunc(); // bye!
     }
     if(data == PJON_ID_CONFIRM) // failed to confirm id with master... This shouldnt happen
-      Serial.println("PJONSlave error: master-slave id confirmation failed.");
+      DPRINTLN("PJONSlave error: master-slave id confirmation failed.");
     if(data == PJON_ID_NEGATE)
       // We wont encounter this as we dont intend to give up out ID
-      Serial.println("PJONSlave error: master-slave id release failed.");
+      DPRINTLN("PJONSlave error: master-slave id release failed.");
     if(data == PJON_ID_REQUEST)
       // We couldnt find a Master on the network.... 
-      Serial.println("PJONSlave error: master-slave id request failed.");
+      DPRINTLN("PJONSlave error: master-slave id request failed.");
       delay(400); // wait 400ms
       if (millis() > 15000){ // if 15s has passed
-        Serial.println("Resetting due to no ID");
+        DPRINTLN("Resetting due to no ID");
         delay(300); // we reset
         resetFunc();
         } // if not
@@ -58,16 +68,16 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   if( string.startsWith("ack")){ // master got our registation message!
     ack = true; // nice
     string = ""; // thats all it says!
-    Serial.print("Heard from server"); 
+    DPRINT("Heard from server"); 
   }
   else parser(); // whats it say then ?? 
   // prints it to the console letter by letter
-  Serial.print("Received: ");
+  DPRINT("Received: ");
   for(uint16_t i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-    Serial.print(" ");
+    DPRINT((char)payload[i]);
+    DPRINT(" ");
   }
-  Serial.println();
+  DPRINTLN();
   Serial.flush();
   
 };
@@ -87,31 +97,36 @@ void parser(){
      *  
      */
     
-    Serial.println(string.length()); // prints the length of the command each iteration
+    DPRINTLN(string.length()); // prints the length of the command each iteration
   }
-  Serial.print("STR = "); // prints after length < 1
-  Serial.println(string);
+  DPRINT("STR = "); // prints after length < 1
+  DPRINTLN(string);
   string = ""; // empty it
 };
 void setup() {  // SETUP 
   Serial.begin(115200); // Serial console
-  Serial.print("Setup ");
+  DPRINT("Setup ");
   bus.set_error(error_handler); // link PJON to error handler
-  Serial.print(". ");
+  DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
-  Serial.print(". ");
+  DPRINT(". ");
   bus.strategy.set_pin(12); // Set PJON pin
-  Serial.print(". ");
+  DPRINT(". ");
   bus.begin(); // 
-  Serial.print(". ");
+  DPRINT(". ");
   delay(160); // possibly not needed if master is online
-  Serial.print(". ");
+  DPRINT(". ");
   bus.acquire_id_master_slave(); //get an id
-  Serial.print(". ");
-  Serial.println("Done!!!");
+  DPRINT(". ");
+  DPRINTLN("Done!!!");
   // SETUP FINISHES
 }
-
+//shows free ram
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 // Function to register with master.
 // simply converts a String to a char array and sends it
 void tellMasterAboutSelf(){
@@ -122,12 +137,12 @@ void tellMasterAboutSelf(){
 }
 void loop() {
   if(ourID == 255 && millis() > 15000){ // No id has been assigned and 15s have elapsed
-    Serial.println("NO ID AFTER 15000");
+    DPRINTLN("NO ID AFTER 15000");
     resetFunc(); // reset
   }
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) { // we have an id, but havent regisrtered
-    Serial.print("Acquired device id: ");
-    Serial.println(bus.device_id()); 
+    DPRINT("Acquired device id: ");
+    DPRINTLN(bus.device_id()); 
     Serial.flush();
     delay(100);
     acquired = true; // track that

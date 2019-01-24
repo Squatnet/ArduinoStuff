@@ -1,3 +1,15 @@
+// Varidaic Debug Macro
+#define DEBUG   //Comment this line to disable Debug output
+#ifdef DEBUG    // Debug is on
+  #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
+  #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
+  #define DFLUSH(...)    Serial.flush()
+#else // Debug is off
+  #define DPRINT(...)     //Nothing Happens
+  #define DPRINTLN(...)   //Nothing Happens
+  #define DFLUSH(...)
+#endif // end macro
+
 // FastLEDS stuff //
 #include "FastLED.h" // The library
 #define NUM_LEDS 28 // Leds per strip
@@ -25,6 +37,17 @@ bool acquired = false; // did we get an address?
 bool debugMode = false; // Are we debugging
 uint32_t t_millis; // tick tock
 int ourID = 255; // Our ID number 
+unsigned long DELAY_TIME = 15000; // 1.5 sec
+unsigned long delayStart = 0; // the time the delay started
+bool delayRunning = false; // true if still waiting for delay to finish
+
+
+// Shows free ram 
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 
 // Program vars //
 int x = 0; // holder for i2c message
@@ -38,29 +61,29 @@ void(* resetFunc) (void) = 0; // Software reset hack
 // PJON error handling 
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) { // Master is gone !!
-    Serial.print("Connection lost with device ");
-    Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    DPRINT("Connection lost with device ");
+    DPRINTLN((uint8_t)bus.packets[data].content[0], DEC);
     delay(1000); // wait a second
     resetFunc(); // Reset
   }
   if(code == PJON_ID_ACQUISITION_FAIL) { // Didnt get an addres... !
     if(data == PJON_ID_ACQUIRE) {
-      Serial.println("PJONSlave error: multi-master addressing failed.");
+      DPRINTLN("PJONSlave error: multi-master addressing failed.");
       // Didnt get id in Multi-Master environment
       delay(1000);
       resetFunc(); // bye!
     }
     if(data == PJON_ID_CONFIRM) // failed to confirm id with master... This shouldnt happen
-      Serial.println("PJONSlave error: master-slave id confirmation failed.");
+      DPRINTLN("PJONSlave error: master-slave id confirmation failed.");
     if(data == PJON_ID_NEGATE)
       // We wont encounter this as we dont intend to give up out ID
-      Serial.println("PJONSlave error: master-slave id release failed.");
+      DPRINTLN("PJONSlave error: master-slave id release failed.");
     if(data == PJON_ID_REQUEST)
       // We couldnt find a Master on the network.... 
-      Serial.println("PJONSlave error: master-slave id request failed.");
+      DPRINTLN("PJONSlave error: master-slave id request failed.");
       delay(400); // wait 400ms
       if (millis() > 15000){ // if 15s has passed
-        Serial.println("Resetting due to no ID");
+        DPRINTLN("Resetting due to no ID");
         delay(300); // we reset
         resetFunc();
         } // if not
@@ -79,17 +102,17 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   if( string.startsWith("ack")){ // master got our registation message!
     ack = true; // nice
     string = ""; // thats all it says!
-    Serial.print("Heard from server");
+    DPRINT("Heard from server");
     
   }
   else parser(); // whats it say then ?? 
   // prints it to the console letter by letter
-  Serial.print("Received: ");
+  DPRINT("Received: ");
   for(uint16_t i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-    Serial.print(" ");
+    DPRINT((char)payload[i]);
+    DPRINT(" ");
   }
-  Serial.println();
+  DPRINTLN();
   Serial.flush();
   
 };
@@ -125,10 +148,10 @@ void parser(){
       ourCol.g = g.toInt(); // conver to int
       string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // thats colour done, remove the value and the comma
     }
-    Serial.println(string.length()); // prints the length of the command each iteration
+    DPRINTLN(string.length()); // prints the length of the command each iteration
   }
-  Serial.print("STR = "); // prints after length < 1
-  Serial.println(string);
+  DPRINT("STR = "); // prints after length < 1
+  DPRINTLN(string);
   string = ""; // empty it
 }
 
@@ -140,7 +163,8 @@ void setup() {  // SETUP
   bus.begin(); // 
   delay(160); // possibly not needed if master is online
   bus.acquire_id_master_slave(); //get an id
-  
+  delayStart = millis();
+  delayRunning = true;
   /* Initialize LED Strips */ 
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
@@ -158,7 +182,7 @@ void setup() {  // SETUP
     FastLED.delay(300);
     i++;
   }
-  Serial.println("Done!!!");
+  DPRINTLN("Done!!!");
   // SETUP FINISHES
 }
 
@@ -264,15 +288,27 @@ void juggle() {
 /* END FASTLEDS PATTERNS */
 
 void loop() {
-  if(ourID == 255 && millis() > 15000){ // No id has been assigned and 15s have elapsed
-    Serial.println("NO ID AFTER 15000");
-    resetFunc(); // reset
+  if (delayRunning && ((millis() - delayStart) >= DELAY_TIME)) {
+    if(bus.device_id() == PJON_NOT_ASSIGNED){
+       DPRINTLN("NO ID AFTER 15000");
+       DFLUSH();
+       resetFunc(); // reset
+    }
+    if(!acquired | !ack){
+      DPRINTLN("Check master knows about");
+      DFLUSH();
+      bus.send(254,"Chk,",5);
+      acquired = true;
+      ack = true;
+    }
+    delayStart += DELAY_TIME; // No id has been assigned and 15s have elapsed
   }
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) { // we have an id, but havent regisrtered
-    Serial.print("Acquired device id: ");
-    Serial.println(bus.device_id()); 
+    DPRINT("Acquired device id: ");
+    DPRINTLN(bus.device_id()); 
     Serial.flush();
     delay(100);
+    ourID = bus.device_id();
     acquired = true; // track that
     tellMasterAboutSelf(); // and register
   }
@@ -284,6 +320,8 @@ void loop() {
   // autopilot timer
   EVERY_N_SECONDS(1) {
     timeSinceBt++;
+    DPRINT("Free memory - ");
+    DPRINTLN(freeRam());
     if (timeSinceBt == autoSecs) {
       timeSinceBt = 0;
       randX();

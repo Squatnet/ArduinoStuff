@@ -11,7 +11,7 @@
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
-int debugMode = 0 ; // Set to 1 for debug on
+int debugMode = 1 ; // Set to 1 for debug on
 
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
@@ -58,7 +58,7 @@ void compressStruct(String type){
     Serial.println(strips[i].namee);
     } // repeat until NumStrips
   }
-    numTerm -= 1; // we have 1 less device now.
+    numStrip -= 1; // we have 1 less device now.
   }
  if(type.startsWith("Mat")){
     for(int i =0; i<numMatrix; i++){
@@ -97,11 +97,16 @@ void compressStruct(String type){
     Serial.println(router[i].namee);
     }
   }
-    numTerm -= 1;
+    numRouter -= 1;
   }
 };
 // Function to remove a device, Called from error_handler
 void removeDevice(int id){
+  
+  // findDevice by id
+
+
+  
   bool chkStrps = false; // have we checked strips array?
   bool chkMatr = false; // have we checked matrix array?
   bool chkRtrs = false; // what about router array?
@@ -173,7 +178,77 @@ void removeDevice(int id){
     }
   }
 }
-
+// FindDEvice BY ID
+int findDeviceByID(int id){
+  bool chkStrps = false; // have we checked strips array?
+  bool chkMatr = false; // have we checked matrix array?
+  bool chkRtrs = false; // what about router array?
+  bool chkTerm = false; // and finally terminals? 
+  bool found = false; // Did we find the device??
+  Serial.print("Removing device with ID ");
+  Serial.println(id);
+  while(!found){ // Run until found is true
+    if(chkStrps && chkMatr && chkRtrs && chkTerm){ // We have looked in every array and found nothing?
+      Serial.println("Checked all arrays, Found nothing. Assuming device failed to register.");
+      found = true; // device isnt in an array and we need not worry
+      return 0;
+      bus.send(uint8_t(id),"Rst,",5);
+    }
+    Serial.println("Not Found!!!");
+    if(!chkStrps){
+      Serial.println("Checking Strips");
+      for(int i = 0; i< numStrip; i++){
+        if(strips[i].id == id){ // Compare our id against each record
+          found = true; // Lovely job its a strip
+          Serial.print("Device ");
+          Serial.print(id);
+          Serial.println(" is a Strip");
+          return 1; // Run the function to remove gaps in the array. sending the type.
+        } 
+      } // we checked every strip...
+      chkStrps = true; // best not do that repeatedly
+    }
+    if(!chkMatr){ // you get the idea
+      Serial.println("Checking Matrix");
+      for(int i = 0; i< numMatrix; i++){
+        if(matrix[i].id == id){
+          found = true;
+          Serial.print("Device ");
+          Serial.print(id);
+          Serial.println(" is a Matrix");
+          return 1;
+        }
+      }
+      chkMatr = true;
+    }
+    if(!chkTerm){
+      Serial.println("Checking Terms");
+      for(int i = 0; i<numTerm;i++){
+        if(term[i].id == id){
+          found = true;
+          Serial.print("Device ");
+          Serial.print(id);
+          Serial.println(" is a Terminal");
+          return 1;
+        }
+      }
+      chkTerm = true;
+    }
+    if(!chkRtrs){
+      Serial.println("Checking Rtrs");
+      for(int i = 0; i<numRouter;i++){
+        if(router[i].id == id){
+          found = true;
+          Serial.print("Device ");
+          Serial.print(id);
+          Serial.println(" is a Router");
+          return 1;
+        }
+      }
+      chkRtrs = true;
+    }
+  }
+}
 // PJON ERROR HANDLER CODE
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   // Another Master / a static device dropped us?
@@ -263,6 +338,7 @@ int findDeviceByName(String type, String nme){
 }
 // function to send a message to a device, called from loop if msgSwitch = 1
 void sendMessage(){
+  msgSwitch = 0;
   Serial.println("sendMessage Function called");
   const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
   msgToSend.toCharArray(packet,msgToSend.length()); //convert String msgToSend to char array, \0 auto added
@@ -369,13 +445,18 @@ void parseMsg(int id, String msg) {
   }
   // Manually Remove a device - msg = Rem,id#
   if(msg.startsWith("Rem")){
-    msg.remove(0,msg.indexOf(',')); //takes the "Rem," off the front
+    msg.remove(0,msg.indexOf(',')+1); //takes the "Rem," off the front
     Serial.print(msg);
     removeDevice(id); // removes a device. 
   }
+  // Check if you are registered
+  if(msg.startsWith("Chk")){
+    msg.remove(0,msg.indexOf(',')+1);
+    findDeviceByID(id);
+  }
   // Control a device - msg = Ctl,id#,MessgeToSend  OR  Ctl,Type,Name,MessgeToSend
  if (msg.startsWith("Ctl")){
-    msg.remove(0,msg.indexOf(',')); // get rid of "Ctl,"
+    msg.remove(0,msg.indexOf(',')+1); // get rid of "Ctl,"
     Serial.println(msg);
     String idStr = msg.substring(0,msg.indexOf(',')); // take whatever comes before the next comma.
     int id = idStr.toInt(); // doing toInt() on something with any character other than a number in it results in 0 being returned
