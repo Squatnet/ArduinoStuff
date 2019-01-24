@@ -19,6 +19,16 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
   int dataMap[4]={0,0,0,0};
   int memory[4]={0,0,0,0};
   
+// Debugger as a Variadic Macro.
+#define DEBUG   //If you comment this line, the DPRINT & DPRINTLN lines are defined as blank.
+#ifdef DEBUG    //Macros are usually in all capital letters.
+  #define DPRINT(...)    Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
+  #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //DPRINTLN is a macro, debug print with new line
+#else
+  #define DPRINT(...)     //now defines a blank line
+  #define DPRINTLN(...)   //now defines a blank line
+#endif
+  
 void readPins(){//takes the current value of inputs then maps and stores them.
     for (int i=0;i<=3;i++){
     dataIn[i]=analogRead(i);
@@ -67,13 +77,13 @@ void mainDisplay(){
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(messageOut);
-    Serial.println("catch case 1");
+    DPRINTLN("catch case 1");
     messageOut=String("");
   
     messageOut=String("Switch 2 = ")+(switches1);
     lcd.setCursor(0,1);
     lcd.print(messageOut);
-    Serial.println("catch case 2");
+    DPRINTLN("catch case 2");
     messageOut=String("");
     mainDelayChange=false; 
     }
@@ -83,13 +93,13 @@ void mainDisplay(){
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(messageOut);
-    Serial.println("catch case 3");
+    DPRINTLN("catch case 3");
     messageOut=String("");
       
     messageOut=String("Pot 2 = ")+(dataMap[3]);
     lcd.setCursor(0,1);
     lcd.print(messageOut);
-    Serial.println("catch case 4");
+    DPRINTLN("catch case 4");
     messageOut=String("");
     mainDelayChange=false;
   }
@@ -141,7 +151,7 @@ void changeDetector(){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial.println("setup begin");
+  DPRINTLN("setup begin");
   lcd.begin();
   lcd.backlight();
   lcd.clear();
@@ -153,14 +163,14 @@ void setup() {
     for (int i=0;i<= 3;i++){
     char b=('A'+i);
     pinMode(i,INPUT);
-    Serial.println ((i)+String(" is set to input"));
+    DPRINTLN ((i)+String(" is set to input"));
     }
   //set the memory to initial values
       memory[0]=(map(analogRead(0),0,1024,0,2));
       memory[1]=(map(analogRead(1),0,1024,0,2));
       memory[2]=(map(analogRead(2),0,1024,0,128));
       memory[3]=(map(analogRead(3),0,1024,0,128));
-    Serial.println("initial memory set");
+    DPRINTLN("initial memory set");
 }
 
 void loop() {
