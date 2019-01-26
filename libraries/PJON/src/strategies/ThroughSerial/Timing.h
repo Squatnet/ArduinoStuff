@@ -29,7 +29,7 @@
   #define TS_INITIAL_DELAY      1000
 #endif
 
-/* Mamimum 32 microseconds random delay in case of collision */
+/* Maximum 32 microseconds random delay in case of collision */
 #ifndef TS_COLLISION_DELAY
   #define TS_COLLISION_DELAY      32
 #endif
@@ -48,11 +48,11 @@
   #define TS_TIME_IN  TS_RESPONSE_TIME_OUT + TS_COLLISION_DELAY
 #endif
 
-/* Set 5 milliseconds as the maximum timeframe for byte reception.
+/* Set 50 milliseconds as the maximum timeframe for byte reception.
    This value depends on the latency, baud rate and computation time.
    Always set TS_BYTE_TIME_OUT > (byte transmission time + latency) */
 #ifndef TS_BYTE_TIME_OUT
-  #define TS_BYTE_TIME_OUT      5000
+  #define TS_BYTE_TIME_OUT     50000
 #endif
 
 /* Maximum transmission attempts */
@@ -63,4 +63,15 @@
 /* Back-off exponential degree */
 #ifndef TS_BACK_OFF_DEGREE
   #define TS_BACK_OFF_DEGREE      4
+#endif
+
+/* Delay before enabling and disabling RS485 DE and or RE pin */
+#ifndef TS_RS485_DELAY
+  #define TS_RS485_DELAY          1
+#endif
+
+/* Force blocking sending hack (adds a delay for each character sent). */
+
+#ifndef TS_FLUSH_OFFSET
+  #define TS_FLUSH_OFFSET 152
 #endif

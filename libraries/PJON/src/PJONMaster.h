@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.0
+   |!y°o:\      |  __| |__| | \| v11.2
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -22,17 +22,19 @@ Master Thesis, IT University of Copenhagen, Denmark, September 2016
 PJON® Dynamic addressing specification:
 - v1.0 specification/PJON-dynamic-addressing-specification-v1.0.md
 
-If you believe in this project and you appreciate our work, please, make a
-donation. The PJON Foundation is entirely financed by contributions of wise
-people like you and its resources are solely invested to cover the development
-and maintainance costs.
+The PJON project is entirely financed by contributions of people like you and
+its resources are solely invested to cover the development and maintenance
+costs, consider to make donation:
 - Paypal:   https://www.paypal.me/PJON
 - Bitcoin:  1FupxAyDTuAMGz33PtwnhwBm4ppc7VLwpD
 - Ethereum: 0xf34AEAF3B149454522019781668F9a2d1762559b
 Thank you and happy tinkering!
  _____________________________________________________________________________
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+This software is experimental and it is distributed "AS IS" without any
+warranty, use it at your own risk.
+
+Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,7 +49,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include <PJON.h>
+#include "PJON.h"
 
 /* Reference to device */
 struct Device_reference {
@@ -276,7 +278,7 @@ class PJONMaster : public PJON<Strategy> {
           )
             if(rid == ids[this->last_packet_info.sender_id - 1].rid)
               if(
-                this->bus_id_equality(
+                PJONTools::bus_id_equality(
                   this->last_packet_info.sender_bus_id,
                   this->bus_id
                 )

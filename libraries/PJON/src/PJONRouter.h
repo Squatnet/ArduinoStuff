@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.0
+   |!y°o:\      |  __| |__| | \| v11.2
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -19,17 +19,19 @@ It performs the same routing as the PJONSwitch for locally attached buses,
 but supports a static routing table to enable traversing multiple levels of
 buses.
 
-If you believe in this project and you appreciate our work, please, make a
-donation. The PJON Foundation is entirely financed by contributions of wise
-people like you and its resources are solely invested to cover the development
-and maintainance costs.
+The PJON project is entirely financed by contributions of people like you and
+its resources are solely invested to cover the development and maintenance
+costs, consider to make donation:
 - Paypal:   https://www.paypal.me/PJON
 - Bitcoin:  1FupxAyDTuAMGz33PtwnhwBm4ppc7VLwpD
 - Ethereum: 0xf34AEAF3B149454522019781668F9a2d1762559b
 Thank you and happy tinkering!
  _____________________________________________________________________________
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+This software is experimental and it is distributed "AS IS" without any
+warranty, use it at your own risk.
+
+Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -48,7 +50,7 @@ limitations under the License. */
 // Add virtual keyword to PJONSimpleSwitch functions
 #define PJON_ROUTER_NEED_INHERITANCE
 
-#include <PJONSwitch.h>
+#include "PJONSwitch.h"
 
 #ifndef PJON_ROUTER_TABLE_SIZE
   #define PJON_ROUTER_TABLE_SIZE 10
@@ -67,7 +69,7 @@ protected:
   ) {
     uint8_t start = start_bus - bus_count;
     for(uint8_t i = start; i < table_size; i++) {
-      if(PJONAny::bus_id_equality(bus_id, remote_bus_ids[i])) {
+      if(PJONTools::bus_id_equality(bus_id, remote_bus_ids[i])) {
         start_bus = bus_count + i + 1; // Continue searching for matches
         return remote_bus_via_attached_bus[i]; // Explicit bus id match
       }
@@ -110,7 +112,7 @@ public:
 
   void add(const uint8_t bus_id[], uint8_t via_attached_bus) {
     if(table_size < PJON_ROUTER_TABLE_SIZE) {
-      PJONAny::copy_bus_id(remote_bus_ids[table_size], bus_id);
+      PJONTools::copy_bus_id(remote_bus_ids[table_size], bus_id);
       remote_bus_via_attached_bus[table_size] = via_attached_bus;
       table_size++;
     }

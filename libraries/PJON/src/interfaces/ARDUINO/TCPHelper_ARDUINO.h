@@ -1,13 +1,21 @@
 #pragma once
 
 #ifdef PJON_ESP
-  #include <ESP8266WiFi.h>
+  #if defined(ESP32)
+    #include <WiFi.h>
+  #else
+    #include <ESP8266WiFi.h>
+  #endif
   typedef WiFiServer TCPHelperServer;
   typedef WiFiClient TCPHelperClient;
   #define min(a,b) (a<b?a:b)
 #else
-  #include <EthernetClient.h>
-  #include <utility/socket.h>
+  #ifdef PJON_ETHERNET2
+    #include <Ethernet2.h>
+  #else
+    #include <Ethernet.h>
+  #endif
+  // #include <utility/socket.h> // May be required if using outdated IDE
   typedef EthernetServer TCPHelperServer;
   typedef EthernetClient TCPHelperClient;
 #endif

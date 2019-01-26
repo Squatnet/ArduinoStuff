@@ -1,12 +1,21 @@
 #pragma once
 
 #ifdef PJON_ESP
-  #include <ESP8266WiFi.h>
+  #if defined(ESP32)
+    #include <WiFi.h>
+  #else
+    #include <ESP8266WiFi.h>
+  #endif
   #include <WiFiUdp.h>
   #define PJON_ESP
 #else
-  #include <Ethernet.h>
-  #include <EthernetUdp.h>
+  #ifdef PJON_ETHERNET2
+    #include <Ethernet2.h>
+    #include <EthernetUdp2.h>
+  #else
+    #include <Ethernet.h>
+    #include <EthernetUdp.h>
+  #endif
 #endif
 
 class UDPHelper {
@@ -27,7 +36,10 @@ public:
     return udp.begin(_port);
   }
 
-  int16_t receive_string(uint8_t *string, uint16_t max_length) {
+  uint16_t receive_string(uint8_t *string, uint16_t max_length) {
+    #ifdef PJON_ESP
+    udp.flush(); // Empty receive buffer so it is prepared for new packet
+    #endif
     uint16_t packetSize = udp.parsePacket();
     if(packetSize > 0) {
       uint32_t header = 0;
@@ -44,10 +56,18 @@ public:
   void send_string(uint8_t *string, uint16_t length, IPAddress remote_ip, uint16_t remote_port) {
     if(length > 0) {
       udp.beginPacket(remote_ip, remote_port);
-      udp.write((const char*) &_magic_header, 4);
+      #if defined(ESP32)
+        udp.write((const unsigned char*) &_magic_header, 4);
+      #else
+        udp.write((const char*) &_magic_header, 4);
+      #endif
       udp.write(string, length);
       udp.endPacket();
     }
+  }
+
+  void send_response(uint8_t *string, uint16_t length) {
+    send_string(string, length, udp.remoteIP(), udp.remotePort());
   }
 
   void send_response(uint8_t response) {
@@ -72,4 +92,10 @@ public:
   }
 
   void set_magic_header(uint32_t magic_header) { _magic_header = magic_header; }
+
+  void get_sender(uint8_t *ip, uint16_t &port) {
+    uint32_t ip_address = udp.remoteIP();
+    memcpy(ip, &ip_address, 4);
+    port = udp.remotePort();
+  }
 };

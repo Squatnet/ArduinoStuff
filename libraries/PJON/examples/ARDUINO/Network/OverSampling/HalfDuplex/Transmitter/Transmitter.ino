@@ -9,10 +9,30 @@ uint8_t bus_id[] = {0, 0, 0, 1};
 // <Strategy name> bus(selected device id)
 PJON<OverSampling> bus(bus_id, 45);
 
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
+  if(code == PJON_CONNECTION_LOST) {
+    Serial.print("Connection with device ID ");
+    Serial.print(bus.packets[data].content[0], DEC);
+    Serial.print(" - ");
+    Serial.print(micros());
+    Serial.println(" is lost.");
+  }
+  if(code == PJON_PACKETS_BUFFER_FULL) {
+    Serial.print("Packet buffer is full, has now a length of ");
+    Serial.println(data, DEC);
+    Serial.println("Possible wrong bus configuration!");
+    Serial.println("higher PJON_MAX_PACKETS if necessary.");
+  }
+  if(code == PJON_CONTENT_TOO_LONG) {
+    Serial.print("Content is too long, length: ");
+    Serial.println(data);
+  }
+};
+
 void setup() {
   Serial.begin(115200);
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW); // Initialize LED 13 to be off
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW); // Initialize LED 13 to be off
 
   /* When using more than one pin always use pins connected to
      a different port group to avoid cross-talk. */
@@ -33,26 +53,6 @@ void setup() {
      PJON packet flooding occurring in this sketch, for this reason try to
      run your tests for short timeframes.
      DO NOT FORGET THIS SKETCH TRANSMITTING ALL DAY LONG :) */
-}
-
-void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
-  if(code == PJON_CONNECTION_LOST) {
-    Serial.print("Connection with device ID ");
-    Serial.print(bus.packets[data].content[0], DEC);
-    Serial.print(" - ");
-    Serial.print(micros());
-    Serial.println(" is lost.");
-  }
-  if(code == PJON_PACKETS_BUFFER_FULL) {
-    Serial.print("Packet buffer is full, has now a length of ");
-    Serial.println(data, DEC);
-    Serial.println("Possible wrong bus configuration!");
-    Serial.println("higher PJON_MAX_PACKETS if necessary.");
-  }
-  if(code == PJON_CONTENT_TOO_LONG) {
-    Serial.print("Content is too long, length: ");
-    Serial.println(data);
-  }
 };
 
 void loop() {
