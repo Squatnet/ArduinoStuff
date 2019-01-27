@@ -4,7 +4,13 @@
 #define I2C_MAT_A 2
 #define I2C_MAT_B 3
 #define I2C_MAT_C 4
-SoftwareSerial BTSerial(23,22); // RX | TX
+=======
+#define I2C_MAT_D 5
+#define I2C_MAT_E 6
+#define I2C_MAT_F 7
+#define I2C_MAT_G 8
+#define I2C_MAT_H 9
+SoftwareSerial BTSerial(2,3); // RX | TX
 String string = "";
 void setup()
 {
@@ -30,7 +36,12 @@ void loop()
     int i2cNum = 0;
     if (which == "A")i2cNum = I2C_MAT_A;
     else if (which == "B")i2cNum = I2C_MAT_B;
-    else if (which == "C")i2cNum = I2C_MAT_C;   
+    else if (which == "C")i2cNum = I2C_MAT_C;
+    else if (which == "D")i2cNum = I2C_MAT_D;
+    else if (which == "E")i2cNum = I2C_MAT_E;
+    else if (which == "F")i2cNum = I2C_MAT_F;
+    else if (which == "G")i2cNum = I2C_MAT_G;
+    else if (which == "H")i2cNum = I2C_MAT_H;
     /// Anything else leaves i2cNum as 0  
     Serial.println(which);
     Serial.println(string.substring(4));
@@ -45,6 +56,16 @@ void loop()
       Wire.beginTransmission(3);
       sendMatrix();
       Wire.beginTransmission(4);
+      sendMatrix();
+      Wire.beginTransmission(5);
+      sendMatrix();
+      Wire.beginTransmission(6);
+      sendMatrix();
+      Wire.beginTransmission(7);
+      sendMatrix();
+      Wire.beginTransmission(8);
+      sendMatrix();
+      Wire.beginTransmission(9);
       sendMatrix();
       string = ""; // Delete string after sending to multiple matrices      
     }
@@ -66,12 +87,35 @@ void loop()
    }
    if (string.startsWith("ALL")){
       Wire.beginTransmission(1); // LEDS
-      sendMatrix();
+      Serial.println("Sending to strips");
+      String buff = string.substring(3);
+      char buffer[32];
+      buff.toCharArray(buffer, 32);
+      Wire.write(buffer);
+      Wire.endTransmission();
       Wire.beginTransmission(2); // MAT A
+      Serial.println("Sending to MAT A");
       sendMatrix();
       Wire.beginTransmission(3); // MAT B
+      Serial.println("Sending to MAT B");
       sendMatrix();
       Wire.beginTransmission(4); // MAT C
+      Serial.println("Sending to MAT C");
+      sendMatrix();
+      Wire.beginTransmission(5); // MAT D
+      Serial.println("Sending to MAT D");
+      sendMatrix();
+      Wire.beginTransmission(6); // MAT E
+      Serial.println("Sending to MAT E");
+      sendMatrix();
+      Wire.beginTransmission(7); // MAT F
+      Serial.println("Sending to MAT F");
+      sendMatrix();
+      Wire.beginTransmission(8); // MAT G
+      Serial.println("Sending to MAT G");
+      sendMatrix();
+      Wire.beginTransmission(9); // MAT H
+      Serial.println("Sending to MAT H");
       sendMatrix();
       string = ""; // Delete string after sending ALL
    }
