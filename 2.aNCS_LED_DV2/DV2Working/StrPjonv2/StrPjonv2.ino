@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
@@ -189,7 +189,7 @@ void setup() {  // SETUP
 // Function to register with master.
 // simply converts a String to a char array and sends it
 void tellMasterAboutSelf(){
-  String newPkt = "Reg,Str,Any"; // Edit this line
+  String newPkt = "Reg,Str, Any1 "; // Edit this line
   const char pkt[newPkt.length()+1]; // Create array
   newPkt.toCharArray(pkt,newPkt.length()); // Convert string to Char[]
   bus.send(254,pkt,newPkt.length()+1); // Send the packet to master. 
