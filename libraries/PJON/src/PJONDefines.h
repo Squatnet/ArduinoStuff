@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.0
+   |!y°o:\      |  __| |__| | \| v11.2
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -15,7 +15,7 @@
 
 For the PJON® Protocol specification see the specification directory.
 
-PJON® Standard compliant tools:
+Compliant tools:
 - ModuleInterface - Easy config and value sync between IOT modules
  https://github.com/fredilarsen/ModuleInterface
 - Command line PJON wrapper over unnamed pipes by Zbigniew Zasieczny
@@ -25,17 +25,19 @@ PJON® Standard compliant tools:
 - PJON-gRPC - gRPC server-client by Oleg Galitskiy
  https://github.com/Galitskiy/PJON-gRPC
 
- If you believe in this project and you appreciate our work, please, make a
- donation. The PJON Foundation is entirely financed by contributions of wise
- people like you and its resources are solely invested to cover the development
- and maintainance costs.
+ The PJON project is entirely financed by contributions of people like you and
+ its resources are solely invested to cover the development and maintenance
+ costs, consider to make donation:
  - Paypal:   https://www.paypal.me/PJON
  - Bitcoin:  1FupxAyDTuAMGz33PtwnhwBm4ppc7VLwpD
  - Ethereum: 0xf34AEAF3B149454522019781668F9a2d1762559b
  Thank you and happy tinkering!
  _____________________________________________________________________________
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+This software is experimental and it is distributed "AS IS" without any
+warranty, use it at your own risk.
+
+Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,17 +52,23 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include <utils/crc/PJON_CRC8.h>
-#include <utils/crc/PJON_CRC32.h>
+#include "utils/crc/PJON_CRC8.h"
+#include "utils/crc/PJON_CRC32.h"
 
 /* Id used for broadcasting to all devices */
-#define PJON_BROADCAST        0
+#ifndef PJON_BROADCAST
+  #define PJON_BROADCAST        0
+#endif
 
 /* Master device id */
-#define PJON_MASTER_ID      254
+#ifndef PJON_MASTER_ID
+  #define PJON_MASTER_ID      254
+#endif
 
 /* Device id of still unindexed devices */
-#define PJON_NOT_ASSIGNED   255
+#ifndef PJON_NOT_ASSIGNED
+  #define PJON_NOT_ASSIGNED   255
+#endif
 
 /* Maximum devices handled by master */
 #ifndef PJON_MAX_DEVICES
@@ -88,8 +96,9 @@ limitations under the License. */
 #define PJON_FAIL         65535
 #define PJON_TO_BE_SENT      74
 
+/* No header present (unacceptable value used)*/
+#define PJON_NO_HEADER      0B01001000
 /* HEADER BITS DEFINITION: */
-
 /* 0 - Local network
    1 - Shared  network */
 #define PJON_MODE_BIT       0B00000001
@@ -165,9 +174,9 @@ limitations under the License. */
 /* Master free id broadcast response interval (100 milliseconds) */
 #define PJON_ID_REQUEST_INTERVAL   100000
 /* Master ID_REQUEST and ID_NEGATE timeout */
-#define PJON_ADDRESSING_TIMEOUT   2900000
-/* Master reception time during LIST_ID broadcast (75 milliseconds) */
-#define PJON_LIST_IDS_TIME          75000
+#define PJON_ADDRESSING_TIMEOUT   4000000
+/* Master reception time during LIST_ID broadcast (250 milliseconds) */
+#define PJON_LIST_IDS_TIME         250000
 
 struct PJON_Packet {
   uint8_t  attempts;
@@ -216,7 +225,57 @@ typedef void (* PJON_Error)(
 );
 
 static void PJON_dummy_error_handler(
-  uint8_t, // code
+  uint8_t,  // code
   uint16_t, // data
-  void *   // custom_pointer
+  void *    // custom_pointer
 ) {};
+
+struct PJONTools {
+  /* Copy a bus id: */
+
+  static void copy_bus_id(uint8_t dest[], const uint8_t src[]) {
+    memcpy(dest, src, 4);
+  };
+
+  /* Check equality between two bus ids */
+
+  static bool bus_id_equality(const uint8_t *n_one, const uint8_t *n_two) {
+    for(uint8_t i = 0; i < 4; i++)
+      if(n_one[i] != n_two[i])
+        return false;
+    return true;
+  };
+
+  /* Fill a PJON_Packet_Info struct with data parsing a packet: */
+
+  static void parse_header(const uint8_t *packet, PJON_Packet_Info &packet_info) {
+    memset(&packet_info, 0, sizeof packet_info);
+    uint8_t index = 0;
+    packet_info.receiver_id = packet[index++];
+    bool extended_length = packet[index] & PJON_EXT_LEN_BIT;
+    packet_info.header = packet[index++];
+    index += extended_length + 2; // + LENGTH + HEADER CRC
+    if(packet_info.header & PJON_MODE_BIT) {
+      copy_bus_id(packet_info.receiver_bus_id, packet + index);
+      index += 4;
+      if(packet_info.header & PJON_TX_INFO_BIT) {
+        copy_bus_id(packet_info.sender_bus_id, packet + index);
+        index += 4;
+      }
+    }
+    if(packet_info.header & PJON_TX_INFO_BIT)
+      packet_info.sender_id = packet[index++];
+    #if(PJON_INCLUDE_ASYNC_ACK || PJON_INCLUDE_PACKET_ID)
+      if(((packet_info.header & PJON_ACK_MODE_BIT) &&
+          (packet_info.header & PJON_TX_INFO_BIT)
+        ) || packet_info.header & PJON_PACKET_ID_BIT
+      ) {
+        packet_info.id =
+          (packet[index] << 8) | (packet[index + 1] & 0xFF);
+        index += 2;
+      }
+    #endif
+    if(packet_info.header & PJON_PORT_BIT)
+      packet_info.port = (packet[index] << 8) | (packet[index + 1] & 0xFF);
+  };
+};

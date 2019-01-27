@@ -3,19 +3,6 @@
 // <Strategy name> bus(selected device id)
 PJON<SoftwareBitBang> bus(45);
 
-void setup() {
-  Serial.begin(115200);
-
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW); // Initialize LED 13 to be off
-
-  bus.set_error(error_handler);
-  bus.set_receiver(receiver_function);
-  bus.strategy.set_pin(12);
-  bus.begin();
-  bus.send(44, "B", 1);
-};
-
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
     Serial.print("Connection with device ID ");
@@ -40,12 +27,25 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   if((char)payload[0] == 'B') {
     if(!bus.update()) // If all packets are delivered, send another
       bus.reply("B", 1);
-    digitalWrite(13, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(5);
-    digitalWrite(13, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
     delay(5);
   }
-}
+};
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW); // Initialize LED 13 to be off
+
+  bus.set_error(error_handler);
+  bus.set_receiver(receiver_function);
+  bus.strategy.set_pin(12);
+  bus.begin();
+  bus.send(44, "B", 1);
+};
 
 void loop() {
   bus.receive(50000);

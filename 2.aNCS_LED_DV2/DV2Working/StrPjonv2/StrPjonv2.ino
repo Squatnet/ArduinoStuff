@@ -119,6 +119,10 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
 // Reads an incoming control message
 void parser(){
   while(string.length() >= 1){ // While there message left to read. 
+    DPRINT("Message is ");
+    DPRINT(string);
+    DPRINT(" With length ");
+    DPRINTLN(string.length());
     String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
     string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
     if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point

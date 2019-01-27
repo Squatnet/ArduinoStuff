@@ -21,16 +21,18 @@
 #pragma once
 
 #ifdef HAS_ETHERNETUDP
-  #include <interfaces/ARDUINO/UDPHelper_ARDUINO.h>
+  #include "../../interfaces/ARDUINO/UDPHelper_ARDUINO.h"
 #else
-  #include <interfaces/LINUX/UDPHelper_POSIX.h>
+  #include "../../interfaces/LINUX/UDPHelper_POSIX.h"
 #endif
 
 #include <PJONDefines.h>
 
-#define LUDP_DEFAULT_PORT                 7100
-#define LUDP_RESPONSE_TIMEOUT  (uint32_t) 100000
-#define LUDP_MAGIC_HEADER      (uint32_t) 0x0DFAC3D0
+#define LUDP_DEFAULT_PORT                   7100
+#ifndef LUDP_RESPONSE_TIMEOUT
+  #define LUDP_RESPONSE_TIMEOUT  (uint32_t) 100000
+#endif
+#define LUDP_MAGIC_HEADER        (uint32_t) 0x0DFAC3D0
 
 class LocalUDP {
     bool _udp_initialized = false;
@@ -50,9 +52,9 @@ public:
 
     uint32_t back_off(uint8_t attempts) {
       #ifdef PJON_ESP
-        return 10000ul*attempts + random(10000);
+        return 10000ul * attempts + PJON_RANDOM(10000);
       #elif _WIN32
-        return 1000ul * attempts + 1000ul*rand()/RAND_MAX;
+        return 1000ul  * attempts + PJON_RANDOM(1000);
       #else
         (void)attempts; // Avoid "unused parameter" warning
         return 1;

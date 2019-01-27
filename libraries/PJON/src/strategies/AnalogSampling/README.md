@@ -1,52 +1,53 @@
+## AnalogSampling
 
-**Medium:** Light |
-**Pins used:** 1 / 2
+**Medium**: light pulses over air or optic-fibre | **Pins used**: 1 or 2
 
-`AnalogSampling` strategy or data link complies with [PJDLS v2.0](/src/strategies/AnalogSampling/specification/PJDLS-specification-v2.0.md), it is designed to communicate data wirelessly using light impulses and its sampling technique based on analog readings. It is able to use a single LED for both photo-emission and photo-reception phases enabling a half-duplex connection between two or more devices with a range of up to 5 meters using only a single LED per device; it can also be used with two pairs of any sort of tuned emitters and receivers enabling for example long range wireless laser communication. `AnalogSampling` can be used along with single channel optic fiber cables enabling a point-to-point bidirectional connection between two devices, that can also be branched in star configuration using optical bidirectional splitters (PLC).
+`AnalogSampling` strategy or data link complies with [PJDLS v2.0](/src/strategies/AnalogSampling/specification/PJDLS-specification-v2.0.md), it is designed to communicate data wirelessly using light impulses and its sampling technique is based on analog readings. This strategy is able to use a single LED for both photo-emission and photo-reception phases providing with wireless half-duplex connectivity between devices with a range of up to 5 meters. Most appliances have at least a useless energy consuming LED on board, right?
 
-`AnalogSampling` was originally implemented it in the far 2011, here you can see the first [video documented experiment](https://www.youtube.com/watch?v=-Ul2j6ixbmE). It has been recently debugged and updated to act as a PJON Strategy. Take a look at the [video introduction](https://www.youtube.com/watch?v=yIncPe8OPpg) for a brief showcase of its features.
+`AnalogSampling` can also be used with separate emitter and receiver pins enabling cheap long range wireless communication using standard photo-diodes, light-emitting diodes or laser diodes. The proposed circuit, technique and codebase were originally implemented in the far 2011, see the first [video documented experiment](https://www.youtube.com/watch?v=-Ul2j6ixbmE). Take a look at the [video introduction](https://www.youtube.com/watch?v=yIncPe8OPpg) for a brief showcase of its features.
 
-#### Compatibility
-- ATmega88/168/328 16MHz (Diecimila, Duemilanove, Uno, Nano, Mini, Lillypad)
-- ATmega1280/2560 16MHz (Arduino Mega)
+### Compatibility
+| MCU              | Clock | Supported pins   | Supported modes |
+| ---------------- |------ | ---------------- | --------------- |
+| ATmega88/168/328 (Duemilanove, Uno, Nano, Pro) | 16MHz | A0, A1, A2, A3, A4, A5 | `1`, `2`, `3`, `4`, `5` |
+| ATmega2560 (Mega, Mega nano) | 16MHz | A0, A1, A2, A3, A4, A5 | `1`, `2`, `3` |
 
-#### Performance
+### Performance
 `AnalogSampling` works with the following communication modes:
-- `1` runs at 1024Bd or 128B/s
-- `2` runs at 1361Bd or 170B/s
-- `3` runs at 3773Bb or 471B/s
-- `4` runs at 5547Bb or 639B/s
-- `5` runs at 12658Bd or 1528B/s
+- `1` runs at 1024Bd or 128B/s (`AS_PRESCALE` 128)
+- `2` runs at 1361Bd or 170B/s (`AS_PRESCALE` 128)
+- `3` runs at 3773Bb or 471B/s (`AS_PRESCALE` 32)
+- `4` runs at 5547Bb or 639B/s (`AS_PRESCALE` 16)
+- `5` runs at 12658Bd or 1528B/s (`AS_PRESCALE` 8)
 
 Caution, mode `5` sets ADC clock prescale to a higher rate than manufacturer recommends as maximum ADC sample rate (prescale 16).
 
-#### How to use AnalogSampling
+### What can be done?
+The most basic example is to connect two devices using a couple of visible light LEDs used as wireless transceivers.
+
+![PJON AnalogSampling LED wireless communication](http://www.pjon.org/assets/images/PJON-AnalogSampling-half-duplex-led-communication.png)
+
+Leveraging of the interesting features of LEDs:
+- Emit light if powered by electricity
+- Emit a small but detectable amount of electricity if hit by light (photo-electric effect)
+
+It is possible to use LEDs as wireless (bidirectional) transceivers. This means that wireless half-duplex connectivity can be provided by a single LED per device. See the [LED selection](documentation/LED-selection.md) guide to know more about how to choose the right LEDs and keep in mind that is necessary to add a 75K-5MΩ pull-down resistor connecting the pin used with ground to reduce the LED capacitance and externally induced interference and that depending on the voltage level used LEDs could be overpowered, add a current limiting resistor if required.
+
+`AnalogSampling` can be used to experiment with short range infrared or visible light communication (remote control, robot swarms, data streaming using lighting), medium range using light sources (cars transmitting data through front and backlights) or long range laser communication (data between ground and LEO).  
+
+### Configuration
+Before including `PJON.h` it is possible to configure `AnalogSampling` using predefined constants:
+
+| Constant                  | Purpose                             | Supported value                            |
+| ------------------------- |------------------------------------ | ------------------------------------------ |
+| `AS_MODE`                 | Data transmission mode              | 1, 2, 3, 4, 5                              |
+| `AS_RESPONSE_TIMEOUT`     | Maximum response time-out           | Duration in microseconds (15000 by default) |
+| `AS_BACK_OFF_DEGREE`      | Maximum back-off exponential degree | Numeric value (5 by default)               |
+| `AS_MAX_ATTEMPTS`         | Maximum transmission attempts       | Numeric value (10 by default)              |
+| `AS_PRESCALE`             | Set ADC pre-scaler                  | 8, 16, 32                                  |
+
 Pass the `AnalogSampling` type as PJON template parameter to instantiate a PJON object ready to communicate through this Strategy. All the other necessary information is present in the general [Documentation](/documentation).
 ```cpp  
-// Predefine AS_MODE selecting communication mode if needed
-#define AS_MODE 1 // 1024Bd  or 128B/s
-#define AS_MODE 2 // 1361Bd  or 170B/s
-#define AS_MODE 3 // 3773Bb  or 471B/s  (ADC prescale 32)
-#define AS_MODE 4 // 5547Bb  or 639B/s  (ADC prescale 16)
-#define AS_MODE 5 // 12658Bd or 1528B/s (ADC prescale  8)
-
-/* Acknowledge maximum latency, 15000 microseconds default.
-   Could be necessary to higher AS_RESPONSE_TIMEOUT if sending
-   long packets because of the CRC computation time needed by
-   receiver before transmitting its acknowledge  */
-#define AS_RESPONSE_TIMEOUT 15000
-
-/* Set the back-off exponential degree (default 5) */
-#define AS_BACK_OFF_DEGREE      5
-
-/* Set the maximum sending attempts (default 10) */
-#define AS_MAX_ATTEMPTS        10
-
-/* The values set above are the default producing a 3.2 seconds
-   back-off timeout with 20 attempts. Higher SWBB_MAX_ATTEMPTS
-   to higher the back-off timeout, higher SWBB_BACK_OFF_DEGREE
-   to higher the interval between every attempt. */
-
 #include <PJON.h>
 
 PJON<AnalogSampling> bus;
@@ -64,30 +65,12 @@ void setup() {
 ```
 After the PJON object is defined with its strategy it is possible to set the communication pin accessing to the strategy present in the PJON instance.
 
-#### What can be done?
-The most basic example is to connect two devices using a couple of visible light LEDs connected to the A0 pin used as wireless transceivers.
-
-![PJON AnalogSampling LED wireless communication](http://www.pjon.org/assets/images/PJON-AnalogSampling-half-duplex-led-communication.png)
-
-Leveraging of the interesting features of LEDs:
-
-- Emit photons if electrons are travelling through the junction
-- Emit electrons if photons are hitting the junction (photo-electric effect)
-
-Thanks to this 2 features it is possible to use LEDs as wireless (bidirectional) transceivers! This means that you can connect two devices needing only one LED on each. Most devices have at least an energy consuming useless LED on board right? :)
-
-In most cases it is necessary to add a pull-down resistor with a value around 200KΩ-5MΩ connecting the A0 pin with ground to reduce the LED capacitance, reduce bit transition slopes and electromagnetic induced interference. Higher resistance can higher the range but can also higher background noise.
-
-Consider that depending on the operating voltage of your device LEDs could be overpowered, so choose the LED depending on its operating voltage and add a current limiting resistor if needed. Because of the non continuous power supply also if using a 5v system most LEDs (infrared, blue, white) should survive.  
-
-The obtained range is related to:
-- **Resolution** - use `analogReference` wiring method to configure `analogRead` resolution as necessary taking care that the input voltage is not higher than the configured voltage reference.
-- **Sensitivity** find a couple of identical LEDs, position one shining light directly on the other's junction and test the voltage produced by the unpowered one. Blue LEDs can produce more than 2 volts if hit by its light at full power.
-- **Transmission power** the more power is feeded into the transmitter, the higher range and reliability can be achieved.
-- **Signal-to-noise ratio or SNR** Noise level affects communication reliability specially when the signal magnitude is lowered by distance, filtering your input from background noise can higher maximum range and overall communication reliability. If the system must operate with a strong background noise, consider using a hardware filter to reduce the background noise frequencies and use a pull down resistor as described above.
-
-With the necessary hardware choices and timing configuration `AnalogSampling` can be used to experiment with short range infrared or visible light communication (i.e. micro-robot swarm, DIY remote, optic fiber), medium range using light sources (i.e. cars transmitting data through front and backlights) or long range laser communication (i.e. data between ground and LEO).  
-
-#### Known issues
+### Known issues
 - Direct sunlight or other light sources can affect receiver's sensitivity and maximum communication range
-- A pull-down resistor can be necessary to obtain nominal functionality, see above
+- Long wires can degrade performance
+- Depending on the power supply voltage, LEDs could be overpowered, add a current limiting resistor if required
+- Oscilloscope's probe acting as a pull down resistor influences results and the required pull down resistor's value
+- A pull-down resistor is required to obtain optimal performance, see above
+
+### Safety warning
+In all cases, when installing or maintaining a PJON network, extreme care must be taken to avoid any danger. When working with an [AnalogSampling](/src/strategies/AnalogSampling) LED or laser based setup safety glasses must be worn and transceivers must be operated cautiously to avoid potential eye injuries. Consider that with [AnalogSampling](/src/strategies/AnalogSampling) all LEDs that are physically connected to an ADC may be used maliciously to both download or upload data wirelessly, effectively circumventing many air-gapping techniques.   

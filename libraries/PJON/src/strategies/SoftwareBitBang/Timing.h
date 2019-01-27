@@ -1,16 +1,19 @@
 
 /* PJON SoftwareBitBang strategy Transmission Timing table
-   Copyright 2010-2018, Giovanni Blu Mitolo All rights reserved.
+   Copyright 2010-2019, Giovanni Blu Mitolo All rights reserved.
 
-   Often timing in two different architectures doesn't match. This happens
-   because code execution time can variate and also because time measurement
-   can be not perfectly equal on all systems. Arduino Duemilanove, Uno or
-   Nano timing is considered as master. All benchmarks should be executed with
-   NetworkAnalysis and SpeedTest examples.
+   Often timing in two different architectures do not match. Code execution
+   time can variate and time measurements can be not perfectly equal.
+   Arduino Duemilanove/UNO/Nano durations are used as master.
+   Consider that master durations defined below are shorter than specified
+   in the PJDL-specification-v2.1 to accomodate the input-output pin change
+   duration (4 microseconds) and effectively produce the specified durations.
 
-   MODE 1:  16.949kBb or 2.11kB/s
-   MODE 2:  19.417kBd or 2.42kB/s
-   MODE 3:  Architecture/Toolchain dependant
+   Benchmarks can be executed using NetworkAnalysis and SpeedTest examples.
+
+   MODE   1: 1.95kB/s - 15625Bd
+   MODE   2: 2.21kB/s - 17696Bd
+   MODE   3: 2.94kB/s - 23529Bd
 
    Use the same pin number on all connected devices to achieve maximum
    timing efficiency, not all different pin combinations work nominally
@@ -138,15 +141,28 @@
 /* NodeMCU, generic ESP8266 ----------------------------------------------- */
 #if defined(ESP8266)
   #if SWBB_MODE == 1
-  /* Added by github user 240974a - 09/03/2016  */
-    #if F_CPU == 80000000L
+  /* Added by github user 240974a                 - 09/03/2016
+     Added full support to MODE 1 (80 and 160MHz) - 12/06/2018 */
+    #if (F_CPU == 80000000L) || (F_CPU == 160000000L)
       /* Working on pin: D1 or GPIO 5 */
       #define SWBB_BIT_WIDTH   44
-      #define SWBB_BIT_SPACER 110
+      #define SWBB_BIT_SPACER 112
       #define SWBB_ACCEPTANCE  56
-      #define SWBB_READ_DELAY   4
+      #define SWBB_READ_DELAY  -6
     #endif
   #endif
+#endif
+
+/* Heltech WiFi LoRa ESP32, generic ESP32 --------------------------------- */
+#if defined(ESP32)
+  #if SWBB_MODE == 1
+      /* Added full support to MODE 1 - 28/06/2018
+         Working on pin: 12 and 25 */
+      #define SWBB_BIT_WIDTH   44
+      #define SWBB_BIT_SPACER 112
+      #define SWBB_ACCEPTANCE  56
+      #define SWBB_READ_DELAY  -2
+    #endif
 #endif
 
 /* MK20DX256 - Teensy ----------------------------------------------------- */
@@ -155,6 +171,19 @@
   /* Added by github user SticilFace - 25/04/2016  */
     #if F_CPU == 96000000L
       #define SWBB_BIT_WIDTH   46
+      #define SWBB_BIT_SPACER 112
+      #define SWBB_ACCEPTANCE  40
+      #define SWBB_READ_DELAY -10
+    #endif
+  #endif
+#endif
+
+/* STM32F1 ---------------------------------------------------------------- */
+#if defined(__STM32F1__)
+  #if SWBB_MODE == 1
+    #if F_CPU == 72000000L
+    /* Added by github user osman-aktepe - 22/06/2018 */
+      #define SWBB_BIT_WIDTH   44
       #define SWBB_BIT_SPACER 112
       #define SWBB_ACCEPTANCE  40
       #define SWBB_READ_DELAY -10
