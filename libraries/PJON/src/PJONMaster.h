@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.1
+   |!y°o:\      |  __| |__| | \| v11.2
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -34,7 +34,7 @@ Thank you and happy tinkering!
 This software is experimental and it is distributed "AS IS" without any
 warranty, use it at your own risk.
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include <PJON.h>
+#include "PJON.h"
 
 /* Reference to device */
 struct Device_reference {
@@ -278,7 +278,7 @@ class PJONMaster : public PJON<Strategy> {
           )
             if(rid == ids[this->last_packet_info.sender_id - 1].rid)
               if(
-                this->bus_id_equality(
+                PJONTools::bus_id_equality(
                   this->last_packet_info.sender_bus_id,
                   this->bus_id
                 )

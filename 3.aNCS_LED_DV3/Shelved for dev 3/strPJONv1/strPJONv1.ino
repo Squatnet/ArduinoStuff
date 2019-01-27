@@ -17,7 +17,6 @@ CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0
 
 // PJON DEFINES
 #include <PJONSlave.h>
-#include<ArduinoJson.h>
 // Bus id definition
 uint8_t bus_id[] = {0, 0, 1, 53};
 // PJON object
@@ -32,78 +31,112 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 10;
+bool ack = false;
+void(* resetFunc) (void) = 0;
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   const char * arr = payload;
-  if(arr[0] == '{'){
-    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 60;
-    StaticJsonBuffer<bufferSize> jsonBuffer;
-    JsonObject& Msg = jsonBuffer.parseObject(arr);
-    if(Msg.success()){
-      Serial.print("Parse Success");
-      Msg.printTo(Serial);
-      if(Msg.containsKey("pattern"))x = Msg["pattern"];
-      if(Msg.containsKey("color"))ourCol = CRGB(Msg["color"].as<char*>());
-      if(Msg.containsKey("timeout"))autoSecs = Msg["timeout"];
-      if(Msg.containsKey("automode"))autoMode = Msg["automode"];
-      if(Msg.containsKey("poll"))respondToPoll();
-    }
-    else Serial.print("PARSE FAIL");
+  string.concat(arr);
+  if( string.startsWith("ack")){
+    ack = true;
+    string = "";
   }
-  else Serial.println(arr);
+  else parser();
 };
-
+void parser(){
+  while(string.length() >= 1){
+    String subs = string.substring(0,string.indexOf(","));
+    string.remove(0,string.indexOf(0,string.indexOf(",")+1));
+    if (subs.startsWith("ptn")){
+      String ptn = string.substring(0,string.indexOf(","));
+      x = ptn.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1));
+    }
+    if (subs.startsWith("atm")){
+      String atm = string.substring(0,string.indexOf(","));
+      autoMode = atm.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1));
+    }
+    if (subs.startsWith("ats")){
+      String ats = string.substring(0,string.indexOf(","));
+      autoSecs = ats.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1));
+    }
+    if (subs.startsWith("col")){
+      String r = string.substring(0,string.indexOf(","));
+      ourCol.r = r.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1));
+      String b = string.substring(0,string.indexOf(","));
+      ourCol.b = b.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1));
+      String g = string.substring(0,string.indexOf(","));
+      ourCol.g = g.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1));
+    }
+  }
+  //Serial.print("STR = ");
+  //Serial.println(string);
+  string = "";
+}
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
-    Serial.print("lost device ");
-    Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    //Serial.print("Connection lost with device ");
+    //Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    delay(1000);
+    resetFunc();
   }
   if(code == PJON_ID_ACQUISITION_FAIL) {
     if(data == PJON_ID_ACQUIRE)
-      Serial.println("ERR: MM addressing failed.");
+      //Serial.println("PJONSlave error: multi-master addressing failed.");
     if(data == PJON_ID_CONFIRM)
-      Serial.println("ERR: slave id conf failed.");
+      //Serial.println("PJONSlave error: master-slave id confirmation failed.");
     if(data == PJON_ID_NEGATE)
-      Serial.println("ERR: id release failed.");
-    if(data == PJON_ID_REQUEST){
-      Serial.println("ERR: id request failed.");
-      delay(160);
+     // Serial.println("PJONSlave error: master-slave id release failed.");
+    if(data == PJON_ID_REQUEST)
+     // Serial.println("PJONSlave error: master-slave id request failed.");
+      delay(400);
+      if (millis() > 15000){
+        //Serial.println("Resetting due to no ID");
+        delay(300);
+        resetFunc();
+        }
       bus.acquire_id_master_slave();
-    }
-  }
-  Serial.flush();
+      acquired = false;
+      delay(160);
+     
+ }
+  //Serial.flush();
 };
+
 void respondToPoll(){
-  Serial.print("Responding to poll request");
-  String msg = "{\"pollreply\":\" \",\"pattern\":\"";
+  //Serial.print("Responding to poll request");
+  String msg = "Rply,Ptrn,";
   msg += String(x);
-  msg += "\",\"color\":[";
+  msg += ",Clr";
   msg += String(ourCol.r);
   msg += ",";
   msg += String(ourCol.g);
   msg += ",";
   msg += String(ourCol.b);
-  msg += ",\"automode\":";
+  msg += ",ATM,";
   msg += String(autoMode);
-  msg += ",\"autosecs\":";
+  msg += ",ATS,";
   msg += String(autoSecs);
-  msg += "}";
-  Serial.println(msg);
+  //Serial.println(msg);
   char JSON[msg.length()+1];
   msg.toCharArray(JSON,msg.length());
     int Size = 0;
     while (JSON[Size] != '\0') Size++;
-    int err = bus.send_packet(254,JSON,Size);
-    Serial.print(err);
+    int err = bus.send(254,JSON,Size);
+    //Serial.print(err);
 }
-
 void setup() {
-  Serial.begin(115200);
+  delay(4000);
+  //Serial.begin(115200);
   bus.set_error(error_handler);
   bus.set_receiver(receiver_handler);
   bus.strategy.set_pin(12);
-  bus.begin();
-  delay(160);
   bus.acquire_id_master_slave();
+  bus.begin();
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
@@ -118,12 +151,18 @@ void setup() {
     FastLED.delay(300);
     i++;
   }
-
+  
 }
 void randX() {
   if (autoMode == 1) {
     x = random(2, 9);
   }
+}
+void tellMasterAboutSelf(){
+  String newPkt = "Reg,Strip,Gary";
+  const char pkt[newPkt.length()+1];
+  newPkt.toCharArray(pkt,newPkt.length());
+  bus.send_packet(254,pkt,newPkt.length()+1);
 }
 void loop() {
   EVERY_N_MILLISECONDS(30) {
@@ -168,12 +207,14 @@ void loop() {
   }
   //call function
   copyLeds();
-  if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
-    Serial.print("Got device id: ");
-    Serial.println(bus.device_id());
+  if(ourID == 255 && millis() > 15000){
+   // Serial.println("NO ID AFTER 15000");
     delay(160);
-    tellMasterAboutSelf();
+    resetFunc();
+  }
+  if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) {
     acquired = true;
+    tellMasterAboutSelf();
   }
   bus.update();
   bus.receive(5000);
@@ -183,18 +224,6 @@ void loop() {
   //  EVERY_N_MILLISECONDS( 20 )
 }
 
-void tellMasterAboutSelf(){
-  const char * JSON = "{\"register\":\"strip\",\"name\":\"A\"}"; // enter the json to describe this slave here, note the \" to escape
-    int Size = 0;
-    while (JSON[Size] != '\0') Size++;
-    if(bus.send_packet(254,JSON,Size) == PJON_ACK){
-    Serial.println("Hi MOM");
-    Serial.print(JSON);
-   }
-  else{
-    Serial.println("failed");
-  }
-};
 void copyLeds() {
   ///for (int i = 0; i < NUM_LEDS; i++) 
   FL(0,NUM_LEDS){

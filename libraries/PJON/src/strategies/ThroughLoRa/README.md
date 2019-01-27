@@ -1,4 +1,4 @@
-### ThroughLoRa
+## ThroughLoRa
 
 **Medium:** Radio, Wire | **Pins used:** 6
 
@@ -6,19 +6,19 @@ With `ThroughLora` strategy, PJON can run through a software or hardware SPI in 
 
 This strategy is a wrapper around  [Arduino LoRa library](https://github.com/sandeepmistry/arduino-LoRa) created by [Sandeep Mistry](https://github.com/sandeepmistry) so all the credit to the specific LoRa implementation goes to him.
 
-#### Compatibility
+### Compatibility
 - ATmega88/168/328 16MHz (Diecimila, Duemilanove, Uno, Nano, Mini, Lillypad)
 - ATmega2560 16MHz (Arduino Mega)
 - ATmega16u4/32u4 16MHz (Arduino Leonardo)
 - STM32F103 ([Blue Pill](http://wiki.stm32duino.com/index.php?title=Blue_Pill))
 
-#### Getting started
+### Getting started
 1. Define `PJON_INCLUDE_TL` before including PJON header `<PJON.h>`
 2. Pass the `ThroughLora` type as PJON template parameter to instantiate a PJON object ready to communicate through this Strategy.
 3. Configure the shield/module pins according to the correct connection. See [Hardware connection](#hardware-connection).
 4. Initialize the module with its specified frequency.
 
-```c++
+```cpp
 #define PJON_INCLUDE_TL //Definition to enable ThroughLora strategy
 
 #include <PJON.h> //PJON header
@@ -28,7 +28,7 @@ bus.strategy.setPins(10,9,2); //CS pin, Reset pin, Interrupt pin
 bus.strategy.setFrequency(868100000UL); //initialize 868 MHZ module
 ```
 
-#### Supported Shields/Modules
+### Supported Shields/Modules
 | Manufacturer                          | Hardware                                                     |
 | ------------------------------------- | ------------------------------------------------------------ |
 | [Dragino](http://www.dragino.com/)    | [Dragino Lora Shield](http://www.dragino.com/products/module/item/102-lora-shield.html) |
@@ -36,7 +36,7 @@ bus.strategy.setFrequency(868100000UL); //initialize 868 MHZ module
 | [Modtronix](http://modtronix.com/)    | [inAir4](http://modtronix.com/inair4.html) / [inAir9](http://modtronix.com/inair9.html) / [inAir9B](http://modtronix.com/inair9b.html) |
 | [Adafruit](https://www.adafruit.com/) | [Adafruit Feather 32u4 LoRa Radio (RFM9x)](https://learn.adafruit.com/adafruit-feather-32u4-radio-with-lora-radio-module/overview) |
 
-#### Hardware connection
+### Hardware connection
 | General Wiring | Arduino |
 | -------------- | ------- |
 | VCC            | 3.3V    |
@@ -51,15 +51,15 @@ bus.strategy.setFrequency(868100000UL); //initialize 868 MHZ module
 - `NSS`, `NRESET`, and `DIO0` pins can be changed by using `PJON.strategy.setPins(ss, reset, dio0)`.
 - `DIO0` pin is optional, it is only needed for receive callback mode. If `DIO0` pin is used, it **must** be interrupt capable via [`attachInterrupt(...)`](https://www.arduino.cc/en/Reference/AttachInterrupt).
 
-#### Usage Example
+### Usage Example
 Here are listed basic examples of a transmitter and receiver code. After tou include the necessary code to initialize the Lora module you can use the normal PJON functions to handle data communication.
 
 Keep in mind that to use the LoRa startegy you must download the [Arduino LoRa library](https://github.com/sandeepmistry/arduino-LoRa).
 
 More examples can be found in https://github.com/gioblu/PJON/tree/master/examples/ARDUINO/Local/ThroughLoRa
 
-#### Transmitter
-```c++
+### Transmitter
+```cpp
 #define PJON_INCLUDE_TL
 
 #include <PJON.h>
@@ -78,9 +78,9 @@ void loop() {
 };
 ```
 
-#### Receiver
+### Receiver
 
-```c++
+```cpp
 #define PJON_INCLUDE_TL
 
 #include <PJON.h>
@@ -121,11 +121,11 @@ This API is a specific wrapper around the [Arduino-LoRa library](https://github.
 
 All the LoRa API is accessible through the exposed strategy in a PJON instance. Ex: `bus.strategy`
 
-#### Setup
+### Setup
 
 Initialize the library with the specified frequency.
 
-```c++
+```cpp
 bus.strategy.setFrequency(frequency);
 ```
 
@@ -133,11 +133,11 @@ bus.strategy.setFrequency(frequency);
 
 Returns `1` on success, `0` on failure.
 
-#### Set pins
+### Set pins
 
 Override the default `NSS`, `NRESET`, and `DIO0` pins used by the library. **Must** be called before `LoRa.begin()`.
 
-```c++
+```cpp
 bus.strategy.setPins(ss, reset, dio0);
 ```
 
@@ -147,50 +147,50 @@ bus.strategy.setPins(ss, reset, dio0);
 
 This call is optional and only needs to be used if you need to change the default pins used.
 
-#### Configuration
+### Configuration
 
-```c++
+```cpp
 int rssi = bus.strategy.packetRssi();
 ```
 Returns the RSSI of the received packet.
 
-```c++
+```cpp
 float snr = bus.strategy.packetSnr();
 ```
 Returns the estimated SNR of the received packet in dB.
 
-```c++
+```cpp
 bus.strategy.setSignalBandwidth(signalBandwidth);
 ```
 Change the signal bandwidth of the radio, `signalBandwidth` represents the signal bandwidth in Hz, defaults to `125E3`. Supported values are `7.8E3`, `10.4E3`, `15.6E3`, `20.8E3`, `31.25E3`, `41.7E3`, `62.5E3`, `125E3`, and `250E3`.
 
-```c++
+```cpp
 bus.strategy.setSpreadingFactor(spreadingFactor);
 ```
 Change the spreading factor of the radio. `spreadingFactor` represents the spreading factor, defaults to `7`. Supported values are between `6` and `12`. If a spreading factor of `6` is set, implicit header mode must be used to transmit and receive packets.
 
-```c++
+```cpp
 bus.strategy.setCodingRate4(codingRateDenominator);
 ```
 Change the coding rate of the radio. `codingRateDenominator` represents denominator of the coding rate, defaults to `5`. Supported values are between `5` and `8`, these correspond to coding rates of `4/5` and `4/8`. The coding rate numerator is fixed at `4`.
 
-```c++
+```cpp
 bus.strategy.setPreambleLength(preambleLength);
 ```
 Change the preamble length of the radio. `preambleLength` represents preamble length in symbols, defaults to `8`. Supported values are between `6` and `65535`.
 
-```c++
+```cpp
 bus.strategy.setSyncWord(syncWord);
 ```
 Change the sync word of the radio. `syncWord` represents byte value to use as the sync word, defaults to `0x34`
 
-```c++
+```cpp
 bus.strategy.setCRC(false); //To disable CRC
 bus.strategy.setCRC(true); // To enable CRC
 ```
 Enable or disable CRC usage, by default a CRC is not used.
 
-```c++
+```cpp
 LoRa.setTxPower(txPower); //Configure the radio TX power
 
 LoRa.setTxPower(txPower, outputPin); //Configure the radio TX power with extra boost pin
@@ -204,20 +204,20 @@ Supported values are between `2` and `17` for `PA_OUTPUT_PA_BOOST_PIN`, `0` and 
 
 Most modules have the PA output pin connected to PA BOOST.
 
-```c++
+```cpp
 bus.strategy.idle();
 ```
 Put the radio in idle (standby) mode.
 
-```c++
+```cpp
 bus.strategy.sleep();
 ```
 Put the radio in sleep mode.
 
-```c++
+```cpp
 byte b = bus.strategy.getRandom();
 ```
 Generate a random byte, based on the Wideband RSSI measurement.
 
-#### Safety warning
+### Safety warning
 In all cases, when installing or maintaining a PJON network, extreme care must be taken to avoid any danger. Before any practical test or hardware purchase for a wireless [ThroughLoRa](/src/strategies/ThroughLoRa) radio setup, compliance with government requirements and regulations must be ensured.

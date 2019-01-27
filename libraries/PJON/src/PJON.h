@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.1
+   |!y°o:\      |  __| |__| | \| v11.2
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -20,9 +20,9 @@ Compliant tools:
   https://github.com/fredilarsen/ModuleInterface
 - cython PJON wrapper by xlfe github user
   https://github.com/xlfe/PJON-cython
-- Command line PJON wrapper over pipes by Zbigniew Zasieczny (outdated)
+- Command line PJON wrapper over pipes by Zbigniew Zasieczny
   https://github.com/Girgitt/PJON-piper
-- PJON-python - PJON running on Python by Zbigniew Zasieczny (outdated)
+- PJON-python - PJON running on Python by Zbigniew Zasieczny
   https://github.com/Girgitt/PJON-python
 - PJON-gRPC - gRPC server-client by Oleg Galitskiy (outdated)
   https://github.com/Galitskiy/PJON-gRPC
@@ -31,6 +31,8 @@ Credits to contributors:
 - Fred Larsen: Systems engineering, header driven communication, debugging
 - Zbigniew Zasieczny: WINX86 interface
 - Matheus Garbelini: ThroughLora strategy
+- sticilface github user: SoftwareBitBang Teensy support, ThroughSerialAsync
+- xlfe github user: LINUX serial support
 - osman-aktepe github user: SoftwareBitBang STM32F1 support
 - Jorgen-VikingGod github user: SoftwareBitBang ESP32 support
 - drtrigon github user: LINUX ThroughSerial examples, missing warning report
@@ -39,7 +41,6 @@ Credits to contributors:
 - budaics github user: ATtiny85 16MHz external clock testing and wiki page
 - Pantovich github user: Update returning number of packets to be delivered
 - Adrian Sławiński: Fix to enable SimpleModbusMasterV2 compatibility
-- SticilFace github user: SoftwareBitBang Teensy support
 - Esben Soeltoft: SoftwareBitBang Arduino Zero support
 - Alex Grishin: SoftwareBitBang ESP8266 support
 - Andrew Grande: Testing, support, bugfix
@@ -75,7 +76,7 @@ Thank you and happy tinkering!
 This software is experimental and it is distributed "AS IS" without any
 warranty, use it at your own risk.
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -90,9 +91,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include <interfaces/PJON_Interfaces.h>
-#include <PJONDefines.h>
-#include <strategies/PJON_Strategies.h>
+#include "interfaces/PJON_Interfaces.h"
+#include "PJONDefines.h"
+#include "strategies/PJON_Strategies.h"
 
 template<typename Strategy>
 class PJON {
@@ -136,7 +137,7 @@ class PJON {
        PJON bus(my_bys, 1); */
 
     PJON(const uint8_t *b_id, uint8_t device_id) : strategy(Strategy()) {
-      copy_bus_id(bus_id, b_id);
+      PJONTools::copy_bus_id(bus_id, b_id);
       _device_id = device_id;
       set_default();
     };
@@ -215,10 +216,10 @@ class PJON {
         destination[index++] = PJON_crc8::compute((uint8_t *)destination, 3);
       }
       if(header & PJON_MODE_BIT) {
-        copy_bus_id((uint8_t*) &destination[index], b_id);
+        PJONTools::copy_bus_id((uint8_t*) &destination[index], b_id);
         index += 4;
         if(header & PJON_TX_INFO_BIT) {
-          copy_bus_id((uint8_t*) &destination[index], bus_id);
+          PJONTools::copy_bus_id((uint8_t*) &destination[index], bus_id);
           index += 4;
         }
       }
@@ -322,7 +323,7 @@ class PJON {
             info.sender_id == actual_info.receiver_id &&
             (
               !(info.header & PJON_MODE_BIT) ? true :
-              bus_id_equality(
+              PJONTools::bus_id_equality(
                 info.receiver_bus_id,
                 actual_info.receiver_bus_id
               )
@@ -370,46 +371,20 @@ class PJON {
           + (header & PJON_PORT_BIT      ?  2 : 0)
           + (
               (
-                (header & PJON_ACK_MODE_BIT) ||
-                (header & PJON_PACKET_ID_BIT)
+                (
+                  (header & PJON_ACK_MODE_BIT) &&
+                  (header & PJON_TX_INFO_BIT)
+                ) || (header & PJON_PACKET_ID_BIT)
               ) ? 2 : 0
             )
-          + 1 // Header
-          + 1 // Header CRC
+          + 2 // header + header's CRC
       );
     };
 
     /* Fill a PJON_Packet_Info struct with data parsing a packet: */
 
     void parse(const uint8_t *packet, PJON_Packet_Info &packet_info) const {
-      memset(&packet_info, 0, sizeof packet_info);
-      uint8_t index = 0;
-      packet_info.receiver_id = packet[index++];
-      bool extended_length = packet[index] & PJON_EXT_LEN_BIT;
-      packet_info.header = packet[index++];
-      index += extended_length + 2; // + LENGTH + HEADER CRC
-      if(packet_info.header & PJON_MODE_BIT) {
-        copy_bus_id(packet_info.receiver_bus_id, packet + index);
-        index += 4;
-        if(packet_info.header & PJON_TX_INFO_BIT) {
-          copy_bus_id(packet_info.sender_bus_id, packet + index);
-          index += 4;
-        }
-      }
-      if(packet_info.header & PJON_TX_INFO_BIT)
-        packet_info.sender_id = packet[index++];
-      #if(PJON_INCLUDE_ASYNC_ACK || PJON_INCLUDE_PACKET_ID)
-        if(((packet_info.header & PJON_ACK_MODE_BIT) &&
-            (packet_info.header & PJON_TX_INFO_BIT)
-          ) || packet_info.header & PJON_PACKET_ID_BIT
-        ) {
-          packet_info.id =
-            (packet[index] << 8) | (packet[index + 1] & 0xFF);
-          index += 2;
-        }
-      #endif
-      if(packet_info.header & PJON_PORT_BIT)
-        packet_info.port = (packet[index] << 8) | (packet[index + 1] & 0xFF);
+      PJONTools::parse_header(packet, packet_info);
       packet_info.custom_pointer = _custom_pointer;
     };
 
@@ -437,7 +412,7 @@ class PJON {
           if(
             (
               !_router &&
-              ((data[1] & PJON_MODE_BIT) != (config & PJON_MODE_BIT))
+              ((config & PJON_MODE_BIT) && !(data[1] & PJON_MODE_BIT))
             ) || (
               data[0] == PJON_BROADCAST &&
               ((data[1] & PJON_ACK_MODE_BIT) || (data[1] & PJON_ACK_REQ_BIT))
@@ -478,12 +453,15 @@ class PJON {
           if(length > 15 && !(data[1] & PJON_CRC_BIT)) return PJON_BUSY;
         }
 
-        if((i >= 1) && (data[1] & PJON_MODE_BIT) && !_router)
-          if(
-            (i > (uint8_t)(3 + extended_length)) &&
-            (i < (uint8_t)(8 + extended_length))
-          ) if(bus_id[i - 4 - extended_length] != data[i])
-              return PJON_BUSY;
+        if(
+          ((data[1] & PJON_MODE_BIT) && !_router) &&
+          (i > (uint8_t)(3 + extended_length)) &&
+          (i < (uint8_t)(8 + extended_length))
+        ) {
+          if(config & PJON_MODE_BIT) {
+            if(bus_id[i - 4 - extended_length] != data[i]) return PJON_BUSY;
+          } else if(data[i] != 0) return PJON_BUSY; // Do not reject localhost
+        }
       }
 
       if(
@@ -532,7 +510,7 @@ class PJON {
             filter = true;
           }
         }
-        if(filter && known_packet_id(last_packet_info))
+        if(filter && known_packet_id(last_packet_info) && !_router)
           return PJON_ACK;
       #endif
 
@@ -582,7 +560,7 @@ class PJON {
           if(actual_info.receiver_id == packet_info.sender_id && (
             (!(actual_info.header & PJON_MODE_BIT) &&
              !(packet_info.header & PJON_MODE_BIT)) ? true :
-              bus_id_equality(
+              PJONTools::bus_id_equality(
                 actual_info.receiver_bus_id,
                 packet_info.sender_bus_id
               )
@@ -641,7 +619,7 @@ class PJON {
           packet,
           length,
           0,
-          header,
+          ((header == PJON_NO_HEADER) ? last_packet_info.header : header),
           p_id,
           requested_port
         );
@@ -692,9 +670,9 @@ class PJON {
     ) {
       uint8_t original_device_id = _device_id;
       uint8_t original_bus_id[4];
-      copy_bus_id(original_bus_id, bus_id);
+      PJONTools::copy_bus_id(original_bus_id, bus_id);
       set_id(sender_id);
-      copy_bus_id(bus_id, sender_bus_id);
+      PJONTools::copy_bus_id(bus_id, sender_bus_id);
       uint16_t result = PJON_FAIL;
       #if(PJON_MAX_PACKETS > 0)
         result = dispatch(
@@ -705,7 +683,7 @@ class PJON {
         result = send_packet_blocking(
           id, b_id, string, length, header, p_id, requested_port
         );
-      copy_bus_id(bus_id, original_bus_id);
+      PJONTools::copy_bus_id(bus_id, original_bus_id);
       set_id(original_device_id);
       return result;
     };
@@ -768,7 +746,7 @@ class PJON {
 
     uint16_t send_packet(
       uint8_t id,
-      char *string,
+      const char *string,
       uint16_t length,
       uint8_t  header = PJON_NO_HEADER,
       uint16_t p_id = 0,
@@ -783,7 +761,7 @@ class PJON {
     uint16_t send_packet(
       uint8_t id,
       const uint8_t *b_id,
-      char *string,
+      const char *string,
       uint16_t length,
       uint8_t  header = PJON_NO_HEADER,
       uint16_t p_id = 0,
@@ -927,7 +905,8 @@ class PJON {
 
     void set_default() {
       _mode = PJON_HALF_DUPLEX;
-      if(!bus_id_equality(bus_id, localhost)) set_shared_network(true);
+      if(!PJONTools::bus_id_equality(bus_id, localhost))
+        set_shared_network(true);
       set_error(PJON_dummy_error_handler);
       set_receiver(PJON_dummy_receiver_handler);
       for(uint16_t i = 0; i < PJON_MAX_PACKETS; i++) {
@@ -1058,8 +1037,11 @@ class PJON {
           if(!packets[i].timing) {
             if(
               _auto_delete && (
-                (packets[i].length == packet_overhead(packets[i].content[1])
-              && async_ack ) || !(packets[i].content[1] & PJON_ACK_MODE_BIT))
+                (
+                  packets[i].length == packet_overhead(packets[i].content[1])
+                  && async_ack
+                ) || !(packets[i].content[1] & PJON_ACK_MODE_BIT)
+              )
             ) {
               remove(i);
               packets_count--;
@@ -1106,13 +1088,14 @@ class PJON {
               (
                 (info.header & PJON_MODE_BIT) &&
                 (recent_packet_ids[i].header & PJON_MODE_BIT) &&
-                bus_id_equality(
+                PJONTools::bus_id_equality(
                   (uint8_t *)info.sender_bus_id,
                   (uint8_t *)recent_packet_ids[i].sender_bus_id
                 )
-              ) ||
-              !(info.header & PJON_MODE_BIT) &&
-              !(recent_packet_ids[i].header & PJON_MODE_BIT)
+              ) || (
+                !(info.header & PJON_MODE_BIT) &&
+                !(recent_packet_ids[i].header & PJON_MODE_BIT)
+              )
             )
           ) return true;
         save_packet_id(info);
@@ -1129,23 +1112,11 @@ class PJON {
         recent_packet_ids[0].id = info.id;
         recent_packet_ids[0].header = info.header;
         recent_packet_ids[0].sender_id = info.sender_id;
-        copy_bus_id(recent_packet_ids[0].sender_bus_id, info.sender_bus_id);
+        PJONTools::copy_bus_id(
+          recent_packet_ids[0].sender_bus_id,
+          info.sender_bus_id
+        );
       #endif
-    };
-
-    /* Check equality between two bus ids */
-
-    static bool bus_id_equality(const uint8_t *n_one, const uint8_t *n_two) {
-      for(uint8_t i = 0; i < 4; i++)
-        if(n_one[i] != n_two[i])
-          return false;
-      return true;
-    };
-
-    /* Copy a bus id: */
-
-    static void copy_bus_id(uint8_t dest[], const uint8_t src[]) {
-      memcpy(dest, src, 4);
     };
 
   private:

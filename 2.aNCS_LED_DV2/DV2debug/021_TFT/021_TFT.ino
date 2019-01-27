@@ -59,15 +59,21 @@ void setup() {
 }
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
      if(payload[0] != '\0'){ // if the payload isn't null
-      const char arr = payload;
-      uint8_t id = packet_info.sender_id; //prepare the packet ...
-        txt(arr,length,id); // ... and send to the TFT
+      const char * arr = payload;
+      String str = "";
+      str.concat(arr);
+      if(str.startsWith("ack")){}
+      else
+      {
+        uint8_t id = packet_info.sender_id; //prepare the packet ...
+        txt(payload,length,id); // ... and send to the TFT
           /*
           for(uint8_t i = 0; i < length; i++) {
             Serial.print(char( payload[i]));
           }
     Serial.println(" ");
     */
+     }
     }
 }
 
@@ -151,4 +157,3 @@ unsigned long menuScreen() {
     tft.setCursor(0, 90);
     return micros() - start;
 }
-

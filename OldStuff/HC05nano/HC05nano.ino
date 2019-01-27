@@ -12,7 +12,7 @@ void setup()
   digitalWrite(9, HIGH);
   Serial.println("Enter a command");
   BTSerial.begin(38400);
-  //BTSerial.write("AT+BAUD6");
+  BTSerial.write("HELLOO");
   Wire.begin();
 }
 

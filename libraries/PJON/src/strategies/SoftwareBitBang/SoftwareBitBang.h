@@ -1,11 +1,11 @@
 
 /* SoftwareBitBang
-   1 or 2 wires software emulated digital communication data link layer
+   1 or 2 wires software emulated asynchronous serial data link layer
    used as a Strategy by PJON (included in version v3.0)
    Compliant with PJDL (Padded Jittering Data Link) specification v2.0
    ___________________________________________________________________________
 
-    Copyright 2010-2018 Giovanni Blu Mitolo gioscarab@gmail.com
+    Copyright 2010-2019 Giovanni Blu Mitolo gioscarab@gmail.com
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,15 +21,6 @@
 
 #pragma once
 
-/* - 1 mode performance:
-     Speed: 16.949kBb or 2.11kB/s
-     Promiscuous architecture/clock compatible
-   - 2 mode performance:
-     Speed: 21.505kBd or 2.68kB/s
-     Promiscuous architecture/clock compatible
-   - 3 mode performance:
-     Architecture/setup dependant, see Timing.h */
-
 /* Set here the selected transmission mode - default STANDARD */
 #ifndef SWBB_MODE
   #define SWBB_MODE         1
@@ -41,6 +32,10 @@
 // Used for pin handling
 #define SWBB_NOT_ASSIGNED 255
 
+/* Transmission speed modes (see Timing.h)
+   MODE   1: 1.95kB/s - 15625Bd
+   MODE   2: 2.21kB/s - 17696Bd
+   MODE   3: 2.94kB/s - 23529Bd */
 #include "Timing.h"
 
 class SoftwareBitBang {
@@ -104,17 +99,17 @@ class SoftwareBitBang {
 
     uint8_t read_byte() {
       uint8_t byte_value = 0B00000000;
-      /* Delay until the center of the first bit */
+      // Delay until the center of the first bit
       PJON_DELAY_MICROSECONDS(SWBB_BIT_WIDTH / 2);
       for(uint8_t i = 0; i < 7; i++) {
-        /* Read in the center of the n one */
+        // Read in the center of the bit
         byte_value += PJON_IO_READ(_input_pin) << i;
-        /* Delay until the center of the next one */
+        // Delay until the center of the next one
         PJON_DELAY_MICROSECONDS(SWBB_BIT_WIDTH);
       }
-      /* Read in the center of the last one */
+      // Read in the center of the last one
       byte_value += PJON_IO_READ(_input_pin) << 7;
-      /* Delay until the end of the bit */
+      // Delay until the end of the last bit
       PJON_DELAY_MICROSECONDS(SWBB_BIT_WIDTH / 2);
       return byte_value;
     };
@@ -128,18 +123,17 @@ class SoftwareBitBang {
     };
 
 
-    /* Receive byte response */
+    /* Receive byte response:
+       Transmitter emits a SWBB_BIT_WIDTH / 4 long bit and tries
+       to get a response cyclically for SWBB_RESPONSE_TIMEOUT microseconds.
+       Receiver synchronizes to the falling edge of the last incoming
+       bit and transmits PJON_ACK */
 
     uint16_t receive_response() {
       if(_output_pin != _input_pin && _output_pin != SWBB_NOT_ASSIGNED)
         PJON_IO_WRITE(_output_pin, LOW);
-
       uint16_t response = SWBB_FAIL;
       uint32_t time = PJON_MICROS();
-      /* Transmitter emits a SWBB_BIT_WIDTH / 4 long bit and tries
-         to get a response cyclically for SWBB_RESPONSE_TIMEOUT microseconds.
-         Receiver synchronizes to the falling edge of the last incoming
-         bit and transmits PJON_ACK */
       while(
         response == SWBB_FAIL &&
         (uint32_t)(PJON_MICROS() - SWBB_RESPONSE_TIMEOUT) <= time
@@ -163,7 +157,7 @@ class SoftwareBitBang {
       uint16_t result;
       if(max_length == PJON_PACKET_MAX_LENGTH) {
         uint32_t time = PJON_MICROS();
-        // Look for frame initializer
+        // Look for a frame initializer
         if(!sync() || !sync() || !sync()) return SWBB_FAIL;
         // Check its timing consistency
         if(
@@ -210,16 +204,15 @@ class SoftwareBitBang {
     };
 
 
-    /* Send byte response to package transmitter */
+    /* Send byte response:
+       Transmitter sends a SWBB_BIT_WIDTH / 4 microseconds long HIGH bit and
+       tries to receive a response cyclically for SWBB_RESPONSE_TIMEOUT
+       microseconds. Receiver synchronizes to the falling edge of the last
+       incoming bit and transmits its response */
 
     void send_response(uint8_t response) {
       PJON_IO_PULL_DOWN(_input_pin);
       uint32_t time = PJON_MICROS();
-      /* Transmitter emits a bit SWBB_BIT_WIDTH / 4 long and tries
-         to get a response cyclically for SWBB_RESPONSE_TIMEOUT microseconds.
-         Here Receiver synchronizes to the falling edge of the last incoming
-         bit and transmits response variable */
-
       while( // If initially low Wait for the next high
         ((uint32_t)(PJON_MICROS() - time) < SWBB_BIT_WIDTH) &&
         !PJON_IO_READ(_input_pin)
@@ -235,10 +228,10 @@ class SoftwareBitBang {
     };
 
 
-    /* The string is prepended with a 3 synchronization pads initializer that
-       ensures separation and consistency.
+    /* The string is prepended with a frame initializer composed by 3
+       synchronization pads to signal the start of a frame.
      _________________ __________________________________
-    |   STRING INIT   | DATA 1-65535 bytes               |
+    |   FRAME INIT    | DATA 1-65535 bytes               |
     |_____ _____ _____|________________ _________________|
     |Sync |Sync |Sync |Sync | Byte     |Sync | Byte      |
     |___  |___  |___  |___  |     __   |___  |      _   _|
@@ -250,7 +243,7 @@ class SoftwareBitBang {
 
     void send_string(uint8_t *string, uint16_t length) {
       PJON_IO_MODE(_output_pin, OUTPUT);
-      // Send string init
+      // Send frame initializer
       for(uint8_t i = 0; i < 3; i++) {
         PJON_IO_WRITE(_output_pin, HIGH);
         PJON_DELAY_MICROSECONDS(SWBB_BIT_SPACER);
@@ -281,23 +274,15 @@ class SoftwareBitBang {
     communication is detected at byte level: */
 
     bool sync() {
-      /* Initialize the pin and set it to LOW to reduce interference */
       PJON_IO_PULL_DOWN(_input_pin);
       if((_output_pin != _input_pin) && (_output_pin != SWBB_NOT_ASSIGNED))
         PJON_IO_PULL_DOWN(_output_pin);
-
       uint32_t time = PJON_MICROS();
-      /* Do nothing until the pin goes LOW or passed more time than
-         SWBB_BIT_SPACER duration */
       while(
         PJON_IO_READ(_input_pin) &&
         ((uint32_t)(PJON_MICROS() - time) <= SWBB_BIT_SPACER)
       );
-      /* Save how much time passed */
       time = PJON_MICROS() - time;
-      /* it is for sure equal or less than SWBB_BIT_SPACER, if is more
-         than ACCEPTANCE, or minimum HIGH duration, and what is coming after
-         is a LOW bit probably a byte is coming so try to receive it. */
       if(time < SWBB_ACCEPTANCE)
         return false;
       else {
