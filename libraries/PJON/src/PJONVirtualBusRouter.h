@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.1
+   |!y°o:\      |  __| |__| | \| v11.2
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -39,7 +39,7 @@ Thank you and happy tinkering!
 This software is experimental and it is distributed "AS IS" without any
 warranty, use it at your own risk.
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -54,8 +54,12 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include <PJONDynamicRouter.h>
+#include "PJONDynamicRouter.h"
 
+// If none of your devices have a device id above a specific number,
+// you can save some bytes of RAM by lowering this constant.
+// The constant must be higher than the highest device id that
+// can be encountered, and will limit the router to this range.
 #ifndef PJON_VIRTUALBUS_MAX_DEVICES
   #define PJON_VIRTUALBUS_MAX_DEVICES 255
 #endif
@@ -111,14 +115,14 @@ protected:
 
       bool disable_ack = true;
       RouterClass::send_packet(payload, length, receiver_bus, sender_bus, disable_ack, info);
-      #ifdef DEBUG_PRINT
+      #ifdef DEBUG_PRINT_PACKETS
       Serial.print(F("FORWARD NOACK ")); Serial.print(info.receiver_id); Serial.print(F(" to bus "));
       Serial.println(receiver_bus);
       #endif
-    } 
+    }
     else {
       RouterClass::send_packet(payload, length, receiver_bus, sender_bus, ack_sent, packet_info);
-      #ifdef DEBUG_PRINT
+      #ifdef DEBUG_PRINT_PACKETS
       Serial.print(F("FORWARD ")); Serial.print(packet_info.receiver_id); Serial.print(F(" to bus "));
       Serial.println(receiver_bus);
       #endif

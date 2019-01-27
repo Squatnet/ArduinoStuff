@@ -12,17 +12,6 @@ uint8_t remote_ip[] = { 192, 1, 1, 150 };
 // <Strategy name> bus(selected device id)
 PJON<GlobalUDP> bus(44);
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Receiver started.");
-  Ethernet.begin(mac, local_ip, gateway, gateway, subnet);
-
-  bus.strategy.add_node(45, remote_ip, 16000);
-  bus.strategy.set_port(16001);
-  bus.set_receiver(receiver_function);
-  bus.begin();
-};
-
 uint32_t cnt = 0;
 uint32_t start = millis();
 
@@ -31,13 +20,23 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     cnt++;
     bus.reply("P", 1);
   }
-}
+};
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Receiver started.");
+  Ethernet.begin(mac, local_ip, gateway, gateway, subnet);
+
+  bus.strategy.add_node(45, remote_ip);
+  bus.set_receiver(receiver_function);
+  bus.begin();
+};
 
 void loop() {
   bus.receive();
   bus.update();
 
-  if (millis() - start > 1000) {
+  if(millis() - start > 1000) {
     start = millis();
     Serial.print("PING/s: "); Serial.println(cnt);
     cnt = 0;

@@ -9,8 +9,13 @@
   #include <WiFiUdp.h>
   #define PJON_ESP
 #else
-  #include <Ethernet.h>
-  #include <EthernetUdp.h>
+  #ifdef PJON_ETHERNET2
+    #include <Ethernet2.h>
+    #include <EthernetUdp2.h>
+  #else
+    #include <Ethernet.h>
+    #include <EthernetUdp.h>
+  #endif
 #endif
 
 class UDPHelper {
@@ -31,7 +36,10 @@ public:
     return udp.begin(_port);
   }
 
-  int16_t receive_string(uint8_t *string, uint16_t max_length) {
+  uint16_t receive_string(uint8_t *string, uint16_t max_length) {
+    #ifdef PJON_ESP
+    udp.flush(); // Empty receive buffer so it is prepared for new packet
+    #endif
     uint16_t packetSize = udp.parsePacket();
     if(packetSize > 0) {
       uint32_t header = 0;
@@ -58,6 +66,10 @@ public:
     }
   }
 
+  void send_response(uint8_t *string, uint16_t length) {
+    send_string(string, length, udp.remoteIP(), udp.remotePort());
+  }
+
   void send_response(uint8_t response) {
     send_string(&response, 1, udp.remoteIP(), udp.remotePort());
   }
@@ -80,4 +92,10 @@ public:
   }
 
   void set_magic_header(uint32_t magic_header) { _magic_header = magic_header; }
+
+  void get_sender(uint8_t *ip, uint16_t &port) {
+    uint32_t ip_address = udp.remoteIP();
+    memcpy(ip, &ip_address, 4);
+    port = udp.remotePort();
+  }
 };

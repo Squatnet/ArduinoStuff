@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.1
+   |!y°o:\      |  __| |__| | \| v11.2
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -30,7 +30,7 @@ Thank you and happy tinkering!
 This software is experimental and it is distributed "AS IS" without any
 warranty, use it at your own risk.
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+Copyright 2010-2019 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -46,14 +46,14 @@ limitations under the License. */
 
 #pragma once
 
-#include <PJONSimpleSwitch.h>
+#include "PJONSimpleSwitch.h"
 
 class PJONAny : public PJONBus<Any> {
 public:
   PJONAny(
     StrategyLinkBase *link,
     const uint8_t id = PJON_NOT_ASSIGNED,
-    const uint32_t receive_time_in = 1000,
+    const uint32_t receive_time_in = 0,
     const uint8_t num_device_id_segments = 1,
     const uint8_t device_id_segment = 0
   ) : PJONBus<Any>(
@@ -69,7 +69,7 @@ public:
     StrategyLinkBase *link,
     const uint8_t bus_id[],
     const uint8_t id = PJON_NOT_ASSIGNED,
-    const uint32_t receive_time_in = 1000,
+    const uint32_t receive_time_in = 0,
     const uint8_t num_device_id_segments = 1,
     const uint8_t device_id_segment = 0
   ) : PJONBus<Any>(

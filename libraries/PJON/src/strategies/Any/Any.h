@@ -7,7 +7,7 @@
    Proposed and developed by Fred Larsen
    ___________________________________________________________________________
 
-    Copyright 2010-2018 Giovanni Blu Mitolo gioscarab@gmail.com
+    Copyright 2010-2019 Giovanni Blu Mitolo gioscarab@gmail.com
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <strategies/Any/StrategyLinkBase.h>
-#include <strategies/Any/StrategyLink.h>
+#include "StrategyLinkBase.h"
+#include "StrategyLink.h"
 
 class Any {
 public:
