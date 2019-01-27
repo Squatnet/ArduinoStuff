@@ -32,8 +32,8 @@ void menu(int a){
 } 
 
 void setup() {
-  Serial.begin(9600);
-  Serial.println("Starting Host BT Connection");
+  //Serial.begin(9600);
+  //Serial.println("Starting Host BT Connection");
   fL(b,3){ pinMode(leds[b], OUTPUT ); }
   BTSerial.begin(38400); //HC05
   bus.strategy.set_pin(12); //PJON 
@@ -55,7 +55,7 @@ void loop() {
     } 
     if(string.substring(1,2) == "B") { // A/B/C
       bus.send_packet(10, bus_id, "#2", 2); // send TFT recognition of Menu selection
-      menu(1); // run menu LED     
+      menu(1); // run menu LED     7
     } 
     if(string.substring(1,2) == "C") { // A/B/C
       bus.send_packet(10, bus_id, "#3", 2); // send TFT recognition of Menu selection
@@ -65,17 +65,17 @@ void loop() {
   if(string.startsWith("R")){
     string.remove(0,1);
     char buff[string.length()+1];
-    string.toCharArray(buff,string.length());
+    string.toCharArray(buff,string.length()+1);
     bus.send_packet(30,buff,string.length()+1);
   }
   if (string != ""){
-            Serial.println(string); //Output the message to serial
+            //Serial.println(string); //Output the message to serial
             //bus.send_packet(10, bus_id, "Hi!", 3);
             bus.send_packet(10, bus_id, strS, sizeof(strS)); // send the string to TFT
             //bus.send_packet(30, bus_id, strS, sizeof(strS)); // send the string to 022_R
             string =""; //clear the buffer/message
         }
  bus.update(); // update and prepare to send in loop
-  if (Serial.available())
-    BTSerial.write(Serial.read());
+  //if (Serial.available())
+    //BTSerial.write(Serial.read());
 }

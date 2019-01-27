@@ -37,7 +37,7 @@ MCUFRIEND_kbv tft; // assign tft mcufriend related stuff to an alias - tft
 void progmemPrint(const char *str);
 void progmemPrintln(const char *str);
 //height of font, top of text, amount of lines, scroll function
-int16_t ht = 8, top = 5, line, lines = 30, scroll;
+int16_t ht = 8, top = 5, line, lines = 45, scroll;
 
 // the following definition will be removed and the string length will be counted instead using += operator) Debug only!
 #define COUNT 200 // CALIBRATE THIS NUMBER TO DETERMINE WHEN RESET SCRIPT KICKS IN (after how many messages received) 
@@ -106,8 +106,10 @@ unsigned long txt(uint8_t *payload,uint16_t length,int sender) {
     tft.vertScroll(top * ht, lines * ht, (scroll) * ht);
     tft.setTextSize(1); // System font is 8 pixels.  ht = 8*2=16
     String newline = "";
-     for(uint8_t i = 0; i < length; i++) {
+    uint8_t i = 0; 
+     while(i != '\0') {
       tft.print(char( payload[i]));
+      i++;
     }
     tft.print(" sender: ");
     tft.println(sender);
