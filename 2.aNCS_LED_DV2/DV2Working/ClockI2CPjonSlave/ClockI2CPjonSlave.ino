@@ -1,7 +1,6 @@
 /*
-* @todo Make slaves react to clock pulses and bpm changes
-* @body Slave devices should be ready to receive a float from master indicating a change in BPM, They should also run a function on receiving a clock pulse from master
-*/
+ * 
+ */
 // Varidaic Debug Macro //
 #define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
@@ -17,7 +16,10 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Type,Name "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+String regString = "Reg,WNI,Clock "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+// i2c stuff //
+#include <Wire.h>
+#define I2CADDR  8
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
 #include <PJONSlave.h>  // Coz we are inslave mode .
@@ -29,8 +31,11 @@ bool debugMode = false; // Are we debugging
 uint32_t t_millis; // tick tock
 int ourID = 255; // Our ID number 
 unsigned long DELAY_TIME = 15000; // 1.5 sec
+unsigned long DELAY_2_TIME = 10000;
 unsigned long delayStart = 0; // the time the delay started
+unsigned long delay2Start = 0;
 bool delayRunning = false; // true if still waiting for delay to finish
+bool delay2Running = false;
 
 
 // Shows free ram 
@@ -41,6 +46,13 @@ int freeRam () {
 }
 // Program vars //
 String string = ""; // holder for our Pjon Message
+String sendStr = "";
+int ticks = 0;
+float bpm1 = 0;
+float bpm2 = 0;
+float bpm3 = 0;
+float bpm4 = 0;
+float bpm = 0;
 bool ack = false; // Master has registered us?
 void(* resetFunc) (void) = 0; // Software reset hack
 
@@ -78,7 +90,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       delay(160); // makes the delay about 500ms between retrys
      
  }
-  Serial.flush(); // wait til serial is printed
+  DFLUSH(); // wait til serial is printed
 };
 
 // PJON RECEIVER CODE
@@ -88,7 +100,7 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   if( string.startsWith("ack")){ // master got our registation message!
     ack = true; // nice
     string = ""; // thats all it says!
-    DPRINT("Heard from server : "); 
+    DPRINT("Heard from server"); 
   }
   else parser(); // whats it say then ?? 
   // prints it to the console letter by letter
@@ -98,7 +110,7 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
     DPRINT(" ");
   }
   DPRINTLN();
-  Serial.flush();
+  DFLUSH();
   
 };
 // Reads an incoming control message
@@ -127,9 +139,30 @@ void parser(){
   DPRINTLN(string);
   string = ""; // empty it
 };
+void sendMaster(String str){ 
+  DPRINT("SENDING TO MASTER");
+  const char pkt[str.length()+1]; // Create array
+  str.toCharArray(pkt,str.length()+1); // Convert string to Char[]
+  bus.send(254,pkt,str.length()+1); // Send the packet to master. 
+  DPRINTLN(pkt);
+};
+void receiveEvent(int howMany) {
+  DPRINTLN("GOT I2C");
+  while (Wire.available()) { // loop through all but the last
+    char c = Wire.read(); // receive byte as a characte  DONT GIVE A FUCK.
+  }
+  ticks++; // count the messages
+  DPRINT("Tick ");
+  DPRINTLN(ticks);
+}
+
 void setup() {  // SETUP 
-  Serial.begin(115200); // Serial console
+  DBEGIN(115200); // Serial console
   DPRINT("Setup ");
+  Wire.begin(8);              // join i2c bus with address #8
+  DPRINT(". ");
+  Wire.onReceive(receiveEvent);
+  DPRINT(". ");
   bus.set_error(error_handler); // link PJON to error handler
   DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
@@ -144,6 +177,8 @@ void setup() {  // SETUP
   DPRINT(". ");
   delayStart = millis();
   delayRunning = true;
+  delay2Start = millis();
+  delay2Running = true;
   DPRINTLN("Done!!!");
   
   // SETUP FINISHES
@@ -169,12 +204,33 @@ void loop() {
       acquired = true;
       ack = true;
     }
+    
     delayStart += DELAY_TIME; // No id has been assigned and 15s have elapsed
   }
+  if (delay2Running && ((millis() - delay2Start) >= DELAY_2_TIME)) {
+      DPRINTLN("Computing BPM");
+      DPRINT("TPS READ : ");
+      float ticksPerSec = float (ticks / 10.0);
+      ticks = 0;
+      DPRINT(ticksPerSec);
+      bpm2 = bpm1;
+      bpm1 = bpm;
+      DPRINT(" - NEW BPM : ");
+      bpm = float(ticksPerSec * 60);
+      if(bpm1 == 0)bpm1 = bpm;
+      if(bpm2 == 0)bpm2 = bpm;
+      DPRINTLN(bpm);
+      float avgBPM = ( (bpm + bpm1 + bpm2) / 3 );
+      String msg = "Clk,";
+      msg.concat(String(avgBPM));
+      msg.concat(",");
+      sendMaster(msg);
+      delay2Start += DELAY_2_TIME;
+      }
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) { // we have an id, but havent regisrtered
     DPRINT("Acquired device id: ");
     DPRINTLN(bus.device_id()); 
-    Serial.flush();
+    DFLUSH();
     delay(100);
     acquired = true; // track that
     tellMasterAboutSelf(); // and register

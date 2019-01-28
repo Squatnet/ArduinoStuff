@@ -1,7 +1,3 @@
-/*
-* @todo Make slaves react to clock pulses and bpm changes
-* @body Slave devices should be ready to receive a float from master indicating a change in BPM, They should also run a function on receiving a clock pulse from master
-*/
 // Varidaic Debug Macro //
 #define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
@@ -17,7 +13,10 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Type,Name "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+String regString = "Reg,WNI,Name "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+// i2c stuff //
+#include <Wire.h>
+#define I2CADDR  8
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
 #include <PJONSlave.h>  // Coz we are inslave mode .
@@ -41,6 +40,7 @@ int freeRam () {
 }
 // Program vars //
 String string = ""; // holder for our Pjon Message
+String i2cStr = "";
 bool ack = false; // Master has registered us?
 void(* resetFunc) (void) = 0; // Software reset hack
 
@@ -78,7 +78,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       delay(160); // makes the delay about 500ms between retrys
      
  }
-  Serial.flush(); // wait til serial is printed
+  DFLUSH(); // wait til serial is printed
 };
 
 // PJON RECEIVER CODE
@@ -88,7 +88,7 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   if( string.startsWith("ack")){ // master got our registation message!
     ack = true; // nice
     string = ""; // thats all it says!
-    DPRINT("Heard from server : "); 
+    DPRINT("Heard from server"); 
   }
   else parser(); // whats it say then ?? 
   // prints it to the console letter by letter
@@ -98,7 +98,7 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
     DPRINT(" ");
   }
   DPRINTLN();
-  Serial.flush();
+  DFLUSH();
   
 };
 // Reads an incoming control message
@@ -127,9 +127,33 @@ void parser(){
   DPRINTLN(string);
   string = ""; // empty it
 };
+void sendMaster(String str){ 
+  DPRINT("SENDING TO MASTER");
+  const char pkt[str.length()+1]; // Create array
+  str.toCharArray(pkt,str.length()+1); // Convert string to Char[]
+  bus.send(254,pkt,str.length()+1); // Send the packet to master. 
+  DPRINTLN(pkt);
+};
+void receiveEvent(int howMany) {
+  DPRINTLN("GOT I2C");
+  while (Wire.available()) { // loop through all but the last
+    char c = Wire.read(); // receive byte as a characte   // print the character
+    i2cStr.concat(c);
+  }
+  DPRINTLN();
+  DPRINT("ASSEMBLED MESSAGE FROM I2C : ");
+  DPRINTLN(i2cStr);
+  sendMaster(i2cStr);
+  i2cStr = "";
+}
+
 void setup() {  // SETUP 
-  Serial.begin(115200); // Serial console
+  DBEGIN(115200); // Serial console
   DPRINT("Setup ");
+  Wire.begin(8);              // join i2c bus with address #8
+  DPRINT(". ");
+  Wire.onReceive(receiveEvent);
+  DPRINT(". ");
   bus.set_error(error_handler); // link PJON to error handler
   DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
@@ -174,7 +198,7 @@ void loop() {
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) { // we have an id, but havent regisrtered
     DPRINT("Acquired device id: ");
     DPRINTLN(bus.device_id()); 
-    Serial.flush();
+    DFLUSH();
     delay(100);
     acquired = true; // track that
     tellMasterAboutSelf(); // and register
