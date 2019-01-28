@@ -1,7 +1,8 @@
-/*
-* @todo Make slaves react to clock pulses and bpm changes
-* @body Slave devices should be ready to receive a float from master indicating a change in BPM, They should also run a function on receiving a clock pulse from master
-*/
+/**
+ * @todo Make slaves react to clock pulses and bpm changes
+ * @body Slave devices should be ready to receive a float from master indicating a change in BPM, They should also run a function on receiving a clock pulse from master
+ */
+ 
 // Varidaic Debug Macro //
 #define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
