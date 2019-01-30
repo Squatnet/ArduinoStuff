@@ -18,8 +18,8 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Type,Name "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
-#include <wire.h>
+String regString = "Reg,Strip,Left "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+#include <Wire.h>
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
 #include <PJONSlave.h>  // Coz we are inslave mode .
@@ -105,20 +105,37 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
 };
 // Reads an incoming control message
 void parser(){
-  while(string.length() >= 1){ // While there message left to read. 
+  while(string.length() >= 1){
+    DPRINTLN(string); // While there message left to read. 
     String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
     string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
     if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point
-    /* 
-     * Add your if staments here, Strips pattern code added for example
-     * if (subs.startsWith("ptn")){ // next value is pattern. 
-     *   String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
-     *   x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-     *   string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
-     *   }
-     *  
-     */
-   
+    if (subs.startsWith("Kick")){ // next value is pattern. 
+      Wire.beginTransmission(1);
+      Wire.write("Pulse,1");
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      Wire.endTransmission();
+      }
+    if (subs.startsWith("Snare")){ // next value is pattern. 
+      Wire.beginTransmission(2);
+      Wire.write("Pulse,1");
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      Wire.endTransmission();
+      }
+    if (subs.startsWith("HiHat")){ // next value is pattern. 
+      Wire.beginTransmission(3);
+      Wire.write("Pulse,1");
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      Wire.endTransmission();
+      }
+    if (subs.startsWith("Ctl")){
+     char c[string.length()+1];
+     string.toCharArray(c,string.length()+1);
+     for(int i = 1; i <= 4; i++){
+      Wire.beginTransmission(i);
+      Wire.write(c); 
+     }
+    }
    else {
       string.remove(0,string.indexOf(",")+1);
     DPRINTLN(string);

@@ -3,11 +3,11 @@
 #include <Arduino.h> // using c++ std lib now or some shit
 #include <PJONMaster.h> // Pjon Master
 #include <SoftwareSerial.h> // HC-05
+#include <Wire.h> // i2c
 // Define HW LEDs here (not yet implemented)
 #define MASTER_LED 22 // Basically is it on?
 #define PJON_ISSUE_LED 24 // Is there an issue?
-
-
+#define I2CADDR 8
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
@@ -42,6 +42,7 @@ bool PjonLedOn = false; // as yet not working
 bool msgSwitch = 0; // Set to true if message is needing to be sent
 String msgToSend = ""; // Container for the message
 int msgSendId = 0; // ID to send to
+String i2cMsg = "";
 
 // Function to remove gaps from the device arrays 
 // Designed to be called by removeDevice(id)
@@ -456,7 +457,7 @@ void parseMsg(int id, String msg) {
   }
   // Control a device - msg = Ctl,id#,MessgeToSend  OR  Ctl,Type,Name,MessgeToSend
  if (msg.startsWith("Ctl")){
-    msg.remove(0,msg.indexOf(',')+1); // get rid of "Ctl,"
+    //msg.remove(0,msg.indexOf(',')+1); // get rid of "Ctl,"
     Serial.println(msg);
     String idStr = msg.substring(0,msg.indexOf(',')); // take whatever comes before the next comma.
     int id = idStr.toInt(); // doing toInt() on something with any character other than a number in it results in 0 being returned
@@ -487,7 +488,21 @@ void parseMsg(int id, String msg) {
   msg = "";
   msgSendId = masterTerm;
  }
+if(msg.startsWith("Clk")){
+  for(int i=0; i< numStrip; i++){
+    id = strips[i].id;
+    bus.send(id,"Clk,1",7);
+    bus.update();
+  }
 }
+if(msg.startsWith("Kic")){
+  for(int i = 0; i < numStrip; i++){
+    id = strips[i].id;
+    bus.send(id,"Kick,1",7);
+    bus.update();
+  }
+}
+};
 // PJON Reciver 
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   /* Make use of the payload before sending something, the buffer where payload points to is
@@ -498,7 +513,16 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   parseMsg(id, toParse); // Shunt off to the PArser
   Serial.println("MESSAGE!!");
 } // Thats it!
-
+void gotWire(int howMany){
+  while (Wire.available()){
+    i2cMsg.concat(char(Wire.read()));
+  }
+  Serial.print("Got i2c - ");
+  Serial.println(i2cMsg);
+  parseMsg(99,i2cMsg);
+  i2cMsg = "";
+  
+}
 // These print every known device to console. 
 void printStrips(){
   Serial.print("Got a list of ");
@@ -566,25 +590,34 @@ void printRtrs(){
 
 void setup() { // Setup
   Serial.begin(115200); // Start Serial
+  Serial.print("Setup ");
   hc05.begin(38400); // Start Bluetooth
-  Serial.print("Setup");
+  Serial.print(". ");
   bus.debug = true; // Pjon Debug switch
+  Serial.print(". ");
   bus.strategy.set_pin(12); // Pjon Pin select
+  Serial.print(". ");
   bus.set_receiver(receiver_function); // Function to run when PJON receives
+  Serial.print(". ");
   bus.set_error(error_handler); // Function to run when PJON has an Error
+  Serial.print(". ");
   bus.begin(); // Fire up the Bus
-  
+  Serial.print(". ");
   // RESET EVERY DEVICE ON THE BUS
   for (uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
       if (bus.ids[i].state) {
         bus.send(i,"Rst,",5);
       }
   }
-  
+  Serial.print(". ");
   bus.update(); // force a Pjon update ASSERT YOUR DOMINANCE HERE!
+  Serial.print(". ");
   //digitalWrite(MASTER_LED,HIGH);
-  //if (bus.debug)bus.send_repeatedly(PJON_BROADCAST, "Master says hi!", 15, 2500000);
   t_millis = millis(); // tick tock bitches.
+  Serial.print(". ");
+  Wire.begin(8);
+  Serial.print(". ");
+  Wire.onReceive(gotWire);
   }
   //MAin fucking loop time.
   

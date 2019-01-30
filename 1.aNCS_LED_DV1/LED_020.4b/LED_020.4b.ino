@@ -19,7 +19,7 @@
 #define FRAMES_PER_SECOND  120
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
-#define I2C_ADDR 8
+#define I2C_ADDR 1
 #define CONNECTED_STRIPS 4
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 CRGB ledsA[NUM_LEDS];
@@ -86,11 +86,13 @@ void requestEvent() {
   Serial.println(buffer);
 }
 void receiveEvent(int howMany) {
+  Serial.print("gotMessage  ");
   while (Wire.available()) { // loop through all but the last
     char c = Wire.read(); // receive byte as a character
     string.concat(c);       // print the character
   }
   timeSinceBt = 0;
+  Serial.print(string);
   string.trim();
   String ss = string.substring(0, 1);
   string.remove(0, 1);

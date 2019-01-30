@@ -14,7 +14,7 @@ int ledState = LOW;
 EthernetUDP Udp; // init ETH UDP lib
 
 void setup(){
-  Serial.begin(9600); 
+  Serial.begin(115200); 
   Serial.println("Setup");
   pinMode(4, OUTPUT); // disable SD
   digitalWrite(4, HIGH);
@@ -36,32 +36,71 @@ void loop(){
     while(size--) 
       bundleIN.fill(Udp.read()); // read packet
     if(!bundleIN.hasError()) // if in the list below:
-      bundleIN.route("/Test", Test); // runtimes
       bundleIN.route("/aCK4", CLK);
+      bundleIN.route("/lKick", KICK);
+      bundleIN.route("/lSnare", SNARE);
+      bundleIN.route("/lHH", HH);
+      bundleIN.route("/lHHo", HHO);
    }
 } 
 
-void iic(int addr ,int x){
+void iic(int addr ,String x){
   Wire.beginTransmission(addr);
-  Wire.write(x);
+  char c[x.length()+1];
+  x.toCharArray(c,x.length()+1);
+  Wire.write(c);
   Serial.println("Sent I2c");
   Wire.endTransmission();
 }
 
-void Test(OSCMessage &msg, int addrOffset ){ // get test value
-  int a = msg.getFloat(0); // get the fucking float info.
-  Serial.print("Value = : ");
-  Serial.println(a);
-  iic(8,a); // send the clock value/pulse to pjon.
-}
-
 void CLK(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
   int b = msg.getFloat(0);
-  Serial.print("Value = : ");
+  Serial.print("CLK = : ");
   Serial.println(b);
-  iic(8,b); // send the clock value/pulse to pjon.
+  String toSend = "Clk,";
+  toSend.concat(String(b));
+  iic(8,toSend); // send the clock value/pulse to pjon.
 }
-
+void KICK(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+  if(b !=  0){  
+    Serial.print("KICK = : ");
+    Serial.println(b);
+    String toSend = "Kick,";
+    toSend.concat(String(b));
+    iic(8,toSend); // send the clock value/pulse to pjon.
+  }
+}
+void SNARE(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+    if(b !=  0){  
+    Serial.print("Snare = : ");
+    Serial.println(b);
+    String toSend = "Snare,";
+    toSend.concat(String(b));
+    iic(8,toSend); // send the clock value/pulse to pjon.
+  }
+}
+void HH(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+  if(b != 0){
+    Serial.print("HH = : ");
+    Serial.println(b);
+    String toSend = "HiHat,";
+    toSend.concat(String(b));
+    iic(8,toSend); // send the clock value/pulse to pjon.
+  }
+}
+void HHO(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+  if(b != 0){
+    Serial.print("HH = : ");
+    Serial.println(b);
+    String toSend = "HiHat,";
+    toSend.concat(String(b));
+    iic(8,toSend); // send the clock value/pulse to pjon.
+  }
+}
 void IO(OSCMessage &msg, int addrOffset){ // Get float from message
   ledState = (boolean) msg.getFloat(0); // get the float and change the bool state
   digitalWrite(ledPin, ledState); // write led state
