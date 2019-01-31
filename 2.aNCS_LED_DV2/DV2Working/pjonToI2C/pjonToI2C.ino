@@ -105,26 +105,47 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
 };
 // Reads an incoming control message
 void parser(){
+  Serial.print(string.length());
   while(string.length() >= 1){
+    Serial.print("Packet length = ");
+    Serial.println(string.length());
+    DFLUSH();
+    if(string.indexOf(",")==-1)string.concat(","); //adds comma at end if not exists. hackkkyyyyy! i love it
+    Serial.print("packet = ");
     DPRINTLN(string); // While there message left to read. 
+    DFLUSH();
     String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
+    DPRINT("SUBS ");
+    DPRINTLN(subs);
+    DFLUSH();
     string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
+    DPRINT("STRI");
+    DPRINTLN(string);
+    DFLUSH();
+    if(string.indexOf(',')==-1)string.concat(","); // again bro, hackkkyyyyy! i love it
+    DPRINTLN(string);
     if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point
     if (subs.startsWith("Kick")){ // next value is pattern. 
+      DPRINTLN("KICK");
       Wire.beginTransmission(1);
       Wire.write("Pulse,1");
       string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      DPRINTLN(string);
       Wire.endTransmission();
       }
     if (subs.startsWith("Snare")){ // next value is pattern. 
+      DPRINTLN("SNARE");
       Wire.beginTransmission(2);
       Wire.write("Pulse,1");
       string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      DPRINTLN(string);
       Wire.endTransmission();
       }
     if (subs.startsWith("HiHat")){ // next value is pattern. 
+      DPRINTLN("HH");
       Wire.beginTransmission(3);
       Wire.write("Pulse,1");
+      DPRINTLN(string);
       string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
       Wire.endTransmission();
       }
@@ -162,7 +183,10 @@ void setup() {  // SETUP
   bus.acquire_id_master_slave(); //get an id
   DPRINT(". ");
   delayStart = millis();
+  DPRINT(". ");
   delayRunning = true;
+  DPRINT(". ");
+  Wire.begin();
   DPRINTLN("Done!!!");
   
   // SETUP FINISHES

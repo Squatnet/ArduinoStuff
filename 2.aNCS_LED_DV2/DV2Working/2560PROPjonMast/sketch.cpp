@@ -3,11 +3,11 @@
 #include <Arduino.h> // using c++ std lib now or some shit
 #include <PJONMaster.h> // Pjon Master
 #include <SoftwareSerial.h> // HC-05
-#include <Wire.h> // i2c
+//#include <Wire.h> // i2c
 // Define HW LEDs here (not yet implemented)
 #define MASTER_LED 22 // Basically is it on?
 #define PJON_ISSUE_LED 24 // Is there an issue?
-#define I2CADDR 8
+//#define I2CADDR 8
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
@@ -488,17 +488,18 @@ void parseMsg(int id, String msg) {
   msg = "";
   msgSendId = masterTerm;
  }
-if(msg.startsWith("Clk")){
+/*
+ if(msg.startsWith("Clk")){
   for(int i=0; i< numStrip; i++){
     id = strips[i].id;
-    bus.send(id,"Clk,1",7);
+    bus.send(id,"Clk,1,",8);
     bus.update();
   }
-}
+} */
 if(msg.startsWith("Kic")){
   for(int i = 0; i < numStrip; i++){
     id = strips[i].id;
-    bus.send(id,"Kick,1",7);
+    bus.send(id,"Kick,1,",8);
     bus.update();
   }
 }
@@ -513,6 +514,7 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   parseMsg(id, toParse); // Shunt off to the PArser
   Serial.println("MESSAGE!!");
 } // Thats it!
+/*
 void gotWire(int howMany){
   while (Wire.available()){
     i2cMsg.concat(char(Wire.read()));
@@ -523,6 +525,7 @@ void gotWire(int howMany){
   i2cMsg = "";
   
 }
+*/
 // These print every known device to console. 
 void printStrips(){
   Serial.print("Got a list of ");
@@ -615,9 +618,9 @@ void setup() { // Setup
   //digitalWrite(MASTER_LED,HIGH);
   t_millis = millis(); // tick tock bitches.
   Serial.print(". ");
-  Wire.begin(8);
+  //Wire.begin(8);
   Serial.print(". ");
-  Wire.onReceive(gotWire);
+  //Wire.onReceive(gotWire);
   }
   //MAin fucking loop time.
   

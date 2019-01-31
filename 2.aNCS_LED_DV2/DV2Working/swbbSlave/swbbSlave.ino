@@ -18,9 +18,11 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Type,Name "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+String regString = "Reg,WNI,OSCIn "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " /
+
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
+#define PJON_PIN  7
 #include <PJONSlave.h>  // Coz we are inslave mode .
 uint8_t bus_id[] = {0, 0, 1, 53}; // Ancs unique ID
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED); // Force no id so master can assign us
@@ -79,7 +81,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       delay(160); // makes the delay about 500ms between retrys
      
  }
-  Serial.flush(); // wait til serial is printed
+  DFLUSH(); // wait til serial is printed
 };
 
 // PJON RECEIVER CODE
@@ -99,7 +101,7 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
     DPRINT(" ");
   }
   DPRINTLN();
-  Serial.flush();
+  DFLUSH();
   
 };
 // Reads an incoming control message
@@ -129,13 +131,13 @@ void parser(){
   string = ""; // empty it
 };
 void setup() {  // SETUP 
-  Serial.begin(115200); // Serial console
+  DBEGIN(115200); // Serial console
   DPRINT("Setup ");
   bus.set_error(error_handler); // link PJON to error handler
   DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
   DPRINT(". ");
-  bus.strategy.set_pin(12); // Set PJON pin
+  bus.strategy.set_pin(PJON_PIN); // Set PJON pin
   DPRINT(". ");
   bus.begin(); // 
   DPRINT(". ");
@@ -144,9 +146,9 @@ void setup() {  // SETUP
   bus.acquire_id_master_slave(); //get an id
   DPRINT(". ");
   delayStart = millis();
+  DPRINT(". ");
   delayRunning = true;
   DPRINTLN("Done!!!");
-  
   // SETUP FINISHES
 };
 // Function to register with master.
@@ -175,7 +177,7 @@ void loop() {
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) { // we have an id, but havent regisrtered
     DPRINT("Acquired device id: ");
     DPRINTLN(bus.device_id()); 
-    Serial.flush();
+    DFLUSH();
     delay(100);
     acquired = true; // track that
     tellMasterAboutSelf(); // and register
