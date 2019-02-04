@@ -4,7 +4,7 @@
  */
  
 // Varidaic Debug Macro //
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -69,7 +69,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
     if(data == PJON_ID_REQUEST)
       // We couldnt find a Master on the network.... 
       DPRINTLN("PJONSlave error: master-slave id request failed.");
-      delay(400); // wait 400ms
+      delay(40); // wait 400ms
       if (millis() > 15000){ // if 15s has passed
         DPRINTLN("Resetting due to no ID");
         delay(300); // we reset
@@ -118,35 +118,35 @@ void parser(){
     DPRINT("SUBS ");
     DPRINTLN(subs);
     DFLUSH();
-    string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
+    string.remove(0,string.indexOf(",")+1); // remove everything up to and including the first comma
     DPRINT("STRI");
     DPRINTLN(string);
     DFLUSH();
-    if(string.indexOf(',')==-1)string.concat(","); // again bro, hackkkyyyyy! i love it
+    if(!string.endsWith(','))string.concat(","); // again bro, hackkkyyyyy! i love it
     DPRINTLN(string);
     if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point
     if (subs.startsWith("Kick")){ // next value is pattern. 
       DPRINTLN("KICK");
       Wire.beginTransmission(1);
       Wire.write("Pulse,1");
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      string.remove(0,string.indexOf(",")+1); // Remove the value
       DPRINTLN(string);
       Wire.endTransmission();
       }
     if (subs.startsWith("Snare")){ // next value is pattern. 
       DPRINTLN("SNARE");
       Wire.beginTransmission(2);
-      Wire.write("Pulse,1");
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      Wire.write("Pulse,1,");
+      string.remove(0,string.indexOf(",")+1); // Remove the value
       DPRINTLN(string);
       Wire.endTransmission();
       }
     if (subs.startsWith("HiHat")){ // next value is pattern. 
       DPRINTLN("HH");
       Wire.beginTransmission(3);
-      Wire.write("Pulse,1");
+      Wire.write("Pulse,1,");
       DPRINTLN(string);
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      string.remove(0,string.indexOf(",")+1); // Remove the value
       Wire.endTransmission();
       }
     if (subs.startsWith("Ctl")){
@@ -156,6 +156,7 @@ void parser(){
       Wire.beginTransmission(i);
       Wire.write(c); 
      }
+     string = "";
     }
    else {
       string.remove(0,string.indexOf(",")+1);

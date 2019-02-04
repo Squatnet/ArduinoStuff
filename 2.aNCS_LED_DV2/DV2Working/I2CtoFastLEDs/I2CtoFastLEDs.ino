@@ -35,28 +35,7 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 2;
 int autoSecs = 10;
-void setup() {
-  Wire.begin(I2C_ADDR);
-  Wire.onReceive(receiveEvent);
-  Serial.begin(115200);
-  Serial.println("Ready for i2c");
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
-  //FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
-  //FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(ledsD, NUM_LEDS);
-  FastLED.setBrightness(128);
-  int i = 0;
-  while (i < 4) {
-    ourCol = startup[i];
-    turnOn();
-    copyLeds();
-    FastLED.show();
-    FastLED.delay(300);
-    i++;
-  }
-
-}
-
+void(* resetFunc) (void) = 0; // Software reset hack
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) {
@@ -66,7 +45,7 @@ void receiveEvent(int howMany) {
     string.concat(c);       // print the character
   }
   timeSinceBt = 0;
-  Serial.print(string);
+  Serial.println(string);
   string.trim();
   parser();
 }
@@ -75,10 +54,14 @@ void parser(){
     DPRINT("Message is ");
     DPRINT(string);
     DPRINT(" With length ");
+    if(!string.endsWith(","))string.concat(","); // STOP CRASHING;
     DPRINTLN(string.length());
-    String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
+    String subs = string.substring(0,string.indexOf(",      ")); // get everything until the first comma.
     string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
-    if(subs.startsWith("Pul"))doPulse();
+    if(subs.startsWith("Pul")){
+      doPulse();
+      string = "";
+    }
     if (subs.startsWith("Ptn")){ // next value is pattern. 
       String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
       x = ptn.toInt(); // Its going to be an integer. its the pattern number,
@@ -119,7 +102,7 @@ void doPulse() {
   }
   copyLeds();
   FastLED.show();
-  FastLED.delay(400);
+  FastLED.delay(100);
   turnOff();
   FastLED.show();
 }
@@ -129,6 +112,27 @@ void randX() {
     Serial.print("RANDOM ");
     Serial.println(x);
   }
+}
+void setup() {
+  Wire.begin(I2C_ADDR);
+  Wire.onReceive(receiveEvent);
+  Serial.begin(115200);
+  Serial.println("Ready for i2c");
+  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
+  //FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
+  //FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(ledsD, NUM_LEDS);
+  FastLED.setBrightness(128);
+  int i = 0;
+  while (i < 4) {
+    ourCol = startup[i];
+    turnOn();
+    copyLeds();
+    FastLED.show();
+    FastLED.delay(300);
+    i++;
+  }
+
 }
 void loop() {
   if(autoMode != 2){

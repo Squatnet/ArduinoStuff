@@ -11,7 +11,7 @@
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
-int debugMode = 1 ; // Set to 1 for debug on
+int debugMode = 0 ; // Set to 1 for debug on
 
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
@@ -42,6 +42,7 @@ bool PjonLedOn = false; // as yet not working
 bool msgSwitch = 0; // Set to true if message is needing to be sent
 String msgToSend = ""; // Container for the message
 int msgSendId = 0; // ID to send to
+String mastBPM = "97.5";
 String i2cMsg = "";
 
 // Function to remove gaps from the device arrays 
@@ -255,7 +256,8 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   // Another Master / a static device dropped us?
   if (code == PJON_CONNECTION_LOST) { 
     Serial.print("PJON error: connection lost with device id ");
-    Serial.println((uint8_t)bus.packets[data].content[0], DEC);
+    bus.send(int(data),"Rst,",5);
+    removeDevice(int(data));
   } 
   // we pinged a device we had already assigned an id to, and it didnt respond? 
   // we should remove it
@@ -346,7 +348,8 @@ void sendMessage(){
   Serial.print("MESSAGE = "); 
   Serial.println(msgToSend);
   Serial.print("Pjon status - ");
-  Serial.println(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1)); // adds the messsageto the bus (prints status code to console)
+  Serial.println(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1));
+  bus.update();// adds the messsageto the bus (prints status code to console)
   msgSendId = 0; //reset
   msgToSend = ""; //reset
   msgSwitch = 0; //reset
@@ -429,13 +432,13 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   msgSendId = id;
 }
 void parseMsg(int id, String msg) {
-  Serial.println("#msgparser");
+  //Serial.println("#msgparser");
   /* Message Struct as Follows 
    *  Reg,Str,Tree1 / POLL,NAME,TYPE
    *  Ctl,Str,Tree1,X1 / CONTROL,TYPE,NAME,COMMAND
    *  Ctl,56,S30 / CONTROL,ID#,COMMAND
    */ 
-  Serial.println(msg);
+  //Serial.println(msg);
   int i = msg.indexOf(','); // A well structured message will have at least 1 comma
   if(i==-1)Serial.println("WHAT?"); // no comma? dont wanna parse your shit
   // Device Registration - msg = Reg,Type,Name
@@ -457,9 +460,10 @@ void parseMsg(int id, String msg) {
   }
   // Control a device - msg = Ctl,id#,MessgeToSend  OR  Ctl,Type,Name,MessgeToSend
  if (msg.startsWith("Ctl")){
-    //msg.remove(0,msg.indexOf(',')+1); // get rid of "Ctl,"
+    msg.remove(0,msg.indexOf(',')+1); // get rid of "Ctl,"
     Serial.println(msg);
     String idStr = msg.substring(0,msg.indexOf(',')); // take whatever comes before the next comma.
+    Serial.println(idStr);
     int id = idStr.toInt(); // doing toInt() on something with any character other than a number in it results in 0 being returned
     msg.remove(0,msg.indexOf(',')+1); // remove the value (whatever it is) and the trailing comma
     if ( id == 0 ) { // Theres a letter in there. so we got a type.
@@ -503,6 +507,20 @@ if(msg.startsWith("Kic")){
     bus.update();
   }
 }
+if(msg.startsWith("Bpm")){
+  msg.remove(0,msg.indexOf(",")+1);
+  String x = msg.substring(0,msg.indexOf(","));
+  msg.remove(0,msg.indexOf(",")+1);
+  if (x.compareTo(mastBPM)!=0){
+    mastBPM = x;
+    msgToSend = "Bpm,";
+    msgToSend.concat(x);
+    msgToSend.concat(",");
+    msgSendId = 0;
+    msgSwitch = 1;
+  }
+  
+}
 };
 // PJON Reciver 
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
@@ -512,7 +530,7 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   int id = int(packet_info.sender_id);
   String toParse = payload; // conver to String
   parseMsg(id, toParse); // Shunt off to the PArser
-  Serial.println("MESSAGE!!");
+  //Serial.println("MESSAGE!!");
 } // Thats it!
 /*
 void gotWire(int howMany){
@@ -659,7 +677,7 @@ void loop() {
     if (str != "") { // Message wasnt empty, Nice!
       Serial.println(str);
       Serial.println("sending to parser");
-      parseMsg(int(99), str); // send tto parser with id 99 (could cause issues later tbf)
+      parseMsg(int(999), str); // send tto parser with id 99 (could cause issues later tbf)
       str = ""; // empty that shit!
     }
   }
