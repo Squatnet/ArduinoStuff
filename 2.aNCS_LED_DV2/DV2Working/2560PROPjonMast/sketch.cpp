@@ -8,6 +8,18 @@
 #define MASTER_LED 22 // Basically is it on?
 #define PJON_ISSUE_LED 24 // Is there an issue?
 //#define I2CADDR 8
+
+#define DEBUG   //If you comment this line, the DPRINT & DPRINTLN lines are defined as blank.
+#ifdef DEBUG    //Macros are usually in all capital letters.
+  #define DPRINT(...)    Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
+  #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //DPRINTLN is a macro, debug print with new line
+  #define DFLUSH(...)	Serial.flush(__VA_ARGS__)
+#else
+  #define DPRINT(...)     //now defines a blank line
+  #define DPRINTLN(...)   //now defines a blank line
+  #define DFLUSH(...)
+#endif
+
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
@@ -51,13 +63,13 @@ void compressStruct(String type){
   if(type.startsWith("Str")){ // check type, 
      for(int i =0; i<numStrip; i++){ // for all known devices of that type
     if(strips[i].id == NULL);{ // removeDevices(id) wipes the id here so we have a "gap"
-    Serial.print("FOUND EMPTY STRIP RECORD WITH ID");
-    Serial.println(i);
+    DPRINT("FOUND EMPTY STRIP RECORD WITH ID");
+    DPRINTLN(i);
     strips[i].id = strips[i+1].id; // Copy the next record downs id
     strips[i].namee = strips[i+1].namee; // Copy its name
     strips[i+1].id = NULL; // Make the next record null
-    Serial.print("got name ");
-    Serial.println(strips[i].namee);
+    DPRINT("got name ");
+    DPRINTLN(strips[i].namee);
     } // repeat until NumStrips
   }
     numStrip -= 1; // we have 1 less device now.
@@ -65,12 +77,12 @@ void compressStruct(String type){
  if(type.startsWith("Mat")){
     for(int i =0; i<numMatrix; i++){
     if(matrix[i].id == NULL);{
-    Serial.print("FOUND EMPTY MATRIX RECORD WITH ID");
-    Serial.println(i);
+    DPRINT("FOUND EMPTY MATRIX RECORD WITH ID");
+    DPRINTLN(i);
     matrix[i] = matrix[i+1];
     matrix[i+1].id = NULL;
-    Serial.print("got name ");
-    Serial.println(matrix[i].namee);
+    DPRINT("got name ");
+    DPRINTLN(matrix[i].namee);
     }
   }
     numMatrix -= 1;
@@ -78,12 +90,12 @@ void compressStruct(String type){
  if(type.startsWith("Ter")){
   for(int i =0; i<numTerm; i++){
     if(term[i].id == NULL);{
-    Serial.print("FOUND EMPTY TERMINAL RECORD WITH ID");
-    Serial.println(i);
+    DPRINT("FOUND EMPTY TERMINAL RECORD WITH ID");
+    DPRINTLN(i);
     term[i] = term[i+1];
     term[i+1].id = NULL;
-    Serial.print("got name ");
-    Serial.println(term[i].namee);
+    DPRINT("got name ");
+    DPRINTLN(term[i].namee);
     }
   }
     numTerm -= 1;
@@ -91,12 +103,12 @@ void compressStruct(String type){
    if(type.startsWith("Rtr")){
     for(int i =0; i<numRouter; i++){
     if(router[i].id == NULL);{
-    Serial.print("FOUND EMPTY ROUTER RECORD WITH ID");
-    Serial.println(i);
+    DPRINT("FOUND EMPTY ROUTER RECORD WITH ID");
+    DPRINTLN(i);
     router[i] = router[i+1];
     router[i+1].id = NULL;
-    Serial.print("got name ");
-    Serial.println(router[i].namee);
+    DPRINT("got name ");
+    DPRINTLN(router[i].namee);
     }
   }
     numRouter -= 1;
@@ -114,22 +126,22 @@ void removeDevice(int id){
   bool chkRtrs = false; // what about router array?
   bool chkTerm = false; // and finally terminals? 
   bool found = false; // Did we find the device??
-  Serial.print("Removing device with ID ");
-  Serial.println(id);
+  DPRINT("Removing device with ID ");
+  DPRINTLN(id);
   while(!found){ // Run until found is true
     if(chkStrps && chkMatr && chkRtrs && chkTerm){ // We have looked in every array and found nothing?
-      Serial.println("Checked all arrays, Found nothing. Assuming device failed to register.");
+      DPRINTLN("Checked all arrays, Found nothing. Assuming device failed to register.");
       found = true; // device isnt in an array and we need not worry
     }
-    Serial.println("Not Found!!!");
+    DPRINTLN("Not Found!!!");
     if(!chkStrps){
-      Serial.println("Checking Strips");
+      DPRINTLN("Checking Strips");
       for(int i = 0; i< numStrip; i++){
         if(strips[i].id == id){ // Compare our id against each record
           found = true; // Lovely job its a strip
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Strip");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Strip");
           strips[i].id = NULL; // Assign a NULL value... Bye!
           compressStruct("Str"); // Run the function to remove gaps in the array. sending the type.
         } // end if id=id ;
@@ -137,13 +149,13 @@ void removeDevice(int id){
       chkStrps = true; // best not do that repeatedly
     }
     if(!chkMatr){ // you get the idea
-      Serial.println("Checking Matrix");
+      DPRINTLN("Checking Matrix");
       for(int i = 0; i< numMatrix; i++){
         if(matrix[i].id == id){
           found = true;
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Matrix");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Matrix");
           matrix[i].id = NULL;
           compressStruct("Mat");
         }
@@ -151,13 +163,13 @@ void removeDevice(int id){
       chkMatr = true;
     }
     if(!chkTerm){
-      Serial.println("Checking Terms");
+      DPRINTLN("Checking Terms");
       for(int i = 0; i<numTerm;i++){
         if(term[i].id == id){
           found = true;
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Terminal");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Terminal");
           term[i].id = NULL;
           compressStruct("Ter");
         }
@@ -165,13 +177,13 @@ void removeDevice(int id){
       chkTerm = true;
     }
     if(!chkRtrs){
-      Serial.println("Checking Rtrs");
+      DPRINTLN("Checking Rtrs");
       for(int i = 0; i<numRouter;i++){
         if(router[i].id == id){
           found = true;
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Router");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Router");
           router[i].id = NULL;
           compressStruct("Rtr");
         }
@@ -187,63 +199,63 @@ int findDeviceByID(int id){
   bool chkRtrs = false; // what about router array?
   bool chkTerm = false; // and finally terminals? 
   bool found = false; // Did we find the device??
-  Serial.print("Removing device with ID ");
-  Serial.println(id);
+  DPRINT("Removing device with ID ");
+  DPRINTLN(id);
   while(!found){ // Run until found is true
     if(chkStrps && chkMatr && chkRtrs && chkTerm){ // We have looked in every array and found nothing?
-      Serial.println("Checked all arrays, Found nothing. Assuming device failed to register.");
+      DPRINTLN("Checked all arrays, Found nothing. Assuming device failed to register.");
       found = true; // device isnt in an array and we need not worry
       return 0;
       bus.send(uint8_t(id),"Rst,",5);
     }
-    Serial.println("Not Found!!!");
+    DPRINTLN("Not Found!!!");
     if(!chkStrps){
-      Serial.println("Checking Strips");
+      DPRINTLN("Checking Strips");
       for(int i = 0; i< numStrip; i++){
         if(strips[i].id == id){ // Compare our id against each record
           found = true; // Lovely job its a strip
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Strip");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Strip");
           return 1; // Run the function to remove gaps in the array. sending the type.
         } 
       } // we checked every strip...
       chkStrps = true; // best not do that repeatedly
     }
     if(!chkMatr){ // you get the idea
-      Serial.println("Checking Matrix");
+      DPRINTLN("Checking Matrix");
       for(int i = 0; i< numMatrix; i++){
         if(matrix[i].id == id){
           found = true;
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Matrix");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Matrix");
           return 1;
         }
       }
       chkMatr = true;
     }
     if(!chkTerm){
-      Serial.println("Checking Terms");
+      DPRINTLN("Checking Terms");
       for(int i = 0; i<numTerm;i++){
         if(term[i].id == id){
           found = true;
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Terminal");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Terminal");
           return 1;
         }
       }
       chkTerm = true;
     }
     if(!chkRtrs){
-      Serial.println("Checking Rtrs");
+      DPRINTLN("Checking Rtrs");
       for(int i = 0; i<numRouter;i++){
         if(router[i].id == id){
           found = true;
-          Serial.print("Device ");
-          Serial.print(id);
-          Serial.println(" is a Router");
+          DPRINT("Device ");
+          DPRINT(id);
+          DPRINTLN(" is a Router");
           return 1;
         }
       }
@@ -255,84 +267,84 @@ int findDeviceByID(int id){
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   // Another Master / a static device dropped us?
   if (code == PJON_CONNECTION_LOST) { 
-    Serial.print("PJON error: connection lost with device id ");
+    DPRINT("PJON error: connection lost with device id ");
     bus.send(int(data),"Rst,",5);
     removeDevice(int(data));
   } 
   // we pinged a device we had already assigned an id to, and it didnt respond? 
   // we should remove it
   if (code == PJON_ID_ACQUISITION_FAIL) {
-    Serial.print("PJONMaster error: connection lost with slave id ");
-    Serial.println(data, DEC);
+    DPRINT("PJONMaster error: connection lost with slave id ");
+    DPRINTLN(data, DEC);
     int id = int(data);
-    Serial.println(id);
+    DPRINTLN(id);
     removeDevice(id); // pretty self explanitory
   }
   // NETWORK OVERLOAD. something is spamming us
   if (code == PJON_DEVICES_BUFFER_FULL) {
-    Serial.print("PJONMaster error: master devices' buffer is full with a length of ");
-    Serial.println(data);
+    DPRINT("PJONMaster error: master devices' buffer is full with a length of ");
+    DPRINTLN(data);
   }
 };
 // function to return an ID given a type and a Name
 int findDeviceByName(String type, String nme){
   if (type.startsWith("St")){ // look at the right array
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
-      Serial.print("Stepped into string");
+      DPRINT("Stepped into string");
       device dev = strips[i]; // get a device to compare
-      Serial.print("Strip ");
-      Serial.print(dev.id);
-      Serial.print(dev.namee);
-      Serial.println();
+      DPRINT("Strip ");
+      DPRINT(dev.id);
+      DPRINT(dev.namee);
+      DPRINTLN();
       if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
-        Serial.print("found strip with name ");
-        Serial.println(nme);
+        DPRINT("found strip with name ");
+        DPRINTLN(nme);
         return dev.id; // return the device id
       }
     }
   }
   else if (type.startsWith("Ma")){
     for(int i=0;i<numMatrix;i++){
-      Serial.print("Stepped into Matrix");
+      DPRINT("Stepped into Matrix");
       device dev = matrix[i];
-      Serial.print("Matrix ");
-      Serial.print(dev.id);
-      Serial.print(dev.namee);
-      Serial.println();
+      DPRINT("Matrix ");
+      DPRINT(dev.id);
+      DPRINT(dev.namee);
+      DPRINTLN();
       if (dev.namee == String(nme)){
-        Serial.print("found Matrix with name ");
-        Serial.println(nme);
+        DPRINT("found Matrix with name ");
+        DPRINTLN(nme);
         return dev.id;
       }
     }
   }
   else if (type.startsWith("Te")){
     for(int i=0;i<numTerm;i++){
-      Serial.print("Stepped into Termi");
+      DPRINT("Stepped into Termi");
       device dev = term[i];
-      Serial.print("Term ");
-      Serial.print(dev.id);
-      Serial.print(" - ");
-      Serial.print(dev.namee);
-      Serial.println();
+      DPRINT("Term ");
+      DPRINT(dev.id);
+      DPRINT(" - ");
+      DPRINT(dev.namee);
+      DPRINTLN();
       if (dev.namee == String(nme)){
-        Serial.print("found Terminal with name ");
-        Serial.println(nme);
+        DPRINT("found Terminal with name ");
+        DPRINTLN(nme);
         return dev.id;
       }
     }
   }
   else if (type.startsWith("Ro")){
     for(int i=0;i<numTerm;i++){
-      Serial.print("Stepped into Router");
+      DPRINT("Stepped into Router");
       device dev = router[i];
-      Serial.print("Router ");
-      Serial.print(dev.id);
-      Serial.print(dev.namee);
-      Serial.println();
+      DPRINT("Router ");
+      DPRINT(dev.id);
+      DPRINT(dev.namee);
+      DPRINTLN();
       if (dev.namee == String(nme)){
-        Serial.print("found Terminal with name ");
-        Serial.println(nme);
+        DPRINT("found Terminal with name ");
+        DPRINTLN(nme);
         return dev.id;
       }
     }
@@ -342,13 +354,13 @@ int findDeviceByName(String type, String nme){
 // function to send a message to a device, called from loop if msgSwitch = 1
 void sendMessage(){
   msgSwitch = 0;
-  Serial.println("sendMessage Function called");
+  DPRINTLN("sendMessage Function called");
   const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
   msgToSend.toCharArray(packet,msgToSend.length()); //convert String msgToSend to char array, \0 auto added
-  Serial.print("MESSAGE = "); 
-  Serial.println(msgToSend);
-  Serial.print("Pjon status - ");
-  Serial.println(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1));
+  DPRINT("MESSAGE = "); 
+  DPRINTLN(msgToSend);
+  DPRINT("Pjon status - ");
+  DPRINTLN(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1));
   bus.update();// adds the messsageto the bus (prints status code to console)
   msgSendId = 0; //reset
   msgToSend = ""; //reset
@@ -357,74 +369,74 @@ void sendMessage(){
 // function to register a device type and name
 void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   if( reg.startsWith("Str")){ // we are a strip, reg = Str,Name
-    Serial.print(reg);
+    DPRINT(reg);
       reg.remove(0,reg.indexOf(',')+1); // removes the type and the trailing comma
-      Serial.println(reg); // now its just Name
+      DPRINTLN(reg); // now its just Name
       strips[numStrip].id = id; // store the ID
       strips[numStrip].namee = reg; // store the name
-      Serial.print("Strip : ");
-      Serial.print(numStrip);
-      Serial.print(" name : ");
-      Serial.print(strips[numStrip].namee);
-      Serial.print(" id : ");
-      Serial.println(strips[numStrip].id);
+      DPRINT("Strip : ");
+      DPRINT(numStrip);
+      DPRINT(" name : ");
+      DPRINT(strips[numStrip].namee);
+      DPRINT(" id : ");
+      DPRINTLN(strips[numStrip].id);
       numStrip++; // We have 1 more strip
   }
   else if( reg.startsWith("Mat")){
-    Serial.print(reg);
+    DPRINT(reg);
       reg.remove(0,reg.indexOf(',')+1);
-      Serial.println(reg);
+      DPRINTLN(reg);
       matrix[numMatrix].id = id;
       matrix[numMatrix].namee = reg;
-      Serial.print("Matrix : ");
-      Serial.print(numMatrix);
-      Serial.print(" name : ");
-      Serial.print(matrix[numMatrix].namee);
-      Serial.print(" id : ");
-      Serial.println(matrix[numMatrix].id);
+      DPRINT("Matrix : ");
+      DPRINT(numMatrix);
+      DPRINT(" name : ");
+      DPRINT(matrix[numMatrix].namee);
+      DPRINT(" id : ");
+      DPRINTLN(matrix[numMatrix].id);
       numMatrix++;
   }
   else if( reg.startsWith("Ter")){
-    Serial.print(reg);
+    DPRINT(reg);
       reg.remove(0,reg.indexOf(',')+1);
-      Serial.println(reg);
+      DPRINTLN(reg);
       if( reg.startsWith("Master")){ // If a TFT registers, Called Master
         masterTerm = id; // make sure we send our debug output to it
       }
       term[numTerm].id = id;
       term[numTerm].namee = reg;
-      Serial.print("Term : ");
-      Serial.print(numTerm);
-      Serial.print(" name : ");
-      Serial.print(term[numTerm].namee);
-      Serial.print(" id : ");
-      Serial.println(term[numTerm].id);
+      DPRINT("Term : ");
+      DPRINT(numTerm);
+      DPRINT(" name : ");
+      DPRINT(term[numTerm].namee);
+      DPRINT(" id : ");
+      DPRINTLN(term[numTerm].id);
       numTerm++;
   }
   else if( reg.startsWith("Rou")){
-    Serial.print(reg);
+    DPRINT(reg);
       reg.remove(0,reg.indexOf(',')+1);
-      Serial.println(reg);
+      DPRINTLN(reg);
       router[numRouter].id = id;
       router[numRouter].namee = reg;
-      Serial.print("Router : ");
-      Serial.print(numRouter);
-      Serial.print(" name : ");
-      Serial.print(router[numRouter].namee);
-      Serial.print(" id : ");
-      Serial.println(router[numRouter].id);
+      DPRINT("Router : ");
+      DPRINT(numRouter);
+      DPRINT(" name : ");
+      DPRINT(router[numRouter].namee);
+      DPRINT(" id : ");
+      DPRINTLN(router[numRouter].id);
       numRouter++;
   }
   else if( reg.startsWith("WNI")){
-    Serial.print(reg);
+    DPRINT(reg);
     reg.remove(0,reg.indexOf(',')+1);
-      Serial.println(reg);
+      DPRINTLN(reg);
       wizNetIn.id = id;
       wizNetIn.namee = reg;
-      Serial.print("OSC In : ");
-      Serial.print(wizNetIn.namee);
-      Serial.print(" id : ");
-      Serial.println(wizNetIn.id);
+      DPRINT("OSC In : ");
+      DPRINT(wizNetIn.namee);
+      DPRINT(" id : ");
+      DPRINTLN(wizNetIn.id);
   }
   // send back a little "ack"
   msgSwitch = 1; 
@@ -432,25 +444,25 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   msgSendId = id;
 }
 void parseMsg(int id, String msg) {
-  //Serial.println("#msgparser");
+  //DPRINTLN("#msgparser");
   /* Message Struct as Follows 
    *  Reg,Str,Tree1 / POLL,NAME,TYPE
    *  Ctl,Str,Tree1,X1 / CONTROL,TYPE,NAME,COMMAND
    *  Ctl,56,S30 / CONTROL,ID#,COMMAND
    */ 
-  //Serial.println(msg);
+  //DPRINTLN(msg);
   int i = msg.indexOf(','); // A well structured message will have at least 1 comma
-  if(i==-1)Serial.println("WHAT?"); // no comma? dont wanna parse your shit
+  if(i==-1)DPRINTLN("WHAT?"); // no comma? dont wanna parse your shit
   // Device Registration - msg = Reg,Type,Name
   if(msg.startsWith("Reg")){
     msg.remove(0,msg.indexOf(',')+1); // Take "Reg," off the front. 
-    Serial.print(msg);
+    DPRINT(msg);
     regDev(id,msg); // pass it onto regDev function. 
   }
   // Manually Remove a device - msg = Rem,id#
   if(msg.startsWith("Rem")){
     msg.remove(0,msg.indexOf(',')+1); //takes the "Rem," off the front
-    Serial.print(msg);
+    DPRINT(msg);
     removeDevice(id); // removes a device. 
   }
   // Check if you are registered
@@ -461,28 +473,28 @@ void parseMsg(int id, String msg) {
   // Control a device - msg = Ctl,id#,MessgeToSend  OR  Ctl,Type,Name,MessgeToSend
  if (msg.startsWith("Ctl")){
     msg.remove(0,msg.indexOf(',')+1); // get rid of "Ctl,"
-    Serial.println(msg);
+    DPRINTLN(msg);
     String idStr = msg.substring(0,msg.indexOf(',')); // take whatever comes before the next comma.
-    Serial.println(idStr);
+    DPRINTLN(idStr);
     int id = idStr.toInt(); // doing toInt() on something with any character other than a number in it results in 0 being returned
     msg.remove(0,msg.indexOf(',')+1); // remove the value (whatever it is) and the trailing comma
     if ( id == 0 ) { // Theres a letter in there. so we got a type.
       String idName = msg.substring(0,msg.indexOf(',')); // Theres going to be name following. 
       msg.remove(0,msg.indexOf(',')+1); // strip off the name (and ",") leaving just the message to send
       id = findDeviceByName(idStr,idName);  // Run findDeviceByName with our 2 variables. Set the id to be the number returned
-      Serial.println("ID");
-      Serial.println(id);
+      DPRINTLN("ID");
+      DPRINTLN(id);
       }
     msgSwitch = 1; // set ourselves up to send a message to someone
     msgToSend = msg; // copy the remaining message to our sending variable
     msg = ""; // delete the remaining message input
     msgSendId = id; // set the ID we with to send to
     // Messge will be sent in loop()
-    Serial.println("MESSAGE TO SEND");
-    Serial.print(msgToSend);
-    Serial.print(" ID to send to ");
-    Serial.print(id);
-    Serial.println();
+    DPRINTLN("MESSAGE TO SEND");
+    DPRINT(msgToSend);
+    DPRINT(" ID to send to ");
+    DPRINT(id);
+    DPRINTLN();
  } 
  // we got a reply from a device, just shunt it onto our terminal. 
  if(msg.startsWith("Rpl")){
@@ -530,15 +542,15 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
   int id = int(packet_info.sender_id);
   String toParse = payload; // conver to String
   parseMsg(id, toParse); // Shunt off to the PArser
-  //Serial.println("MESSAGE!!");
+  //DPRINTLN("MESSAGE!!");
 } // Thats it!
 /*
 void gotWire(int howMany){
   while (Wire.available()){
     i2cMsg.concat(char(Wire.read()));
   }
-  Serial.print("Got i2c - ");
-  Serial.println(i2cMsg);
+  DPRINT("Got i2c - ");
+  DPRINTLN(i2cMsg);
   parseMsg(99,i2cMsg);
   i2cMsg = "";
   
@@ -546,98 +558,100 @@ void gotWire(int howMany){
 */
 // These print every known device to console. 
 void printStrips(){
-  Serial.print("Got a list of ");
-  Serial.print(numStrip);
-  Serial.println(" Strips");
+  DPRINT("Got a list of ");
+  DPRINT(numStrip);
+  DPRINTLN(" Strips");
   if (debugMode == true){
     for(int i = 0; i<numStrip; i++){
-      Serial.print("Strip : ");
-      Serial.print(i);
-      Serial.print(" name : ");
-      Serial.print(strips[i].namee);
-      Serial.print(" id : ");
-      Serial.println(strips[i].id);
+      DPRINT("Strip : ");
+      DPRINT(i);
+      DPRINT(" name : ");
+      DPRINT(strips[i].namee);
+      DPRINT(" id : ");
+      DPRINTLN(strips[i].id);
     }
   }
 }
 
 void printMatrix(){
-  Serial.print("Got a list of ");
-  Serial.print(numMatrix);
-  Serial.println(" Matrices");
+  DPRINT("Got a list of ");
+  DPRINT(numMatrix);
+  DPRINTLN(" Matrices");
   if (debugMode == true){
     for(int i = 0; i<numMatrix; i++){
-      Serial.print("Matrix : ");
-      Serial.print(i);
-      Serial.print(" name : ");
-      Serial.print(matrix[i].namee);
-      Serial.print(" id : ");
-      Serial.println(matrix[i].id);
+      DPRINT("Matrix : ");
+      DPRINT(i);
+      DPRINT(" name : ");
+      DPRINT(matrix[i].namee);
+      DPRINT(" id : ");
+      DPRINTLN(matrix[i].id);
     }
   }
 }
 
 void printTFTs(){
-  Serial.print("Got a list of ");
-  Serial.print(numTerm);
-  Serial.println(" TFTs");
+  DPRINT("Got a list of ");
+  DPRINT(numTerm);
+  DPRINTLN(" TFTs");
   if (debugMode == true){
     for(int i = 0; i<numTerm; i++){
-      Serial.print("Term : ");
-      Serial.print(i);
-      Serial.print(" name : ");
-      Serial.print(term[i].namee);
-      Serial.print(" id : ");
-      Serial.println(term[i].id);
+      DPRINT("Term : ");
+      DPRINT(i);
+      DPRINT(" name : ");
+      DPRINT(term[i].namee);
+      DPRINT(" id : ");
+      DPRINTLN(term[i].id);
     }
   }
 }
 
 void printRtrs(){
-  Serial.print("Got a list of ");
-  Serial.print(numRouter);
-  Serial.println(" Routers");
+  DPRINT("Got a list of ");
+  DPRINT(numRouter);
+  DPRINTLN(" Routers");
   if (debugMode == true){
     for(int i = 0; i<numRouter; i++){
-      Serial.print("Router : ");
-      Serial.print(i);
-      Serial.print(" name : ");
-      Serial.print(router[i].namee);
-      Serial.print(" id : ");
-      Serial.println(router[i].id);
+      DPRINT("Router : ");
+      DPRINT(i);
+      DPRINT(" name : ");
+      DPRINT(router[i].namee);
+      DPRINT(" id : ");
+      DPRINTLN(router[i].id);
     }
   }
 }
 
 void setup() { // Setup
+#ifdef DEBUG{
   Serial.begin(115200); // Start Serial
-  Serial.print("Setup ");
+  #endif
+  DPRINT("Setup ");
   hc05.begin(38400); // Start Bluetooth
-  Serial.print(". ");
+  DPRINT(". ");
   bus.debug = true; // Pjon Debug switch
-  Serial.print(". ");
+  DPRINT(". ");
   bus.strategy.set_pin(12); // Pjon Pin select
-  Serial.print(". ");
+  DPRINT(". ");
   bus.set_receiver(receiver_function); // Function to run when PJON receives
-  Serial.print(". ");
+  DPRINT(". ");
   bus.set_error(error_handler); // Function to run when PJON has an Error
-  Serial.print(". ");
+  DPRINT(". ");
   bus.begin(); // Fire up the Bus
-  Serial.print(". ");
+  DPRINT(". ");
   // RESET EVERY DEVICE ON THE BUS
   for (uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
       if (bus.ids[i].state) {
         bus.send(i,"Rst,",5);
       }
   }
-  Serial.print(". ");
+  DPRINT(". ");
   bus.update(); // force a Pjon update ASSERT YOUR DOMINANCE HERE!
-  Serial.print(". ");
+  DPRINT(". ");
   //digitalWrite(MASTER_LED,HIGH);
   t_millis = millis(); // tick tock bitches.
-  Serial.print(". ");
+  DPRINT(". ");
   //Wire.begin(8);
-  Serial.print(". ");
+  DPRINT(". ");
   //Wire.onReceive(gotWire);
   }
   //MAin fucking loop time.
@@ -648,17 +662,17 @@ void loop() {
     // Check if registered slaves are still present on the bus
     bus.check_slaves_presence();
     // List all slaves here
-    Serial.println("List of slaves known by master: ");
+    DPRINTLN("List of slaves known by master: ");
     for (uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
       if (bus.ids[i].state) {
-        Serial.print(" - Device id: ");
-        Serial.print(i + 1); // Shifted by one to avoid PJON_BROADCAST
-        Serial.print(" Device rid: ");
-        Serial.print(bus.ids[i].rid);
+        DPRINT(" - Device id: ");
+        DPRINT(i + 1); // Shifted by one to avoid PJON_BROADCAST
+        DPRINT(" Device rid: ");
+        DPRINT(bus.ids[i].rid);
       } 
     }
-    Serial.println();
-    Serial.flush(); // Make sure the serial finishes printing. 
+    DPRINTLN();
+    DFLUSH(); // Make sure the serial finishes printing. 
     t_millis = millis(); // tick tock
   }
   if(msgSwitch!=0){ // Theres a message to send fam!
@@ -668,15 +682,15 @@ void loop() {
   bus.update(); // 
   if (hc05.available()) {  // Got bluetooth ?? 
     String str = "";
-    Serial.print("got BT");
+    DPRINT("got BT");
     // read all those lovely characters into a string Thanks!
     while ( hc05.available()) {
       char c = hc05.read();
       str.concat(c); // < - lovely string.... 
     }
     if (str != "") { // Message wasnt empty, Nice!
-      Serial.println(str);
-      Serial.println("sending to parser");
+      DPRINTLN(str);
+      DPRINTLN("sending to parser");
       parseMsg(int(999), str); // send tto parser with id 99 (could cause issues later tbf)
       str = ""; // empty that shit!
     }
