@@ -1,8 +1,11 @@
+
+
 // includes
 #include <FastLED.h>
 #include <Arduino.h> // using c++ std lib now or some shit
 #include <PJONMaster.h> // Pjon Master
 #include <SoftwareSerial.h> // HC-05
+#include <Queue.h>
 //#include <Wire.h> // i2c
 // Define HW LEDs here (not yet implemented)
 #define MASTER_LED 22 // Basically is it on?
@@ -23,7 +26,7 @@
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
-int debugMode = 0 ; // Set to 1 for debug on
+int debugMode = 1 ; // Set to 1 for debug on
 
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
@@ -54,6 +57,8 @@ bool PjonLedOn = false; // as yet not working
 bool msgSwitch = 0; // Set to true if message is needing to be sent
 String msgToSend = ""; // Container for the message
 int msgSendId = 0; // ID to send to
+int *msgSendList;
+int msgSendListSize = 0;
 String mastBPM = "97.5";
 String i2cMsg = "";
 
@@ -287,7 +292,8 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   }
 };
 // function to return an ID given a type and a Name
-int findDeviceByName(String type, String nme){
+int * findDeviceByName(String type, String nme){
+  Queue<int> queue(numStrip+numMatrix+numTerm+numRouter);
   if (type.startsWith("St")){ // look at the right array
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
       DPRINT("Stepped into string");
@@ -299,7 +305,7 @@ int findDeviceByName(String type, String nme){
       if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
         DPRINT("found strip with name ");
         DPRINTLN(nme);
-        return dev.id; // return the device id
+        queue.push(dev.id); // return the device id
       }
     }
   }
@@ -314,7 +320,7 @@ int findDeviceByName(String type, String nme){
       if (dev.namee == String(nme)){
         DPRINT("found Matrix with name ");
         DPRINTLN(nme);
-        return dev.id;
+        queue.push(dev.id);
       }
     }
   }
@@ -330,12 +336,12 @@ int findDeviceByName(String type, String nme){
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
-        return dev.id;
-      }
+        queue.push(dev.id);
+        }
     }
   }
   else if (type.startsWith("Ro")){
-    for(int i=0;i<numTerm;i++){
+    for(int i=0;i<numRouter;i++){
       DPRINT("Stepped into Router");
       device dev = router[i];
       DPRINT("Router ");
@@ -345,23 +351,66 @@ int findDeviceByName(String type, String nme){
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
-        return dev.id;
+        queue.push(dev.id);     }
       }
     }
-  }
-  else return 99999; // got no device with that name,
-}
-// function to send a message to a device, called from loop if msgSwitch = 1
-void sendMessage(){
-  msgSwitch = 0;
-  DPRINTLN("sendMessage Function called");
+    else {
+      queue.push(0);
+    }
+    static int arr[255];
+    DPRINT("got ");
+    DPRINT(queue.count());
+    DPRINT(" devices ");
+    for(int i = 0; i<=queue.count();i++){
+      arr[i]=queue.pop();
+      DPRINT(arr[i]);
+      DPRINT(" ");
+    }
+    DFLUSH();
+    return arr;
+ }
+
+// Function to send to a group //
+void sendMessageGroup(){
+  DPRINTLN("GroupMess Function called");
   const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
   msgToSend.toCharArray(packet,msgToSend.length()); //convert String msgToSend to char array, \0 auto added
   DPRINT("MESSAGE = "); 
   DPRINTLN(msgToSend);
-  DPRINT("Pjon status - ");
-  DPRINTLN(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1));
-  bus.update();// adds the messsageto the bus (prints status code to console)
+  for(int i=0; i<=msgSendListSize; i++){
+    DPRINT("SENDING TO");
+    DPRINTLN(msgSendList[i]);
+    DPRINT("Pjon status - ");
+    bus.update();
+    DPRINTLN(  bus.send(uint8_t(msgSendList[i]),packet,msgToSend.length()+1));
+    bus.update();// adds the messsageto the bus (prints status code to console)
+  }
+  msgSendId = 0; //reset
+  msgToSend = ""; //reset
+  msgSwitch = 0; //reset
+  msgSendListSize = 0;
+  for(int i = 0; i<255; i++){
+    msgSendList[i] = NULL;
+  }
+}
+// function to send a message to a device, called from loop if msgSwitch = 1
+void sendMessage(){
+  msgSwitch = 0;
+  if(msgSendId != 9999){
+    DPRINTLN("sendMessage Function called");
+    const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
+    msgToSend.toCharArray(packet,msgToSend.length()); //convert String msgToSend to char array, \0 auto added
+    DPRINT("MESSAGE = "); 
+    DPRINTLN(msgToSend);
+    DPRINT("Pjon status - ");
+    DPRINTLN(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1));
+    bus.update();// adds the messsageto the bus (prints status code to console)
+  }
+  else{
+    DPRINTLN("GROUP MESSAGE");
+    sendMessageGroup();
+    
+  }
   msgSendId = 0; //reset
   msgToSend = ""; //reset
   msgSwitch = 0; //reset
@@ -438,6 +487,7 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       DPRINT(" id : ");
       DPRINTLN(wizNetIn.id);
   }
+  DFLUSH();
   // send back a little "ack"
   msgSwitch = 1; 
   msgToSend = "ack,";
@@ -478,17 +528,19 @@ void parseMsg(int id, String msg) {
     DPRINTLN(idStr);
     int id = idStr.toInt(); // doing toInt() on something with any character other than a number in it results in 0 being returned
     msg.remove(0,msg.indexOf(',')+1); // remove the value (whatever it is) and the trailing comma
+    int *idList;
     if ( id == 0 ) { // Theres a letter in there. so we got a type.
       String idName = msg.substring(0,msg.indexOf(',')); // Theres going to be name following. 
       msg.remove(0,msg.indexOf(',')+1); // strip off the name (and ",") leaving just the message to send
-      id = findDeviceByName(idStr,idName);  // Run findDeviceByName with our 2 variables. Set the id to be the number returned
-      DPRINTLN("ID");
-      DPRINTLN(id);
+	    idList = findDeviceByName(idStr,idName);
+	    msgSendId = 9999; // Run findDeviceByName with our 2 variables. Set the id to be the number returned
+      msgSendList = idList;
+      msgSendListSize = sizeof(idList);
       }
     msgSwitch = 1; // set ourselves up to send a message to someone
     msgToSend = msg; // copy the remaining message to our sending variable
     msg = ""; // delete the remaining message input
-    msgSendId = id; // set the ID we with to send to
+     // set the ID to send to -1 triggering group send
     // Messge will be sent in loop()
     DPRINTLN("MESSAGE TO SEND");
     DPRINT(msgToSend);
@@ -502,7 +554,7 @@ void parseMsg(int id, String msg) {
   msgSwitch = 1;
   msgToSend = msg;
   msg = "";
-  msgSendId = masterTerm;
+  msgSendId = 0;
  }
 /*
  if(msg.startsWith("Clk")){
