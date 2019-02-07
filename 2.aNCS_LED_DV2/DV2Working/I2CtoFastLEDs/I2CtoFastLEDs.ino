@@ -1,17 +1,18 @@
-// LEDcxFFFFFF 
-// c is channel 
-// x is pattern number
-// Valid x : 
-// 0 Off
-// 1-8 Patterns
-
-// cxzcz
-// S00 Seconds timeout
-// X0  Boolean automode
-// Color optional
+// Varidaic Debug Macro
+//#define DEBUG   //Comment this line to disable Debug output
+#ifdef DEBUG    // Debug is on
+  #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
+  #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
+  #define DFLUSH(...)    Serial.flush()
+#else // Debug is off
+  #define DPRINT(...)     //Nothing Happens
+  #define DPRINTLN(...)   //Nothing Happens
+  #define DFLUSH(...)
+#endif // end macro
+#define DEBUG_LED 13
 #include "FastLED.h"
 #include <Wire.h>
-#define NUM_LEDS 112
+#define NUM_LEDS 28
 #define DATA_PIN 2
 #define DATA_PIN_2 3
 //#define DATA_PIN_3 4
@@ -20,7 +21,7 @@
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
 #define I2C_ADDR 1
-#define CONNECTED_STRIPS 4
+#define CONNECTED_STRIPS 2
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 CRGB ledsA[NUM_LEDS];
 CRGB ledsB[NUM_LEDS];
@@ -33,12 +34,91 @@ String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 1;
-int autoSecs = 10;
+int autoSecs = 2;
+bool debugLED = false;
+void(* resetFunc) (void) = 0; // Software reset hack
+// function that executes whenever data is received from master
+// this function is registered as an event, see setup()
+void receiveEvent(int howMany) {
+  Serial.print("gotMessage  ");
+  while (Wire.available()) { // loop through all but the last
+    char c = Wire.read(); // receive byte as a character
+    string.concat(c);       // print the character
+  }
+  timeSinceBt = 0;
+  Serial.println(string);
+  string.trim();
+  parser();
+}
+void parser(){
+  while(string.length() >= 1){ // While there message left to read. 
+    DPRINT("Message is ");
+    DPRINT(string);
+    DPRINT(" With length ");
+    if(!string.endsWith(","))string.concat(","); // STOP CRASHING;
+    DPRINTLN(string.length());
+    String subs = string.substring(0,string.indexOf(",      ")); // get everything until the first comma.
+    string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
+    if(subs.startsWith("Pul")){
+      doPulse();
+      string = "";
+    }
+    if (subs.startsWith("Ptn")){ // next value is pattern. 
+      String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
+      x = ptn.toInt(); // Its going to be an integer. its the pattern number,
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+    }
+    if (subs.startsWith("Atm")){ // next value is boolean for automode
+      String atm = string.substring(0,string.indexOf(",")); // get until first comma
+      autoMode = atm.toInt(); // also an integer
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove it
+    }
+    if (subs.startsWith("Ats")){ // next value is autoSecs
+      String ats = string.substring(0,string.indexOf(",")); // get the value, 
+      autoSecs = ats.toInt();
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove the value and trailing comma
+    }
+    if (subs.startsWith("Col")){ // its the color
+      String r = string.substring(0,string.indexOf(",")); // first bit is red, 
+      ourCol.r = r.toInt(); // convert to an int
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove red and comma
+      String b = string.substring(0,string.indexOf(",")); // next up its blue
+      ourCol.b = b.toInt(); // to integer
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove blue and comma
+      String g = string.substring(0,string.indexOf(",")); // then green 
+      ourCol.g = g.toInt(); // conver to int
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // thats colour done, remove the value and the comma
+    }
+    DPRINTLN(string.length()); // prints the length of the command each iteration
+  }
+  DPRINT("STR = "); // prints after length < 1
+  DPRINTLN(string);
+  string = ""; // empty it
+}
+void doPulse() {
+  turnOff();
+  FastLED.show();
+  FL(0,NUM_LEDS){
+    ledsA[i]=CRGB::White;
+  }
+  copyLeds();
+  FastLED.show();
+  FastLED.delay(100);
+  turnOff();
+  FastLED.show();
+}
+void randX() {
+  if (autoMode == 1) {
+    x = random(2, 10);
+    Serial.print("RANDOM ");
+    Serial.println(x);
+  }
+}
 void setup() {
   Wire.begin(I2C_ADDR);
-  Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
-  Serial.begin(9600);
+  Serial.begin(115200);
+  pinMode(DEBUG_LED, OUTPUT);
   Serial.println("Ready for i2c");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
@@ -54,130 +134,73 @@ void setup() {
     FastLED.delay(300);
     i++;
   }
-
-}
-
-// function that executes whenever data is received from master
-// this function is registered as an event, see setup()
-void requestEvent() {
-  String msg = "STR,";
-  msg += String(I2C_ADDR);
-  msg += ",";
-  msg += String(CONNECTED_STRIPS);
-  msg += ",";
-  msg += String(ourCol.r);
-  msg += ",";
-  msg += String(ourCol.g);
-  msg += ",";
-  msg += String(ourCol.b);
-  msg += ",";
-  msg += String(x);
-  msg += ",";
-  msg += String(autoMode);
-  msg += ",";
-  msg += String(autoSecs);
-  msg += ",";
-  msg += '\0';
-  char buffer[msg.length()];
-  msg.toCharArray(buffer, msg.length());
-  Serial.println(msg);
-  Serial.println(msg.length());
-  Wire.write(buffer);
-  Serial.println(buffer);
-}
-void receiveEvent(int howMany) {
-  Serial.print("gotMessage  ");
-  while (Wire.available()) { // loop through all but the last
-    char c = Wire.read(); // receive byte as a character
-    string.concat(c);       // print the character
-  }
-  timeSinceBt = 0;
-  Serial.print(string);
-  string.trim();
-  String ss = string.substring(0, 1);
-  string.remove(0, 1);
-  if (ss == "X") {
-    autoMode = string.toInt();
-    Serial.print("AUTO");
-    Serial.print(autoMode);
-  }
-  else if (ss == "S") {
-    autoSecs = string.toInt();
-    Serial.print("AUTOSECS = ");
-    Serial.println(autoSecs);
-  }
-  else {
-    x = ss.toInt();
-    if (string.length() == 6) {
-      char charbuf[8];
-      string.toCharArray(charbuf, 8);
-      long int rgb = strtol(charbuf, 0, 16); //=>rgb=0x001234FE;
-      byte r = (byte)(rgb >> 16);
-      byte g = (byte)(rgb >> 8);
-      byte b = (byte)(rgb);
-      ourCol = CRGB(r, g, b);
-    }
-  }
-  string = "";
-}
-void randX() {
-  if (autoMode == 1) {
-    x = random(2, 10);
-    Serial.print("RANDOM ");
-    Serial.println(x);
-  }
+  turnOff();
+  copyLeds();
+  FastLED.show();
 }
 void loop() {
-  EVERY_N_MILLISECONDS(30) {
-    gHue++;
-  }
-  EVERY_N_SECONDS(1) {
-    timeSinceBt++;
-    if (timeSinceBt == autoSecs) {
-      timeSinceBt = 0;
-      randX();
+  EVERY_N_SECONDS(2) {
+    if(debugLED){
+      debugLED = false;
+      digitalWrite(DEBUG_LED,HIGH);
+    }
+    else{
+      debugLED = true;
+      digitalWrite(DEBUG_LED,LOW);
     }
   }
-  switch (x) {
-    case 0:
-      turnOff();
-      break;
-    case 1:
-      turnOn();
-      break;
-    case 2:
-      theLights();
-      break;
-    case 3:
-      rainbow();
-      break;
-    case 4:
-      rainbowWithGlitter();
-      break;
-    case 5:
-      confetti();
-      break;
-    case 6:
-      sinelon();
-      break;
-    case 7:
-      bpm();
-      break;
-    case 8:
-      juggle();
-      break;
-    case 9:
-      simpleStrobe();
-      break;
+  if(autoMode != 2){
+    EVERY_N_MILLISECONDS(30) {
+      gHue++;
+    }
+    EVERY_N_SECONDS(1) {
+      timeSinceBt++;
+      if (timeSinceBt == autoSecs) {
+       timeSinceBt = 0;
+       randX();
+      }
+    }
+    switch (x) {
+      case 0:
+        turnOff();
+        break;
+      case 1:
+        turnOn();
+        break;
+      case 2:
+        theLights();
+        break;
+      case 3:
+        rainbow();
+        break;
+      case 4:
+        rainbowWithGlitter();
+        break;
+      case 5:
+        confetti();
+        break;
+      case 6:
+        sinelon();
+        break;
+      case 7:
+        bpm();
+        break;
+      case 8:
+        juggle();
+        break;
+      case 9:
+        simpleStrobe();
+        break;
 
+    }
+    //call function
+    copyLeds();
+
+    FastLED.show();
+    FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
+
+    //  EVERY_N_MILLISECONDS( 20 )
   }
-  //call function
-  copyLeds();
-
-  FastLED.show();
-  FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
-
-  //  EVERY_N_MILLISECONDS( 20 )
 }
 void copyLeds() {
   ///for (int i = 0; i < NUM_LEDS; i++) 

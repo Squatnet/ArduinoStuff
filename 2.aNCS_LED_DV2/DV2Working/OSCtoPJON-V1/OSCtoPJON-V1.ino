@@ -5,7 +5,6 @@
  
 // Varidaic Debug Macro //
 #define DEBUG   //Comment this line to disable Debug output
-
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -19,11 +18,27 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Str,Top "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " /
+String regString = "Reg,WNI,OSCIn "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+
+// Ethernet & OSC Includes ///
+#include <SPI.h>
+#include <Ethernet.h>
+#include <EthernetUdp.h>
+#include <OSCBundle.h>
+
+// Ethernet Vars //
+byte mac[] = { 
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xFD }; 
+byte ip[] = { 192, 168, 1, 200 };
+char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet
+unsigned int localPort = 9000; // OSC IN port
+int ledPin =  13;       
+int ledState = LOW;
+EthernetUDP Udp; // init ETH UDP lib
 
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
-#define PJON_PIN 12
+#define PJON_PIN  7
 #include <PJONSlave.h>  // Coz we are inslave mode .
 uint8_t bus_id[] = {0, 0, 1, 53}; // Ancs unique ID
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED); // Force no id so master can assign us
@@ -131,6 +146,77 @@ void parser(){
   DPRINTLN(string);
   string = ""; // empty it
 };
+void iic(String x){
+  //Wire.beginTransmission(addr);
+  char c[x.length()+1];
+  x.toCharArray(c,x.length()+1);
+  //Wire.write(c);
+  bus.send(254,c,x.length()+1);
+  bus.update();
+  DPRINTLN("Sent Pjon");
+  //Wire.endTransmission();
+}
+void CLK(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+  DPRINT("CLK = : ");
+  DPRINTLN(b);
+  String toSend = "Clk,";
+  toSend.concat(String(b));
+  iic(toSend); // send the clock value/pulse to pjon.
+}
+void KICK(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+  if(b !=  0){  
+    DPRINT("KICK = : ");
+    DPRINTLN(b);
+    String toSend = "Kick,";
+    toSend.concat(String(b));
+    iic(toSend); // send the clock value/pulse to pjon.
+  }
+}
+void SNARE(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+    if(b !=  0){  
+    DPRINT("Snare = : ");
+    DPRINTLN(b);
+    String toSend = "Snare,";
+    toSend.concat(String(b));
+    iic(toSend); // send the clock value/pulse to pjon.
+  }
+}
+void HH(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+  if(b != 0){
+    DPRINT("HH = : ");
+    DPRINTLN(b);
+    String toSend = "HiHat,";
+    toSend.concat(String(b));
+    iic(toSend); // send the clock value/pulse to pjon.
+  }
+}
+void HHO(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
+  int b = msg.getFloat(0);
+  if(b != 0){
+    DPRINT("HH = : ");
+    DPRINTLN(b);
+    String toSend = "HiHat,";
+    toSend.concat(String(b));
+    iic(toSend); // send the clock value/pulse to pjon.
+  }
+}
+void IO(OSCMessage &msg, int addrOffset){ // Get float from message
+  ledState = (boolean) msg.getFloat(0); // get the float and change the bool state
+  digitalWrite(ledPin, ledState); // write led state
+  if (ledState) { // debug - turn osc I/O
+    DPRINTLN("OSC on");
+    iic(ledState);
+  }
+  else {
+    DPRINTLN("OSC off");
+    iic(ledState);
+  }
+  ledState = !ledState;     // change led state
+}
 void setup() {  // SETUP 
   DBEGIN(115200); // Serial console
   DPRINT("Setup ");
@@ -149,7 +235,21 @@ void setup() {  // SETUP
   delayStart = millis();
   DPRINT(". ");
   delayRunning = true;
+  DPRINT(". ");
+  pinMode(4, OUTPUT); // disable SD
+  DPRINT(". ");
+  digitalWrite(4, HIGH);
+  DPRINT(". ");
+  Ethernet.begin(mac, ip);  // init ETH
+  DPRINT(". ");
   DPRINTLN("Done!!!");
+  DPRINTLN("Arduino IP address: ");
+  for (byte thisByte = 0; thisByte < 4; thisByte++) {
+    DPRINT(Ethernet.localIP()[thisByte], DEC);
+    DPRINT("."); 
+  }
+  DPRINTLN();
+  Udp.begin(localPort); // listen to port 9000
   // SETUP FINISHES
 };
 // Function to register with master.
@@ -183,6 +283,18 @@ void loop() {
     acquired = true; // track that
     tellMasterAboutSelf(); // and register
   }
+  OSCBundle bundleIN; // init bundle class
+  int size; 
+  if( (size = Udp.parsePacket())>0) { // if the packet is not null
+    while(size--) 
+      bundleIN.fill(Udp.read()); // read packet
+    if(!bundleIN.hasError()) // if in the list below:
+      bundleIN.route("/aCK4", CLK);
+      bundleIN.route("/lKick", KICK);
+      bundleIN.route("/lSnare", SNARE);
+      bundleIN.route("/lHH", HH);
+      bundleIN.route("/lHHo", HHO);
+   }
   bus.update(); // update the PJON
   bus.receive(5000); // receive for a while
 } //END

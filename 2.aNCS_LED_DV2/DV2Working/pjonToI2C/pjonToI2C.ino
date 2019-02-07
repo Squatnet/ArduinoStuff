@@ -4,8 +4,7 @@
  */
  
 // Varidaic Debug Macro //
-#define DEBUG   //Comment this line to disable Debug output
-
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -19,11 +18,10 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Str,Top "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " /
-
+String regString = "Reg,Strip,Left "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+#include <Wire.h>
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
-#define PJON_PIN 12
 #include <PJONSlave.h>  // Coz we are inslave mode .
 uint8_t bus_id[] = {0, 0, 1, 53}; // Ancs unique ID
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED); // Force no id so master can assign us
@@ -71,7 +69,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
     if(data == PJON_ID_REQUEST)
       // We couldnt find a Master on the network.... 
       DPRINTLN("PJONSlave error: master-slave id request failed.");
-      delay(400); // wait 400ms
+      delay(40); // wait 400ms
       if (millis() > 15000){ // if 15s has passed
         DPRINTLN("Resetting due to no ID");
         delay(300); // we reset
@@ -82,7 +80,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       delay(160); // makes the delay about 500ms between retrys
      
  }
-  DFLUSH(); // wait til serial is printed
+  Serial.flush(); // wait til serial is printed
 };
 
 // PJON RECEIVER CODE
@@ -102,25 +100,64 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
     DPRINT(" ");
   }
   DPRINTLN();
-  DFLUSH();
+  Serial.flush();
   
 };
 // Reads an incoming control message
 void parser(){
-  while(string.length() >= 1){ // While there message left to read. 
+  Serial.print(string.length());
+  while(string.length() >= 1){
+    Serial.print("Packet length = ");
+    Serial.println(string.length());
+    DFLUSH();
+    if(string.indexOf(",")==-1)string.concat(","); //adds comma at end if not exists. hackkkyyyyy! i love it
+    Serial.print("packet = ");
+    DPRINTLN(string); // While there message left to read. 
+    DFLUSH();
     String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
-    string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
+    DPRINT("SUBS ");
+    DPRINTLN(subs);
+    DFLUSH();
+    string.remove(0,string.indexOf(",")+1); // remove everything up to and including the first comma
+    DPRINT("STRI");
+    DPRINTLN(string);
+    DFLUSH();
+    if(!string.endsWith(','))string.concat(","); // again bro, hackkkyyyyy! i love it
+    DPRINTLN(string);
     if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point
-    /* 
-     * Add your if staments here, Strips pattern code added for example
-     * if (subs.startsWith("ptn")){ // next value is pattern. 
-     *   String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
-     *   x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-     *   string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
-     *   }
-     *  
-     */
-   
+    if (subs.startsWith("Kick")){ // next value is pattern. 
+      DPRINTLN("KICK");
+      Wire.beginTransmission(1);
+      Wire.write("Pulse,1");
+      string.remove(0,string.indexOf(",")+1); // Remove the value
+      DPRINTLN(string);
+      Wire.endTransmission();
+      }
+    if (subs.startsWith("Snare")){ // next value is pattern. 
+      DPRINTLN("SNARE");
+      Wire.beginTransmission(2);
+      Wire.write("Pulse,1,");
+      string.remove(0,string.indexOf(",")+1); // Remove the value
+      DPRINTLN(string);
+      Wire.endTransmission();
+      }
+    if (subs.startsWith("HiHat")){ // next value is pattern. 
+      DPRINTLN("HH");
+      Wire.beginTransmission(3);
+      Wire.write("Pulse,1,");
+      DPRINTLN(string);
+      string.remove(0,string.indexOf(",")+1); // Remove the value
+      Wire.endTransmission();
+      }
+    if (subs.startsWith("Ctl")){
+     char c[string.length()+1];
+     string.toCharArray(c,string.length()+1);
+     for(int i = 1; i <= 4; i++){
+      Wire.beginTransmission(i);
+      Wire.write(c); 
+     }
+     string = "";
+    }
    else {
       string.remove(0,string.indexOf(",")+1);
     DPRINTLN(string);
@@ -132,13 +169,13 @@ void parser(){
   string = ""; // empty it
 };
 void setup() {  // SETUP 
-  DBEGIN(115200); // Serial console
+  Serial.begin(115200); // Serial console
   DPRINT("Setup ");
   bus.set_error(error_handler); // link PJON to error handler
   DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
   DPRINT(". ");
-  bus.strategy.set_pin(PJON_PIN); // Set PJON pin
+  bus.strategy.set_pin(12); // Set PJON pin
   DPRINT(". ");
   bus.begin(); // 
   DPRINT(". ");
@@ -149,7 +186,10 @@ void setup() {  // SETUP
   delayStart = millis();
   DPRINT(". ");
   delayRunning = true;
+  DPRINT(". ");
+  Wire.begin();
   DPRINTLN("Done!!!");
+  
   // SETUP FINISHES
 };
 // Function to register with master.
@@ -178,7 +218,7 @@ void loop() {
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) { // we have an id, but havent regisrtered
     DPRINT("Acquired device id: ");
     DPRINTLN(bus.device_id()); 
-    DFLUSH();
+    Serial.flush();
     delay(100);
     acquired = true; // track that
     tellMasterAboutSelf(); // and register
