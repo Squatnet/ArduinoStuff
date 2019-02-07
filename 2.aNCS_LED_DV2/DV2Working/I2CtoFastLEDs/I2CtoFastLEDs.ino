@@ -9,7 +9,7 @@
   #define DPRINTLN(...)   //Nothing Happens
   #define DFLUSH(...)
 #endif // end macro
-
+#define DEBUG_LED 13
 #include "FastLED.h"
 #include <Wire.h>
 #define NUM_LEDS 28
@@ -33,8 +33,9 @@ int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
-int autoMode = 2;
-int autoSecs = 10;
+int autoMode = 1;
+int autoSecs = 2;
+bool debugLED = false;
 void(* resetFunc) (void) = 0; // Software reset hack
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
@@ -117,6 +118,7 @@ void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
   Serial.begin(115200);
+  pinMode(DEBUG_LED, OUTPUT);
   Serial.println("Ready for i2c");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
@@ -132,9 +134,21 @@ void setup() {
     FastLED.delay(300);
     i++;
   }
-
+  turnOff();
+  copyLeds();
+  FastLED.show();
 }
 void loop() {
+  EVERY_N_SECONDS(2) {
+    if(debugLED){
+      debugLED = false;
+      digitalWrite(DEBUG_LED,HIGH);
+    }
+    else{
+      debugLED = true;
+      digitalWrite(DEBUG_LED,LOW);
+    }
+  }
   if(autoMode != 2){
     EVERY_N_MILLISECONDS(30) {
       gHue++;
