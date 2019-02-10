@@ -294,7 +294,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 // function to return an ID given a type and a Name
 int * findDeviceByName(String type, String nme){
   Queue<int> queue(numStrip+numMatrix+numTerm+numRouter);
-  if(type.strartWith("Al")){
+  if(type.startsWith("Al")){
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
       DPRINT("Stepped into string");
       device dev = strips[i]; // get a device to compare
