@@ -5,7 +5,6 @@
  *  or on the top menu Tools>Serial Monitor to show it. 
  *  Enter commands in the top line.
  */
-// hi 
 
 #define LED_PIN 13  // Sets LED_PIN to pin 13 (on board LED)
 // the setup function runs once when you press reset or power the board
