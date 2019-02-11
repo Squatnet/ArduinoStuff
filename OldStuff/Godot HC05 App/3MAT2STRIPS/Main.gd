@@ -3,6 +3,7 @@ extends Control
 onready var btn_connect = get_node("ConnBtn")
 var StripScene = load("res://Scenes/LEDString.tscn")
 var bt
+var activeConn = false
 var matrixes = []
 var strips = []
 func _ready():
@@ -22,9 +23,11 @@ func _on_connect_pressed():
 #GodotBluetooth Callbacks
 func _on_connected():
 	btn_connect.set_text("Disconnect")
+	activeConn = true
 	
 func _on_disconnected():
 	btn_connect.set_text("Connect")
+	
 	pass
 
 func set_signals():
