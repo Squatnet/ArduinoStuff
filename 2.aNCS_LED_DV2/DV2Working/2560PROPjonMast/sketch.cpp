@@ -294,7 +294,61 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 // function to return an ID given a type and a Name
 int * findDeviceByName(String type, String nme){
   Queue<int> queue(numStrip+numMatrix+numTerm+numRouter);
-  if (type.startsWith("St")){ // look at the right array
+  if(type.startsWith("Al")){
+    for(int i=0;i<numStrip;i++){ // iterate all known devices in array
+      DPRINT("Stepped into string");
+      device dev = strips[i]; // get a device to compare
+      DPRINT("Strip ");
+      DPRINT(dev.id);
+      DPRINT(dev.namee);
+      DPRINTLN();
+      if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
+        DPRINT("found strip with name ");
+        DPRINTLN(nme);
+        queue.push(dev.id); // return the device id
+      }
+    }
+    for(int i=0;i<numMatrix;i++){
+      DPRINT("Stepped into Matrix");
+      device dev = matrix[i];
+      DPRINT("Matrix ");
+      DPRINT(dev.id);
+      DPRINT(dev.namee);
+      DPRINTLN();
+      if (dev.namee == String(nme)){
+        DPRINT("found Matrix with name ");
+        DPRINTLN(nme);
+        queue.push(dev.id);
+      }
+    }
+    for(int i=0;i<numTerm;i++){
+      DPRINT("Stepped into Termi");
+      device dev = term[i];
+      DPRINT("Term ");
+      DPRINT(dev.id);
+      DPRINT(" - ");
+      DPRINT(dev.namee);
+      DPRINTLN();
+      if (dev.namee == String(nme)){
+        DPRINT("found Terminal with name ");
+        DPRINTLN(nme);
+        queue.push(dev.id);
+        }
+    }
+    for(int i=0;i<numRouter;i++){
+      DPRINT("Stepped into Router");
+      device dev = router[i];
+      DPRINT("Router ");
+      DPRINT(dev.id);
+      DPRINT(dev.namee);
+      DPRINTLN();
+      if (dev.namee == String(nme)){
+        DPRINT("found Terminal with name ");
+        DPRINTLN(nme);
+        queue.push(dev.id);     }
+    }
+  }
+  else if (type.startsWith("St")){ // look at the right array
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
       DPRINT("Stepped into string");
       device dev = strips[i]; // get a device to compare

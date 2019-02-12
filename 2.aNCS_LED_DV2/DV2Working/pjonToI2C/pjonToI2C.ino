@@ -1,8 +1,3 @@
-/**
- * @todo Make slaves react to clock pulses and bpm changes
- * @body Slave devices should be ready to receive a float from master indicating a change in BPM, They should also run a function on receiving a clock pulse from master
- */
- 
 // Varidaic Debug Macro //
 //#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
@@ -149,6 +144,17 @@ void parser(){
       string.remove(0,string.indexOf(",")+1); // Remove the value
       Wire.endTransmission();
       }
+    if (subs.startsWith("Mode")){
+      string = "";
+      Wire.beginTransmission(10);
+      Wire.write("Mode,");
+      Wire.endTransmission();
+      for(int i = 1; i<=4; i++){
+        Wire.beginTransmission(i);
+        Wire.write("Atm,2");
+        Wire.endTransmission();
+      }
+    }
     if (subs.startsWith("Ctl")){
      char c[string.length()+1];
      string.toCharArray(c,string.length()+1);
