@@ -349,3 +349,43 @@ static void strobeDraw(
     hue += huedelta;
   }
 }
+
+//function where a red pixle moves down the LED strips from A1-D28. RE Issue #44
+void pixleRef1(){
+  FL(0,NUM_LEDS){
+    ledsA[i]=CRGB::Red;
+    ledsA[i-1]=ourCol;
+    FastLED.show();
+    delay(250);
+    if (i==28){
+      ledsA[28]=ourCol;
+      }
+  }
+      FL(0,NUM_LEDS){
+        ledsB[i]=CRGB::Red;
+        ledsB[i-1]=ourCol;
+        FastLED.show();
+        delay(250);
+        if (i==28){
+          ledsB[28]=ourCol;
+          }
+      }
+      /*FL(0,NUM_LEDS){
+        ledsC[i]=CRGB::Red;
+        ledsC[i-1]=ourCol;
+        FastLED.show();
+        delay(250);
+        if (i==28){
+          ledsC[28]=ourCol;
+          }
+      }
+      FL(0,NUM_LEDS){
+        ledsD[i]=CRGB::Red;
+        ledsD[i-1]=ourCol;
+        FastLED.show();
+        delay(250);
+        if (i==28){
+          ledsD[28]=ourCol;
+          }
+      }*/
+}
