@@ -40,7 +40,7 @@ bool debugLED = false;
 unsigned long timer1=0;//timer used by pixleRef1.
 unsigned long quarterSec=50;
 int totalLedAmount= (NUM_LEDS*CONNECTED_STRIPS);
-CRGBArray leds[totalLedAmount];
+CRGBArray <(NUM_LEDS*CONNECTED_STRIPS)>leds;
 
 void setup() {/**********************************************************************************************************************************************/
 //  Wire.begin(I2C_ADDR);
