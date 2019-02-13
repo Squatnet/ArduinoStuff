@@ -450,6 +450,9 @@ void sendMessageGroup(){
 // function to send a message to a device, called from loop if msgSwitch = 1
 void sendMessage(){
   msgSwitch = 0;
+  if(msgSendId == 0){
+    DPRINT("NO ONE TO SEND TO");
+  }
   if(msgSendId != 9999){
     DPRINTLN("sendMessage Function called");
     const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
@@ -581,18 +584,24 @@ void parseMsg(int id, String msg) {
     String idStr = msg.substring(0,msg.indexOf(',')); // take whatever comes before the next comma.
     DPRINTLN(idStr);
     int id = idStr.toInt(); // doing toInt() on something with any character other than a number in it results in 0 being returned
+    DPRINTLN(id);
     msg.remove(0,msg.indexOf(',')+1); // remove the value (whatever it is) and the trailing comma
     int *idList;
     if ( id == 0 ) { // Theres a letter in there. so we got a type.
       String idName = msg.substring(0,msg.indexOf(',')); // Theres going to be name following. 
+      
       msg.remove(0,msg.indexOf(',')+1); // strip off the name (and ",") leaving just the message to send
 	    idList = findDeviceByName(idStr,idName);
 	    msgSendId = 9999; // Run findDeviceByName with our 2 variables. Set the id to be the number returned
       msgSendList = idList;
       msgSendListSize = sizeof(idList);
       }
+     else {
+      msgSendId = id;
+     }
+	  msgToSend = "";
     msgSwitch = 1; // set ourselves up to send a message to someone
-    msgToSend = msg; // copy the remaining message to our sending variable
+    msgToSend.concat(msg); // copy the remaining message to our sending variable
     msg = ""; // delete the remaining message input
      // set the ID to send to -1 triggering group send
     // Messge will be sent in loop()
