@@ -26,7 +26,7 @@
 CRGB ledsA[NUM_LEDS];
 CRGB ledsB[NUM_LEDS];
 CRGB ledsC[NUM_LEDS];
-CRGB ledsD[NUM_LEDS];
+//CRGB ledsD[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 int x = 0; // holder for i2c message
@@ -39,9 +39,10 @@ int a = 0;//counter for millis timer. used by pixleRef1.
 bool debugLED = false;
 unsigned long timer1=0;//timer used by pixleRef1.
 unsigned long quarterSec=50;
-CRGBArray <(NUM_LEDS/*CONNECTED_STRIPS*/)> leds;
+int totalLedAmount= (NUM_LEDS*CONNECTED_STRIPS);
+CRGBArray leds[totalLedAmount];
 
-void setup() {
+void setup() {/**********************************************************************************************************************************************/
 //  Wire.begin(I2C_ADDR);
 //  Wire.onReceive(receiveEvent);
   Serial.begin(115200);
@@ -55,12 +56,12 @@ void setup() {
  FL(0,NUM_LEDS){
   leds[i]=&ledsA[i];
  }
-/* FL(0,NUM_LEDS){
-  leds[(i+(NUM_LEDS*2)+1)]=&ledsB[i];
+ FL(0,NUM_LEDS){
+  leds[(i+(NUM_LEDS+1))]=&ledsB[i];
  }
  FL(0,NUM_LEDS){
-  leds[(i+(NUM_LEDS*3)+2)]=&ledsC[i];
- }*/
+  leds[(i+(NUM_LEDS*2)+1)]=&ledsC[i];
+ }
 
   FastLED.setBrightness(128);
   int i = 0;
@@ -77,10 +78,10 @@ void setup() {
   FastLED.show();
 }
 
-void loop(){
+void loop(){/*************************************************************************************************************************/
   pixleRef1();
-  //FastLED.show();
-   // FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
+  FastLED.show();
+  FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
   
 }
 
@@ -91,14 +92,16 @@ void pixleRef1(){
     a++;
     DPRINTLN(a);
     leds[a]=CRGB::Red;
+    FastLED.show();
     if (a!=0){
       leds[a-1]=CRGB::Black;
+      FastLED.show();
     }
-    if (a>(NUM_LEDS/*CONNECTED_STRIP*/)){
+    if (a>totalLedAmount){
       a=0;
     }
   }
-    
+   
 }
   
 
