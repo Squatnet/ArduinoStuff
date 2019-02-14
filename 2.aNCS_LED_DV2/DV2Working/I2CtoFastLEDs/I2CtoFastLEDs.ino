@@ -11,7 +11,7 @@
   #define DPRINTLN(...)   //Nothing Happens
   #define DFLUSH(...)
 #endif // end macro
-
+#define DEBUG_LED 13
 #include "FastLED.h"
 #include <Wire.h>
 #define NUM_LEDS 28
@@ -36,7 +36,8 @@ String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
 int autoMode = 1;
-int autoSecs = 10;
+int autoSecs = 2;
+bool debugLED = false;
 void(* resetFunc) (void) = 0; // Software reset hack
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
@@ -132,6 +133,7 @@ void randX() {
 void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
+  pinMode(DEBUG_LED, OUTPUT);
   DBEGIN(115200);
   DPRINTLN("Ready for i2c");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
@@ -148,9 +150,21 @@ void setup() {
     FastLED.delay(300);
     i++;
   }
-
+  turnOff();
+  copyLeds();
+  FastLED.show();
 }
 void loop() {
+  EVERY_N_SECONDS(2) {
+    if(debugLED){
+      debugLED = false;
+      digitalWrite(DEBUG_LED,HIGH);
+    }
+    else{
+      debugLED = true;
+      digitalWrite(DEBUG_LED,LOW);
+    }
+  }
   if(autoMode != 2){
     EVERY_N_MILLISECONDS(30) {
       gHue++;
@@ -350,4 +364,44 @@ static void strobeDraw(
     }
     hue += huedelta;
   }
+}
+
+//function where a red pixle moves down the LED strips from A1-D28. RE Issue #44
+void pixleRef1(){
+  FL(0,NUM_LEDS){
+    ledsA[i]=CRGB::Red;
+    ledsA[i-1]=ourCol;
+    FastLED.show();
+    delay(250);
+    if (i==28){
+      ledsA[28]=ourCol;
+      }
+  }
+      FL(0,NUM_LEDS){
+        ledsB[i]=CRGB::Red;
+        ledsB[i-1]=ourCol;
+        FastLED.show();
+        delay(250);
+        if (i==28){
+          ledsB[28]=ourCol;
+          }
+      }
+      /*FL(0,NUM_LEDS){
+        ledsC[i]=CRGB::Red;
+        ledsC[i-1]=ourCol;
+        FastLED.show();
+        delay(250);
+        if (i==28){
+          ledsC[28]=ourCol;
+          }
+      }
+      FL(0,NUM_LEDS){
+        ledsD[i]=CRGB::Red;
+        ledsD[i-1]=ourCol;
+        FastLED.show();
+        delay(250);
+        if (i==28){
+          ledsD[28]=ourCol;
+          }
+      }*/
 }
