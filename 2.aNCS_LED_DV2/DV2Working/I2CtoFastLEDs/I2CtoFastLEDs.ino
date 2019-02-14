@@ -57,8 +57,8 @@ void parser(){
     DPRINT(" With length ");
     if(!string.endsWith(","))string.concat(","); // STOP CRASHING;
     DPRINTLN(string.length());
-    String subs = string.substring(0,string.indexOf(",      ")); // get everything until the first comma.
-    string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
+    String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
+    string.remove(0,string.indexOf(",")+1); // remove everything up to and including the first comma
     if(subs.startsWith("Pul")){
       doPulse();
       string = "";
@@ -66,28 +66,28 @@ void parser(){
     if (subs.startsWith("Ptn")){ // next value is pattern. 
       String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
       x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      string.remove(0,string.indexOf(",")+1); // Remove the value
     }
     if (subs.startsWith("Atm")){ // next value is boolean for automode
       String atm = string.substring(0,string.indexOf(",")); // get until first comma
       autoMode = atm.toInt(); // also an integer
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove it
+      string.remove(0,string.indexOf(",")+1); // remove it
     }
     if (subs.startsWith("Ats")){ // next value is autoSecs
       String ats = string.substring(0,string.indexOf(",")); // get the value, 
       autoSecs = ats.toInt();
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove the value and trailing comma
+      string.remove(0,string.indexOf(",")+1); // remove the value and trailing comma
     }
     if (subs.startsWith("Col")){ // its the color
       String r = string.substring(0,string.indexOf(",")); // first bit is red, 
       ourCol.r = r.toInt(); // convert to an int
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove red and comma
+      string.remove(0,string.indexOf(",")+1); // remove red and comma
       String b = string.substring(0,string.indexOf(",")); // next up its blue
       ourCol.b = b.toInt(); // to integer
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove blue and comma
+      string.remove(0,string.indexOf(",")+1); // remove blue and comma
       String g = string.substring(0,string.indexOf(",")); // then green 
       ourCol.g = g.toInt(); // conver to int
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // thats colour done, remove the value and the comma
+      string.remove(0,string.indexOf(",")+1); // thats colour done, remove the value and the comma
     }
     DPRINTLN(string.length()); // prints the length of the command each iteration
   }

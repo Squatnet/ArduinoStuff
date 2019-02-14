@@ -13,7 +13,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Strip,Left "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+String regString = "Reg,Strip,Debug "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
 #include <Wire.h>
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
@@ -161,6 +161,7 @@ void parser(){
      for(int i = 1; i <= 4; i++){
       Wire.beginTransmission(i);
       Wire.write(c); 
+      Wire.endTransmission();
      }
      string = "";
     }

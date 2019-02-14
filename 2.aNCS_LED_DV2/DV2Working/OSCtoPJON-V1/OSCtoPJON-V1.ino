@@ -28,10 +28,10 @@ String regString = "Reg,WNI,OSCIn "; // note the trailing space "Reg,Str,Left " 
 
 // Ethernet Vars //
 byte mac[] = { 
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xFD }; 
-byte ip[] = { 192, 168, 1, 200 };
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xFE }; 
+byte ip[] = { 192, 168, 1, 221 };
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet
-unsigned int localPort = 9000; // OSC IN port
+unsigned int localPort = 9050; // OSC IN port
 int ledPin =  13;       
 int ledState = LOW;
 EthernetUDP Udp; // init ETH UDP lib
@@ -288,12 +288,15 @@ void loop() {
   if( (size = Udp.parsePacket())>0) { // if the packet is not null
     while(size--) 
       bundleIN.fill(Udp.read()); // read packet
+    DPRINTLN("INTERCEPTED OSC");
     if(!bundleIN.hasError()) // if in the list below:
+      DPRINTLN(" INTERESTED IN OSC ");
       bundleIN.route("/aCK4", CLK);
       bundleIN.route("/lKick", KICK);
       bundleIN.route("/lSnare", SNARE);
       bundleIN.route("/lHH", HH);
       bundleIN.route("/lHHo", HHO);
+      bundleIN.route("/Test", DPRINTLN("TEST"));
    }
   bus.update(); // update the PJON
   bus.receive(5000); // receive for a while
