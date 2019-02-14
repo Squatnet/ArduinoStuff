@@ -18,7 +18,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Strip,Left "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+String regString = "Reg,Strip,Long "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
 #include <Wire.h>
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
@@ -80,7 +80,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
       delay(160); // makes the delay about 500ms between retrys
      
  }
-  Serial.flush(); // wait til serial is printed
+  DFLUSH(); // wait til serial is printed
 };
 
 // PJON RECEIVER CODE
@@ -100,18 +100,18 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
     DPRINT(" ");
   }
   DPRINTLN();
-  Serial.flush();
+  DFLUSH();
   
 };
 // Reads an incoming control message
 void parser(){
-  Serial.print(string.length());
+  DPRINT(string.length());
   while(string.length() >= 1){
-    Serial.print("Packet length = ");
-    Serial.println(string.length());
+    DPRINT("Packet length = ");
+    DPRINTLN(string.length());
     DFLUSH();
     if(string.indexOf(",")==-1)string.concat(","); //adds comma at end if not exists. hackkkyyyyy! i love it
-    Serial.print("packet = ");
+    DPRINT("packet = ");
     DPRINTLN(string); // While there message left to read. 
     DFLUSH();
     String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
@@ -151,10 +151,16 @@ void parser(){
       }
     if (subs.startsWith("Ctl")){
      char c[string.length()+1];
+     DPRINT("Control message");
+     DPRINTLN(string);
      string.toCharArray(c,string.length()+1);
      for(int i = 1; i <= 4; i++){
       Wire.beginTransmission(i);
+      DPRINT("Sending to :");
+      DPRINT(i);
+      DPRINTLN(string);
       Wire.write(c); 
+      Wire.endTransmission();
      }
      string = "";
     }
@@ -169,7 +175,7 @@ void parser(){
   string = ""; // empty it
 };
 void setup() {  // SETUP 
-  Serial.begin(115200); // Serial console
+  DBEGIN(115200); // Serial console
   DPRINT("Setup ");
   bus.set_error(error_handler); // link PJON to error handler
   DPRINT(". ");
@@ -218,7 +224,7 @@ void loop() {
   if((bus.device_id() != PJON_NOT_ASSIGNED) && !acquired) { // we have an id, but havent regisrtered
     DPRINT("Acquired device id: ");
     DPRINTLN(bus.device_id()); 
-    Serial.flush();
+    DFLUSH();
     delay(100);
     acquired = true; // track that
     tellMasterAboutSelf(); // and register

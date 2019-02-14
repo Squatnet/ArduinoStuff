@@ -1,10 +1,12 @@
 // Varidaic Debug Macro
-//#define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
+  #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
   #define DFLUSH(...)    Serial.flush()
 #else // Debug is off
+  #define DBEGIN(...)
   #define DPRINT(...)     //Nothing Happens
   #define DPRINTLN(...)   //Nothing Happens
   #define DFLUSH(...)
@@ -20,7 +22,7 @@
 #define FRAMES_PER_SECOND  120
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
-#define I2C_ADDR 1
+#define I2C_ADDR 4
 #define CONNECTED_STRIPS 2
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 CRGB ledsA[NUM_LEDS];
@@ -33,60 +35,74 @@ int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
-int autoMode = 2;
+int autoMode = 1;
 int autoSecs = 10;
 void(* resetFunc) (void) = 0; // Software reset hack
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) {
-  Serial.print("gotMessage  ");
+  DPRINT("gotMessage  ");
   while (Wire.available()) { // loop through all but the last
     char c = Wire.read(); // receive byte as a character
     string.concat(c);       // print the character
   }
   timeSinceBt = 0;
-  Serial.println(string);
+  DPRINTLN(string);
   string.trim();
   parser();
 }
 void parser(){
+  DPRINTLN("PARSER");
   while(string.length() >= 1){ // While there message left to read. 
     DPRINT("Message is ");
     DPRINT(string);
     DPRINT(" With length ");
-    if(!string.endsWith(","))string.concat(","); // STOP CRASHING;
     DPRINTLN(string.length());
-    String subs = string.substring(0,string.indexOf(",      ")); // get everything until the first comma.
-    string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
+    if(!string.endsWith(","))string.concat(","); // STOP CRASHING;
+    String subs = string.substring(0,string.indexOf(',')); // get everything until the first comma.
+    DPRINT("SubStr - ");
+    DPRINT(subs);
+    string.remove(0,string.indexOf(',')+1); // remove everything up to and including the first comma
+    DPRINT(" String - ");
+    DPRINTLN(string);
     if(subs.startsWith("Pul")){
       doPulse();
       string = "";
     }
     if (subs.startsWith("Ptn")){ // next value is pattern. 
+      DPRINT("PTN ");
       String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
+      DPRINT(ptn);
+      DPRINT(" - ");
       x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      DPRINTLN(x);
+      string.remove(0,string.indexOf(",")+1); // Remove the value
     }
     if (subs.startsWith("Atm")){ // next value is boolean for automode
+      DPRINT("ATM ");
       String atm = string.substring(0,string.indexOf(",")); // get until first comma
       autoMode = atm.toInt(); // also an integer
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove it
+      DPRINT(atm);
+      DPRINT(" - ");
+      DPRINTLN(autoMode);
+      string.remove(0,string.indexOf(",")+1); // remove it
     }
     if (subs.startsWith("Ats")){ // next value is autoSecs
+      DPRINT("ATS ");
       String ats = string.substring(0,string.indexOf(",")); // get the value, 
       autoSecs = ats.toInt();
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove the value and trailing comma
+      string.remove(0,string.indexOf(",")+1); // remove the value and trailing comma
     }
     if (subs.startsWith("Col")){ // its the color
       String r = string.substring(0,string.indexOf(",")); // first bit is red, 
       ourCol.r = r.toInt(); // convert to an int
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove red and comma
+      string.remove(0,string.indexOf(",")+1); // remove red and comma
       String b = string.substring(0,string.indexOf(",")); // next up its blue
       ourCol.b = b.toInt(); // to integer
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove blue and comma
+      string.remove(0,string.indexOf(",")+1); // remove blue and comma
       String g = string.substring(0,string.indexOf(",")); // then green 
       ourCol.g = g.toInt(); // conver to int
-      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // thats colour done, remove the value and the comma
+      string.remove(0,string.indexOf(",")+1); // thats colour done, remove the value and the comma
     }
     DPRINTLN(string.length()); // prints the length of the command each iteration
   }
@@ -109,15 +125,15 @@ void doPulse() {
 void randX() {
   if (autoMode == 1) {
     x = random(2, 10);
-    Serial.print("RANDOM ");
-    Serial.println(x);
+    DPRINT("RANDOM ");
+    DPRINTLN(x);
   }
 }
 void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
-  Serial.begin(115200);
-  Serial.println("Ready for i2c");
+  DBEGIN(115200);
+  DPRINTLN("Ready for i2c");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
   //FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
