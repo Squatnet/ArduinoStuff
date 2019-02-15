@@ -150,8 +150,10 @@ void changeDetector(){
 
 void setup() {
   // put your setup code here, to run once:
+  #ifdef DEBUG
   Serial.begin(9600);
   DPRINTLN("setup begin");
+  #endif
   lcd.begin();
   lcd.backlight();
   lcd.clear();
