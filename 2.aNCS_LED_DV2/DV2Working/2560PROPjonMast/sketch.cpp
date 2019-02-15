@@ -32,8 +32,8 @@ PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
 // Declare device Struct
 struct device { // struct for a device
-  int id; // device id num
-  String namee; // device name
+  int id = NULL;// device id num
+  String namee = NULL; // device name
 };
 // declare an array of our devices and a tracking number.
 // Strips
@@ -67,7 +67,7 @@ String i2cMsg = "";
 void compressStruct(String type){
   if(type.startsWith("Str")){ // check type, 
      for(int i =0; i<numStrip; i++){ // for all known devices of that type
-    if(strips[i].id == NULL);{ // removeDevices(id) wipes the id here so we have a "gap"
+    if(strips[i].id == NULL or strips[i].id == 0){ // removeDevices(id) wipes the id here so we have a "gap"
     DPRINT("FOUND EMPTY STRIP RECORD WITH ID");
     DPRINTLN(i);
     strips[i].id = strips[i+1].id; // Copy the next record downs id
@@ -81,7 +81,7 @@ void compressStruct(String type){
   }
  if(type.startsWith("Mat")){
     for(int i =0; i<numMatrix; i++){
-    if(matrix[i].id == NULL);{
+    if(matrix[i].id == NULL or matrix[i].id == 0){
     DPRINT("FOUND EMPTY MATRIX RECORD WITH ID");
     DPRINTLN(i);
     matrix[i] = matrix[i+1];
@@ -94,7 +94,7 @@ void compressStruct(String type){
   }
  if(type.startsWith("Ter")){
   for(int i =0; i<numTerm; i++){
-    if(term[i].id == NULL);{
+    if(term[i].id == NULL or term[i].id == 0){
     DPRINT("FOUND EMPTY TERMINAL RECORD WITH ID");
     DPRINTLN(i);
     term[i] = term[i+1];
@@ -107,7 +107,7 @@ void compressStruct(String type){
   }
    if(type.startsWith("Rtr")){
     for(int i =0; i<numRouter; i++){
-    if(router[i].id == NULL);{
+    if(router[i].id == NULL or term[i].id == 0){
     DPRINT("FOUND EMPTY ROUTER RECORD WITH ID");
     DPRINTLN(i);
     router[i] = router[i+1];
@@ -147,7 +147,8 @@ void removeDevice(int id){
           DPRINT("Device ");
           DPRINT(id);
           DPRINTLN(" is a Strip");
-          strips[i].id = NULL; // Assign a NULL value... Bye!
+          strips[i].id = NULL;
+          strips[i].namee = ""; // Assign a NULL value... Bye!
           compressStruct("Str"); // Run the function to remove gaps in the array. sending the type.
         } // end if id=id ;
       } // we checked every strip...
@@ -162,6 +163,7 @@ void removeDevice(int id){
           DPRINT(id);
           DPRINTLN(" is a Matrix");
           matrix[i].id = NULL;
+          matrix[i].namee = "";
           compressStruct("Mat");
         }
       }
@@ -302,6 +304,7 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      DFLUSH();
       if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
         DPRINT("found strip with name ");
         DPRINTLN(nme);
@@ -432,12 +435,14 @@ void sendMessageGroup(){
   DPRINT("MESSAGE = "); 
   DPRINTLN(msgToSend);
   for(int i=0; i<=msgSendListSize; i++){
-    DPRINT("SENDING TO");
-    DPRINTLN(msgSendList[i]);
-    DPRINT("Pjon status - ");
-    bus.update();
-    DPRINTLN(  bus.send(uint8_t(msgSendList[i]),packet,msgToSend.length()+1));
-    bus.update();// adds the messsageto the bus (prints status code to console)
+    if(!msgSendList[i] == 0){
+      DPRINT("SENDING TO");
+      DPRINTLN(msgSendList[i]);
+      DPRINT("Pjon status - ");
+      bus.update();
+      DPRINTLN(  bus.send(uint8_t(msgSendList[i]),packet,msgToSend.length()+1));
+      bus.update();// adds the messsageto the bus (prints status code to console)
+    }
   }
   msgSendId = 0; //reset
   msgToSend = ""; //reset
@@ -450,6 +455,9 @@ void sendMessageGroup(){
 // function to send a message to a device, called from loop if msgSwitch = 1
 void sendMessage(){
   msgSwitch = 0;
+  if(msgSendId == 0){
+    DPRINT("NO ONE TO SEND TO");
+  }
   if(msgSendId != 9999){
     DPRINTLN("sendMessage Function called");
     const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
@@ -581,18 +589,24 @@ void parseMsg(int id, String msg) {
     String idStr = msg.substring(0,msg.indexOf(',')); // take whatever comes before the next comma.
     DPRINTLN(idStr);
     int id = idStr.toInt(); // doing toInt() on something with any character other than a number in it results in 0 being returned
+    DPRINTLN(id);
     msg.remove(0,msg.indexOf(',')+1); // remove the value (whatever it is) and the trailing comma
     int *idList;
     if ( id == 0 ) { // Theres a letter in there. so we got a type.
       String idName = msg.substring(0,msg.indexOf(',')); // Theres going to be name following. 
+      
       msg.remove(0,msg.indexOf(',')+1); // strip off the name (and ",") leaving just the message to send
 	    idList = findDeviceByName(idStr,idName);
 	    msgSendId = 9999; // Run findDeviceByName with our 2 variables. Set the id to be the number returned
       msgSendList = idList;
       msgSendListSize = sizeof(idList);
       }
+     else {
+      msgSendId = id;
+     }
+	  msgToSend = "";
     msgSwitch = 1; // set ourselves up to send a message to someone
-    msgToSend = msg; // copy the remaining message to our sending variable
+    msgToSend.concat(msg); // copy the remaining message to our sending variable
     msg = ""; // delete the remaining message input
      // set the ID to send to -1 triggering group send
     // Messge will be sent in loop()
