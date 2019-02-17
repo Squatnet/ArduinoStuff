@@ -5,6 +5,7 @@
  
 // Varidaic Debug Macro //
 #define DEBUG   //Comment this line to disable Debug output
+
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -18,11 +19,11 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,WNI,OSCIn "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " /
+String regString = "Reg,Str,Top "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " /
 
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
-#define PJON_PIN  7
+#define PJON_PIN 12
 #include <PJONSlave.h>  // Coz we are inslave mode .
 uint8_t bus_id[] = {0, 0, 1, 53}; // Ancs unique ID
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED); // Force no id so master can assign us
