@@ -26,12 +26,15 @@
 CRGB leds[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
-int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+int x = 0; // holder for i2c message
+int stripNumber = 0; // holder for strip to address message.
 int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 2;
+int individualStrips = 0; //if 0 will treat the LEDs as one long strip, ignoring copy LEDs function, if 1 it will print the pattern to one strip
+int LEDNos = 0; //holds the number of LED's we are addressing.
 bool debugLED = false;
 
 void(* resetFunc) (void) = 0; // Software reset hack
@@ -47,6 +50,20 @@ void receiveEvent(int howMany) {
   DPRINTLN(string);
   string.trim();
   parser();
+}
+void setLEDs(){//will have to increase as we add more stripps. ToDO
+	if(individualStrips==1)&&(stripNumber==1){
+		LEDNos=NUM_LEDS_PER_STRIP;
+	}
+	if(individualStrips==1)&&(stripNumber==2){
+		LEDNos=NUM_LEDS_PER_STRIP;
+	}
+	if(individualStrips==1)&&(stripNumber==3){
+		LEDNos=NUM_LEDS_PER_STRIP;
+	}
+	else {
+		LEDNos=NUM_LEDS;
+	}
 }
 void parser(){
   DPRINTLN("PARSER");
@@ -66,6 +83,24 @@ void parser(){
     if(subs.startsWith("Pul")){
       doPulse();
       string = "";
+    }
+	if (subs.startsWith("SNo")){ // next value is strip No. to address. 
+      DPRINT("Strip No. ");
+      String sno = string.substring(0,string.indexOf(",")); // get everything until the comma
+      DPRINT(sno);
+      DPRINT(" - ");
+      stripNumber = sno.toInt(); // Its going to be an integer.
+      DPRINTLN(stripNumber);
+      string.remove(0,string.indexOf(",")+1); // Remove the value
+    }
+	if (subs.startsWith("ISt")){ // individual Strip Mode. next value if 0, addresses all strips, if 1 addresses strips individually. 
+      DPRINT("individual Strip Mode ");
+      String ist = string.substring(0,string.indexOf(",")); // get everything until the comma
+      DPRINT(ist);
+      DPRINT(" - ");
+      individualStrips = ist.toInt(); // Its going to be an integer.
+      DPRINTLN(individualStrips);
+      string.remove(0,string.indexOf(",")+1); // Remove the value
     }
     if (subs.startsWith("Ptn")){ // next value is pattern. 
       DPRINT("PTN ");
@@ -155,7 +190,7 @@ void setup() {
   FastLED.show();
 }
 void loop() {
-  EVERY_N_SECONDS(2) {
+  EVERY_N_SECONDS(2)  // this flashes the onboard LED when loop is completed.
     if(debugLED){
       debugLED = false;
       digitalWrite(DEBUG_LED,HIGH);
@@ -219,11 +254,9 @@ void loop() {
   }
 }
 void copyLeds() {
-  for (int i = 0; i < NUM_LEDS; i++) 
-  FL(0,NUM_LEDS){
-   /* ledsB[i] = leds[i];
-    ledsC[i] = leds[i];
-    ledsD[i] = leds[i];*/
+  FL(0,NUM_LEDS_PER_STRIP){
+	leds[(i+NUM_LEDS_PER_STRIP)]=leds[i];
+	leds[(i+(NUM_LEDS_PER_STRIP*2))]=leds[i];
   }
 }
 void turnOff() {
