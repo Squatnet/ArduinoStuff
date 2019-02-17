@@ -13,11 +13,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Strip,Debug "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
-/*
- * @todo Fix regString Needs trailing space
- * @body regString should not need a trailing space, Possibly caused by setting to small an array in string.toCharArray()
- */
+String regString = "Reg,Strip,Debug"; // The command sent to register device with master
 #include <Wire.h>
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
@@ -123,7 +119,19 @@ void parser(){
     DFLUSH();
     if(!string.endsWith(','))string.concat(","); // again bro, hackkkyyyyy! i love it
     DPRINTLN(string);
-    if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point
+    if (subs.startsWith("Rst")){
+		DPRINT("Reset Command Received... Sending to : ");
+		for(int i = 1; i<=4; i++){
+			DPRINT(i);
+			Wire.beginTransmission(i);
+			Wire.write("Rst,");
+			Wire.endTransmission();
+			DPRINT(", ");
+		}
+		DPRINTLN("Done !);
+		DFLUSH();
+		resetFunc(); // Reboot yourself. messge is destryed at this point
+	}
     if (subs.startsWith("Kick")){ // next value is pattern. 
       DPRINTLN("KICK");
       Wire.beginTransmission(1);
@@ -205,14 +213,14 @@ void setup() {  // SETUP
   DPRINT(". ");
   Wire.begin();
   DPRINTLN("Done!!!");
-  
+ 
   // SETUP FINISHES
 };
 // Function to register with master.
 // simply converts a String to a char array and sends it
 void tellMasterAboutSelf(){ 
   const char pkt[regString.length()+1]; // Create array
-  regString.toCharArray(pkt,regString.length()); // Convert string to Char[]
+  regString.toCharArray(pkt,regString.length()+1); // Convert string to Char[]
   bus.send(254,pkt,regString.length()+1); // Send the packet to master. 
 };
 void loop() {

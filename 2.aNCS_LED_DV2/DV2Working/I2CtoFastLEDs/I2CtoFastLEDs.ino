@@ -1,7 +1,3 @@
-/*
- * @todo I2CtoFastLEDs reset
- * @body Allow devices Running I2CtoFastLEDs code to be reset by their routers. 
- */
 // Varidaic Debug Macro
 #define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
@@ -70,6 +66,7 @@ void parser(){
     string.remove(0,string.indexOf(',')+1); // remove everything up to and including the first comma
     DPRINT(" String - ");
     DPRINTLN(string);
+	if(subs.startsWith("Rst"))resetFunc();
     if(subs.startsWith("Pul")){
       doPulse();
       string = "";
