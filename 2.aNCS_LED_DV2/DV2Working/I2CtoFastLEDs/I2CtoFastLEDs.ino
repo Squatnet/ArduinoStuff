@@ -12,29 +12,24 @@
 
 #include "FastLED.h"
 #include <Wire.h>
-#define NUM_LEDS 28
-#define DATA_PIN 2
-#define DATA_PIN_2 3
-//#define DATA_PIN_3 4
-//#define DATA_PIN_4 5
+#define NUM_STRIPS 3
+#define NUM_LEDS_PER_STRIP 28
+#define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS
 #define FRAMES_PER_SECOND  120
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
 #define I2C_ADDR 1
 #define CONNECTED_STRIPS 2
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
-CRGB ledsA[NUM_LEDS];
-CRGB ledsB[NUM_LEDS];
-//CRGB ledsC[NUM_LEDS];
-//CRGB ledsD[NUM_LEDS];
+CRGB leds[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
 int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
-int autoMode = 2;
-int autoSecs = 10;
+int autoMode = 1;
+int autoSecs = 2;
 void(* resetFunc) (void) = 0; // Software reset hack
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
@@ -98,7 +93,7 @@ void doPulse() {
   turnOff();
   FastLED.show();
   FL(0,NUM_LEDS){
-    ledsA[i]=CRGB::White;
+    leds[i]=CRGB::White;
   }
   copyLeds();
   FastLED.show();
@@ -118,10 +113,11 @@ void setup() {
   Wire.onReceive(receiveEvent);
   Serial.begin(115200);
   Serial.println("Ready for i2c");
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(ledsA, NUM_LEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_2, GRB>(ledsB, NUM_LEDS);
-  //FastLED.addLeds<WS2812B, DATA_PIN_3, GRB>(ledsC, NUM_LEDS);
-  //FastLED.addLeds<WS2812B, DATA_PIN_4, GRB>(ledsD, NUM_LEDS);
+  //sets one long array containing multiple data pins in the following format.
+  //type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
+  FastLED.addLeds<WS2812B, 2, GRB>(leds, 0, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<WS2812B, 3, GRB>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<WS2812B, 4, GRB>(leds, 2*NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
   FastLED.setBrightness(128);
   int i = 0;
   while (i < 4) {
@@ -189,37 +185,37 @@ void loop() {
   }
 }
 void copyLeds() {
-  ///for (int i = 0; i < NUM_LEDS; i++) 
+  for (int i = 0; i < NUM_LEDS; i++) 
   FL(0,NUM_LEDS){
-    ledsB[i] = ledsA[i];
-  //  ledsC[i] = ledsA[i];
-  //  ledsD[i] = ledsA[i];
+   /* ledsB[i] = leds[i];
+    ledsC[i] = leds[i];
+    ledsD[i] = leds[i];*/
   }
 }
 void turnOff() {
   FL(0,NUM_LEDS) {
-    ledsA[i] = CRGB( 0, 0, 0);
+    leds[i] = CRGB( 0, 0, 0);
   }
 }
 void turnOn() {
   FL(0,NUM_LEDS) {
-    ledsA[i] = ourCol;
+    leds[i] = ourCol;
   }
 }
 void theLights() { //  speckles and strobes
-  fadeToBlackBy( ledsA, NUM_LEDS, 10);
+  fadeToBlackBy( leds, NUM_LEDS, 10);
   int pos = random16(NUM_LEDS);
-  ledsA[pos] = ourCol;
+  leds[pos] = ourCol;
 }
 void rainbow()
 {
   // FastLED's built-in rainbow generator
-  fill_rainbow( ledsA, NUM_LEDS, gHue, 7);
+  fill_rainbow( leds, NUM_LEDS, gHue, 7);
 }
 void addGlitter( fract8 chanceOfGlitter)
 {
   if ( random8() < chanceOfGlitter) {
-    ledsA[ random16(NUM_LEDS) ] += CRGB::White;
+    leds[ random16(NUM_LEDS) ] += CRGB::White;
   }
 }
 void rainbowWithGlitter()
@@ -231,19 +227,19 @@ void rainbowWithGlitter()
 void confetti()
 {
   // random colored speckles that blink in and fade smoothly
-  fadeToBlackBy( ledsA, NUM_LEDS, 10);
+  fadeToBlackBy( leds, NUM_LEDS, 10);
   int pos = random16(NUM_LEDS);
-  ledsA[pos] = ourCol;
-  ledsA[pos] += CHSV( gHue + random8(64), 200, 255);
+  leds[pos] = ourCol;
+  leds[pos] += CHSV( gHue + random8(64), 200, 255);
 }
 
 void sinelon()
 {
   // a colored dot sweeping back and forth, with fading trails
-  fadeToBlackBy( ledsA, NUM_LEDS, 20);
+  fadeToBlackBy( leds, NUM_LEDS, 20);
   int pos = beatsin16( 13, 0, NUM_LEDS - 1 );
-  ledsA[pos] = ourCol;
-  ledsA[pos] += CHSV( gHue, 255, 192);
+  leds[pos] = ourCol;
+  leds[pos] += CHSV( gHue, 255, 192);
 }
 
 void bpm()
@@ -253,23 +249,23 @@ void bpm()
   CRGBPalette16 palette = PartyColors_p;
   uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
   FL(0,NUM_LEDS) { //9948
-    ledsA[i] = ourCol;
-    ledsA[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
+    leds[i] = ourCol;
+    leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
   }
 }
 
 void juggle() {
   // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy( ledsA, NUM_LEDS, 20);
+  fadeToBlackBy( leds, NUM_LEDS, 20);
   byte dothue = 0;
   FL(0,8) {
-    ledsA[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= ourCol;
-    ledsA[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= CHSV(dothue, 200, 255);
+    leds[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= ourCol;
+    leds[beatsin16( i + 7, 0, NUM_LEDS - 1 )] |= CHSV(dothue, 200, 255);
     dothue += 32;
   }
 }
 void simpleStrobe () {
- fill_solid( ledsA, NUM_LEDS, CRGB::Black);
+ fill_solid( leds, NUM_LEDS, CRGB::Black);
  const uint8_t kStrobeCycleLength = 6; // light every Nth frame
   static uint8_t sStrobePhase = 0;
   sStrobePhase = sStrobePhase + 1;
@@ -326,7 +322,7 @@ static void strobeDraw(
     //CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
     uint16_t pos = i;
     for( uint8_t w = 0; w < width; w++) {
-      ledsA[ pos ] = color;
+      leds[ pos ] = color;
       pos++;
       if( pos >= NUM_LEDS) {
         break;
