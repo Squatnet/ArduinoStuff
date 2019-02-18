@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -11,16 +11,19 @@
   #define DPRINTLN(...)   //Nothing Happens
   #define DFLUSH(...)
 #endif // end macro
+
+// SET THESE PER DEVICE//
+#define NUM_STRIPS 1
+#define NUM_LEDS_PER_STRIP 112
+#define I2C_ADDR 1
+// - - - - - - - - - - //
 #define DEBUG_LED 13
 #include "FastLED.h"
 #include <Wire.h>
-#define NUM_STRIPS 3
-#define NUM_LEDS_PER_STRIP 28
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS
 #define FRAMES_PER_SECOND  120
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
-#define I2C_ADDR 4
 #define CONNECTED_STRIPS 2
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 CRGB leds[NUM_LEDS];
@@ -62,7 +65,7 @@ void parser(){
     string.remove(0,string.indexOf(',')+1); // remove everything up to and including the first comma
     DPRINT(" String - ");
     DPRINTLN(string);
-	if(subs.startsWith("Rst"))resetFunc();
+	  if(subs.startsWith("Rst"))resetFunc();
     if(subs.startsWith("Pul")){
       doPulse();
       string = "";

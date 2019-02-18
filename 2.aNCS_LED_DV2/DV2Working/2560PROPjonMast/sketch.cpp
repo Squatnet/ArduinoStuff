@@ -26,7 +26,7 @@
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
-int debugMode = 1 ; // Set to 1 for debug on
+int debugMode = 0; // Set to 1 for debug on
 
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
@@ -478,16 +478,76 @@ void sendMessage(){
   msgSwitch = 0; //reset
 }
 // Function to register with the bluetooth app
-void regWithApp(){
-	String BtMessge = "{Nums,";
-	BtMessge.concat(numStrip);
-  BtMessge.concat(",");
-  BtMessge.concat(numMatrix);
-  BtMessge.concat(",");
-  BtMessge.concat(numTerm);
-  BtMessge.concat(",");
-  BtMessge.concat(numRouter);
-	BtMessge.concat("}} ");
+void regWithApp(String arg){
+  String BtMessge = "";
+  if(arg.startsWith("Ini")){
+    BtMessge = "{\"Nums\":[";
+  	BtMessge.concat(numStrip);
+    BtMessge.concat(",");
+    BtMessge.concat(numMatrix);
+    BtMessge.concat(",");
+    BtMessge.concat(numTerm);
+    BtMessge.concat(",");
+    BtMessge.concat(numRouter);
+	  BtMessge.concat("]} ");
+  }
+  else if (arg.startsWith("Dev")){
+    DPRINTLN(arg);
+    arg.remove(0,arg.indexOf(",")+1);
+    DPRINTLN(arg);
+    BtMessge = "{\"Dev\":[";
+    String typ = arg.substring(0,arg.indexOf(","));
+    arg.remove(0,arg.indexOf(",")+1);
+    DPRINTLN(arg);
+    if(!arg.endsWith(","))arg.concat(",");
+    if(typ.startsWith("Str")){
+      BtMessge.concat("\"Str\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(strips[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(strips[i].id);
+      BtMessge.concat("]}");
+    }
+    if(typ.startsWith("Mat")){
+      BtMessge.concat("\"Mat\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(matrix[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(matrix[i].id);
+      BtMessge.concat("]}");
+    }
+    if(typ.startsWith("Ter")){
+      BtMessge.concat("\"Ter\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(term[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(term[i].id);
+      BtMessge.concat("]}");
+    }
+    if(typ.startsWith("Rtr")){
+      BtMessge.concat("\"Rtr\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(router[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(router[i].id);
+      BtMessge.concat("]}");
+    }
+    else{
+      DPRINTLN(typ);
+    }
+  }
   DPRINTLN(BtMessge);
 	hc05.println(BtMessge);
 }
@@ -593,7 +653,7 @@ void parseMsg(int id, String msg) {
   }
   if(msg.startsWith("App")){
     msg.remove(0,msg.indexOf(',')+1);
-    regWithApp();
+    regWithApp(msg);
   }
   // Check if you are registered
   if(msg.startsWith("Chk")){
@@ -778,9 +838,7 @@ void setup() { // Setup
   DPRINT(". ");
   // RESET EVERY DEVICE ON THE BUS
   for (uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
-      if (bus.ids[i].state) {
-        bus.send(i,"Rst,",5);
-      }
+        bus.send(i,"Rst",4);
   }
   DPRINT(". ");
   bus.update(); // force a Pjon update ASSERT YOUR DOMINANCE HERE!

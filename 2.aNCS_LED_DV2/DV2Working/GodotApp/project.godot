@@ -28,6 +28,7 @@ window/size/width=720
 window/size/height=1440
 window/size/test_width=360
 window/size/test_height=720
+window/handheld/orientation="portrait"
 
 [rendering]
 

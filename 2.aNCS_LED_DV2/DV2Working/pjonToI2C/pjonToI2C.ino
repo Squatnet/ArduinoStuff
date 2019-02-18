@@ -13,8 +13,8 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
-String regString = "Reg,Strip,Debug"; // The command sent to register device with master
-#define I2C_SLAVES_NUM 4
+String regString = "Reg,Strip,Long"; // The command sent to register device with master
+#define I2C_SLAVES_NUM 1
 
 // I2C // 
 #include <Wire.h>

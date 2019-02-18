@@ -28,10 +28,11 @@ anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_left = 306.0
-margin_top = 19.0
-margin_right = 417.0
-margin_bottom = 45.0
+margin_left = 252.0
+margin_top = 13.0
+margin_right = 363.0
+margin_bottom = 39.0
+rect_scale = Vector2( 2, 2 )
 rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 focus_mode = 2
@@ -46,6 +47,7 @@ group = null
 text = "Connect"
 flat = false
 align = 1
+_sections_unfolded = [ "Rect" ]
 
 [connection signal="pressed" from="Connect" to="." method="_on_Connect_pressed"]
 
