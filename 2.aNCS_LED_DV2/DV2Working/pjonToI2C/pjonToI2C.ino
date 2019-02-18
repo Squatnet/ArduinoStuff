@@ -1,10 +1,10 @@
 // Varidaic Debug Macro //
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)  //Sends our arguments to DPRINTLN()
-  #define DFLUSH(...)    Serial.flush() // Flush serial
+  #define DFLUSH(...)    Serial.flush(__VA_ARGS__) // Flush serial
 #else // Debug is off
   #define DBEGIN(...)
   #define DPRINT(...)     //Nothing Happens
@@ -12,8 +12,11 @@
   #define DFLUSH(...)//Nothing Happens
 #endif // end macro
 // REGISTATION // 
-// EDIT THIS //
+// EDIT THIS PER DEVICE//
 String regString = "Reg,Strip,Debug"; // The command sent to register device with master
+#define I2C_SLAVES_NUM 4
+
+// I2C // 
 #include <Wire.h>
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
@@ -117,18 +120,18 @@ void parser(){
     DPRINT("STRI");
     DPRINTLN(string);
     DFLUSH();
-    if(!string.endsWith(','))string.concat(","); // again bro, hackkkyyyyy! i love it
+    if(!string.endsWith(","))string.concat(","); // again bro, hackkkyyyyy! i love it
     DPRINTLN(string);
     if (subs.startsWith("Rst")){
 		DPRINT("Reset Command Received... Sending to : ");
-		for(int i = 1; i<=4; i++){
+		for(int i = 1; i<=I2C_SLAVES_NUM; i++){
 			DPRINT(i);
 			Wire.beginTransmission(i);
 			Wire.write("Rst,");
 			Wire.endTransmission();
 			DPRINT(", ");
 		}
-		DPRINTLN("Done !);
+		DPRINTLN("Done !");
 		DFLUSH();
 		resetFunc(); // Reboot yourself. messge is destryed at this point
 	}
@@ -161,7 +164,7 @@ void parser(){
       Wire.beginTransmission(10);
       Wire.write("Mode,");
       Wire.endTransmission();
-      for(int i = 1; i<=4; i++){
+      for(int i = 1; i<=I2C_SLAVES_NUM; i++){
         Wire.beginTransmission(i);
         Wire.write("Atm,2");
         Wire.endTransmission();
@@ -172,7 +175,7 @@ void parser(){
      DPRINT("Control message");
      DPRINTLN(string);
      string.toCharArray(c,string.length()+1);
-     for(int i = 1; i <= 4; i++){
+     for(int i = 1; i <= I2C_SLAVES_NUM; i++){
       Wire.beginTransmission(i);
       DPRINT("Sending to :");
       DPRINT(i);
