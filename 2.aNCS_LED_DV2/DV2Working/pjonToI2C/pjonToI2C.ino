@@ -128,7 +128,7 @@ void parser(){
 			Wire.endTransmission();
 			DPRINT(", ");
 		}
-		DPRINTLN("Done !);
+		DPRINTLN("Done !");
 		DFLUSH();
 		resetFunc(); // Reboot yourself. messge is destryed at this point
 	}
