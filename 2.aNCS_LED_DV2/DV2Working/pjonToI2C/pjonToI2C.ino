@@ -12,8 +12,11 @@
   #define DFLUSH(...)//Nothing Happens
 #endif // end macro
 // REGISTATION // 
-// EDIT THIS //
+// EDIT THIS PER DEVICE//
 String regString = "Reg,Strip,Debug"; // The command sent to register device with master
+#define I2C_SLAVES_NUM 4
+
+// I2C // 
 #include <Wire.h>
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
@@ -121,7 +124,7 @@ void parser(){
     DPRINTLN(string);
     if (subs.startsWith("Rst")){
 		DPRINT("Reset Command Received... Sending to : ");
-		for(int i = 1; i<=4; i++){
+		for(int i = 1; i<=I2C_SLAVES_NUM; i++){
 			DPRINT(i);
 			Wire.beginTransmission(i);
 			Wire.write("Rst,");
@@ -161,7 +164,7 @@ void parser(){
       Wire.beginTransmission(10);
       Wire.write("Mode,");
       Wire.endTransmission();
-      for(int i = 1; i<=4; i++){
+      for(int i = 1; i<=I2C_SLAVES_NUM; i++){
         Wire.beginTransmission(i);
         Wire.write("Atm,2");
         Wire.endTransmission();
@@ -172,7 +175,7 @@ void parser(){
      DPRINT("Control message");
      DPRINTLN(string);
      string.toCharArray(c,string.length()+1);
-     for(int i = 1; i <= 4; i++){
+     for(int i = 1; i <= I2C_SLAVES_NUM; i++){
       Wire.beginTransmission(i);
       DPRINT("Sending to :");
       DPRINT(i);
