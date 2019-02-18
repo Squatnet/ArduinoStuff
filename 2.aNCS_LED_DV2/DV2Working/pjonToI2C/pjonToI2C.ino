@@ -1,10 +1,10 @@
 // Varidaic Debug Macro //
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)  //Sends our arguments to DPRINTLN()
-  #define DFLUSH(...)    Serial.flush() // Flush serial
+  #define DFLUSH(...)    Serial.flush(__VA_ARGS__) // Flush serial
 #else // Debug is off
   #define DBEGIN(...)
   #define DPRINT(...)     //Nothing Happens
@@ -117,7 +117,7 @@ void parser(){
     DPRINT("STRI");
     DPRINTLN(string);
     DFLUSH();
-    if(!string.endsWith(','))string.concat(","); // again bro, hackkkyyyyy! i love it
+    if(!string.endsWith(","))string.concat(","); // again bro, hackkkyyyyy! i love it
     DPRINTLN(string);
     if (subs.startsWith("Rst")){
 		DPRINT("Reset Command Received... Sending to : ");

@@ -477,6 +477,20 @@ void sendMessage(){
   msgToSend = ""; //reset
   msgSwitch = 0; //reset
 }
+// Function to register with the bluetooth app
+void regWithApp(){
+	String BtMessge = "{Nums,";
+	BtMessge.concat(numStrip);
+  BtMessge.concat(",");
+  BtMessge.concat(numMatrix);
+  BtMessge.concat(",");
+  BtMessge.concat(numTerm);
+  BtMessge.concat(",");
+  BtMessge.concat(numRouter);
+	BtMessge.concat("}} ");
+  DPRINTLN(BtMessge);
+	hc05.println(BtMessge);
+}
 // function to register a device type and name
 void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   if( reg.startsWith("Str")){ // we are a strip, reg = Str,Name
@@ -577,6 +591,10 @@ void parseMsg(int id, String msg) {
     DPRINT(msg);
     removeDevice(id); // removes a device. 
   }
+  if(msg.startsWith("App")){
+    msg.remove(0,msg.indexOf(',')+1);
+    regWithApp();
+  }
   // Check if you are registered
   if(msg.startsWith("Chk")){
     msg.remove(0,msg.indexOf(',')+1);
@@ -622,7 +640,7 @@ void parseMsg(int id, String msg) {
   msgSwitch = 1;
   msgToSend = msg;
   msg = "";
-  msgSendId = 0;
+  msgSendId = masterTerm;
  }
 /*
  if(msg.startsWith("Clk")){
@@ -648,7 +666,7 @@ if(msg.startsWith("Bpm")){
     msgToSend = "Bpm,";
     msgToSend.concat(x);
     msgToSend.concat(",");
-    msgSendId = 0;
+    msgSendId = 255;
     msgSwitch = 1;
   }
   
