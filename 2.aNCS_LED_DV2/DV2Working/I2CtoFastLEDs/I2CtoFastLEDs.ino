@@ -21,7 +21,7 @@
 #define NUM_STRIPS 3
 #define NUM_LEDS_PER_STRIP 29
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS
-#define I2C_ADDR 4
+#define I2C_ADDR 1
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 CRGB leds[NUM_LEDS];
 CRGB ourCol = CRGB(255, 255, 255);
@@ -30,14 +30,16 @@ CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0
 String string = "";
 uint8_t gHue = 0;
 int x = 0; // holder for i2c message
+int y = 0;
 int timeSinceBt = 0;
 int autoMode = 1;
 int autoSecs = 2;
 int stripNumber = 3;
-int individualStripMode = 0;
+int individualStripMode = 1;
 int LEDStart = 0;
 int LEDEnd = 0;
 int NoLEDs = 0;
+int patternStore[NUM_STRIPS+1];
 bool debugLED = false;
 
 void(* resetFunc) (void) = 0; // Software reset hack
@@ -53,6 +55,24 @@ void receiveEvent(int howMany) {
   DPRINTLN(string);
   string.trim();
   parser();
+}
+void setLEDs() {
+  if (individualStripMode == 1) {
+    NoLEDs = NUM_LEDS_PER_STRIP;
+    FL(1, NUM_STRIPS + 1) {
+
+      if ((individualStripMode == 1) && (stripNumber == i)) {
+        LEDEnd = (NUM_LEDS_PER_STRIP * i);
+        LEDStart = ((NUM_LEDS_PER_STRIP * i) - (NUM_LEDS_PER_STRIP));
+      }
+    }
+  }
+  if (individualStripMode == 0) {
+    NoLEDs = NUM_LEDS;
+    stripNumber = 0;
+    LEDStart = 0;
+    LEDEnd = NUM_LEDS;
+  }
 }
 void turnOn() {
   FL(LEDStart, LEDEnd) {
@@ -91,7 +111,9 @@ void parser() {
       stripNumber = sno.toInt(); // Its going to be an integer.
       DPRINTLN(stripNumber);
       string.remove(0, string.indexOf(",") + 1); // Remove the value
-    }
+    setLEDs();
+  
+  }
     if (subs.startsWith("ISt")) { // individual Strip Mode. next value if 0, addresses all strips, if 1 addresses strips individually.
       DPRINT("individual Strip Mode ");
       String ist = string.substring(0, string.indexOf(",")); // get everything until the comma
@@ -100,6 +122,9 @@ void parser() {
       individualStripMode = ist.toInt(); // Its going to be an integer.
       DPRINTLN(individualStripMode);
       string.remove(0, string.indexOf(",") + 1); // Remove the value
+    if (individualStripMode==0){
+      setLEDs();
+    }
     }
     if (subs.startsWith("Ptn")) { // next value is pattern.
       DPRINT("PTN ");
@@ -109,6 +134,9 @@ void parser() {
       x = ptn.toInt(); // Its going to be an integer. its the pattern number,
       DPRINTLN(x);
       string.remove(0, string.indexOf(",") + 1); // Remove the value
+    if(individualStripMode==1){
+      patternStore[stripNumber]=x;
+    }
     }
     if (subs.startsWith("Atm")) { // next value is boolean for automode
       DPRINT("ATM ");
@@ -155,30 +183,16 @@ void doPulse() {
 }
 void randX() {
   if (autoMode == 1) {
-    x = random(2, 10);
+  if (individualStripMode==0){
+    x = random(2, 9);
     DPRINT("RANDOM ");
     DPRINTLN(x);
   }
-}
-void setLEDs() {
-  if (individualStripMode == 1) {
-    NoLEDs = NUM_LEDS_PER_STRIP;
-    FL(1, NUM_STRIPS + 1) {
-
-      if ((individualStripMode == 1) && (stripNumber == i)) {
-        LEDEnd = (NUM_LEDS_PER_STRIP * i);
-        LEDStart = ((NUM_LEDS_PER_STRIP * i) - (NUM_LEDS_PER_STRIP));
-      }
-    }
+  if (individualStripMode!=0){
+      patternStore[stripNumber]=random(2,9);
   }
-  if (individualStripMode == 0) {
-    NoLEDs = NUM_LEDS;
-    stripNumber = 0;
-    LEDStart = 0;
-    LEDEnd = NUM_LEDS;
   }
 }
-
 void theLights() { //  speckles and strobes
   fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
   int pos = random16(LEDStart, LEDEnd);
@@ -307,6 +321,84 @@ static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8
     hue += huedelta;
   }
 }
+void patternSelect(){
+  int lastStripNumber=stripNumber;
+  if (individualStripMode==0){
+    setLEDs();
+      switch (x) {
+    case 0:
+      turnOff();
+      break;
+    case 1:
+      turnOn();
+        break;
+    case 2:
+      theLights();
+      break;
+    case 3:
+      rainbow();
+      break;
+    case 4:
+      rainbowWithGlitter();
+      break;
+    case 5:
+      confetti();
+      break;
+    case 6:
+      sinelon();
+      break;
+    case 7:
+      bpm();
+      break;
+    case 8:
+      juggle();
+      break;
+    case 9:
+      simpleStrobe();
+      break;
+    }
+  }
+  if (individualStripMode!=0){
+    FL(1,NUM_STRIPS+1){
+      stripNumber=i;
+      setLEDs();
+      y=patternStore[i];
+      switch (y) {
+        case 0:
+          turnOff();
+          break;
+        case 1:
+          turnOn();
+          break;
+        case 2:
+          theLights();
+          break;
+        case 3:
+          rainbow();
+          break;
+        case 4:
+          rainbowWithGlitter();
+          break;
+        case 5:
+          confetti();
+          break;
+        case 6:
+          sinelon();
+          break;
+        case 7:
+          bpm();
+          break;
+        case 8:
+          juggle();
+          break;
+        case 9:
+          simpleStrobe();
+          break;
+      }
+    stripNumber=lastStripNumber;
+    }
+  }
+}
 void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
@@ -321,7 +413,7 @@ void setup() {
 
   FastLED.setBrightness(128);
   int i = 0;
-  while (i < 4) {
+  while (i < NUM_STRIPS+1) {
     ourCol = startup[i];
     setLEDs();
     turnOn();
@@ -331,71 +423,37 @@ void setup() {
   }
   turnOff();
   FastLED.show();
+  FL(1,NUM_STRIPS+1){
+    patternStore[i]=i+1;
+  } 
 }
 void loop() {
   EVERY_N_SECONDS(2)  // this flashes the onboard LED when loop is completed.
     if(debugLED){
+      randX();
       debugLED = false;
       digitalWrite(DEBUG_LED,HIGH);
     }
     else{
+      randX();
       debugLED = true;
       digitalWrite(DEBUG_LED,LOW);
     }
   if (autoMode != 2) {
     EVERY_N_MILLISECONDS(30) {
       gHue++;
+    if (gHue>=255){
+      gHue=0;
     }
-    EVERY_N_SECONDS(1) {
+   }
+    EVERY_N_SECONDS(1) {      
       timeSinceBt++;
-      if (debugLED) {
-        debugLED = false;
-        digitalWrite(DEBUG_LED, HIGH);
-      }
-      else {
-        debugLED = true;
-        digitalWrite(DEBUG_LED, LOW);
-      }
       if (timeSinceBt == autoSecs) {
-        timeSinceBt = 0;
-        randX();
-      }
+    timeSinceBt = 0;}
     }
-    switch (x) {
-      case 0:
-        turnOff();
-        break;
-      case 1:
-        turnOn();
-        break;
-      case 2:
-        theLights();
-        break;
-      case 3:
-        rainbow();
-        break;
-      case 4:
-        rainbowWithGlitter();
-        break;
-      case 5:
-        confetti();
-        break;
-      case 6:
-        sinelon();
-        break;
-      case 7:
-        bpm();
-        break;
-      case 8:
-        juggle();
-        break;
-      case 9:
-        simpleStrobe();
-        break;
-
-    }
-    setLEDs();
+  }
+  patternSelect();
     FastLED.show();
     FastLED.delay(1000 / FRAMES_PER_SECOND);
-  }
+  
 }

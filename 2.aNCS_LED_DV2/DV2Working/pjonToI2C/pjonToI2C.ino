@@ -167,7 +167,7 @@ void parser(){
         Wire.endTransmission();
       }
     }
-    if (subs.startsWith("Ctl")){
+    else {
      char c[string.length()+1];
      DPRINT("Control message");
      DPRINTLN(string);
@@ -182,11 +182,7 @@ void parser(){
      }
      string = "";
     }
-   else {
-      string.remove(0,string.indexOf(",")+1);
-    DPRINTLN(string);
-    DPRINTLN(string.length());
-    }// prints the length of the command each iteration
+		
   }
   DPRINT("STR = "); // prints after length < 1
   DPRINTLN(string);
