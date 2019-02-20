@@ -13,8 +13,8 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
-String regString = "Reg,Strip,Long"; // The command sent to register device with master
-#define I2C_SLAVES_NUM 1
+String regString = "Reg,Strip,Debug"; // The command sent to register device with master
+#define I2C_SLAVES_NUM 4
 
 // I2C // 
 #include <Wire.h>
@@ -160,17 +160,21 @@ void parser(){
       Wire.endTransmission();
       }
     if (subs.startsWith("Mode")){
+      DPRINTLN("Switching Mode");
+      int val = string.toInt();
       string = "";
-      Wire.beginTransmission(10);
-      Wire.write("Mode,");
-      Wire.endTransmission();
-      for(int i = 1; i<=I2C_SLAVES_NUM; i++){
-        Wire.beginTransmission(i);
-        Wire.write("Atm,2");
+      if(val == 2){
+        Wire.beginTransmission(10);
+        Wire.write("Mode,");
         Wire.endTransmission();
+        for(int i = 1; i<=I2C_SLAVES_NUM; i++){
+          Wire.beginTransmission(i);
+          Wire.write("Atm,2");
+          Wire.endTransmission();
+        }
       }
     }
-    if (subs.startsWith("Ctl")){
+    else {
      char c[string.length()+1];
      DPRINT("Control message");
      DPRINTLN(string);
@@ -185,12 +189,7 @@ void parser(){
      }
      string = "";
     }
-   else {
-      string.remove(0,string.indexOf(",")+1);
-    DPRINTLN(string);
-    DPRINTLN(string.length());
-    }// prints the length of the command each iteration
-  }
+   }
   DPRINT("STR = "); // prints after length < 1
   DPRINTLN(string);
   string = ""; // empty it

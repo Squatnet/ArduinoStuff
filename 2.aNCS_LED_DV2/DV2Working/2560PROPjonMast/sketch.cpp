@@ -26,7 +26,7 @@
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
-int debugMode = 0; // Set to 1 for debug on
+int debugMode = 1; // Set to 1 for debug on
 
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx

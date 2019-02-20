@@ -14,8 +14,9 @@
 
 // SET THESE PER DEVICE//
 #define NUM_STRIPS 1
-#define NUM_LEDS_PER_STRIP 112
-#define I2C_ADDR 1
+#define NUM_LEDS_PER_STRIP 28
+#define I2C_ADDR 4
+
 // - - - - - - - - - - //
 #define DEBUG_LED 13
 #include "FastLED.h"
@@ -119,7 +120,7 @@ void doPulse() {
   }
   copyLeds();
   FastLED.show();
-  FastLED.delay(100);
+  FastLED.delay(300);
   turnOff();
   FastLED.show();
 }
@@ -219,6 +220,9 @@ void loop() {
     FastLED.delay(1000 / FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
 
     //  EVERY_N_MILLISECONDS( 20 )
+  }
+  else{
+    doPulse();
   }
 }
 void copyLeds() {

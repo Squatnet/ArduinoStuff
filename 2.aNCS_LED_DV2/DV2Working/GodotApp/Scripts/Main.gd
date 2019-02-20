@@ -13,20 +13,38 @@ func set_signals():
 func _on_connected():
 	print("MAIN - Connected")
 	$Connect.set_text("Disconnect")
-	GS.BT.sendData("App,Init")
+	if GS.BT:
+		$ModeLbl.set_text("BlueTooth")
+		GS.BT.sendData("App,Init")
+	else:
+		$ModeLbl.set_text("FakeData")
+		GS.fakeReg()
 
 func _on_disconnected():
 	$Connect.set_text("Connect")
-	for i in get_children():
-		queue_free()
+	$ModeLbl.set_text("Disconnected")
+	$Control.hide()
+	for i in $Control/MenuBarA.get_children():
+		i.queue_free()
+	for i in $Control/ContentArea.get_children():
+		i.queue_free()
 	
 func _on_reg_finished():
-	print("Main : Regfin")
-	var ss = load("res://Scenes/DeviceList.tscn")
-	var cock = ss.instance()
-	cock.rect_position = Vector2(0,80)
-	add_child(cock)
+	$Control.show()
+	print("Main : Register Devices finished")
+	addMenuButton("List All")
+	if GS.knownGroups.empty():
+		pass
+	else:
+		addMenuButton("Groups")
+	addMenuButton("Types")
 
+func addMenuButton(name):
+	var btn = Button.new()
+	btn.set_text(name)
+	btn.rect_scale = Vector2(2,2)
+	btn.connect("pressed",self,"_on_Menu_A_Btn_Pressed",[btn.text])
+	$Control/MenuBarA.add_child(btn)
 
 func _on_data_received(data_received):
 	var s = "{"+data_received+"}"
@@ -58,9 +76,22 @@ func _on_data_received(data_received):
 			GS.addDvc(type,sglDev)
 			print(str(GS.knownDevs))
 			GS.doRegStep()
-
+func _on_Menu_A_Btn_Pressed(btn):
+	print("MAIN: Menu_A_Btn_Pressed("+btn+")")
+	for i in $Control/ContentArea.get_children():
+		i.queue_free()
+	var newSc = load("res://Scenes/"+btn+".tscn")
+	var newInsScn = newSc.instance()
+	newInsScn.setup(btn)
+	$Control/ContentArea.add_child(newInsScn)
+	
 func _on_Connect_pressed():
 	if GS.BT:
 		GS.BT.getPairedDevices(true)
 	else:
-		print("Module not initialized!")
+		if $Connect.text == "Connect":
+			GS.emit_signal("connected")
+			OS.alert("BT Module not initialised, Using FakeData","Alert!")
+		else:
+			GS.emit_signal("disconnected")
+			GS._on_disconnected()
