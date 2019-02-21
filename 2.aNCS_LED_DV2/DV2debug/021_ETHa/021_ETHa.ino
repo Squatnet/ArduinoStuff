@@ -66,9 +66,9 @@ void KICK(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receiv
   if(b !=  0){  
     Serial.print("KICK = : ");
     Serial.println(b);
-    String toSend = "Kick,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(1,toSend); // send the clock value/pulse to pjon.
   }
 }
 void SNARE(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
@@ -76,9 +76,9 @@ void SNARE(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Recei
     if(b !=  0){  
     Serial.print("Snare = : ");
     Serial.println(b);
-    String toSend = "Snare,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(2,toSend); // send the clock value/pulse to pjon.
   }
 }
 void HH(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
@@ -86,19 +86,19 @@ void HH(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive 
   if(b != 0){
     Serial.print("HH = : ");
     Serial.println(b);
-    String toSend = "HiHat,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(3,toSend); // send the clock value/pulse to pjon.
   }
 }
 void HHO(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
   int b = msg.getFloat(0);
   if(b != 0){
-    Serial.print("HH = : ");
+    Serial.print("HHo = : ");
     Serial.println(b);
-    String toSend = "HiHat,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(4,toSend); // send the clock value/pulse to pjon.
   }
 }
 void IO(OSCMessage &msg, int addrOffset){ // Get float from message

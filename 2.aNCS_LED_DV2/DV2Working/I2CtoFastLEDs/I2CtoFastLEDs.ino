@@ -221,9 +221,6 @@ void loop() {
 
     //  EVERY_N_MILLISECONDS( 20 )
   }
-  else{
-    doPulse();
-  }
 }
 void copyLeds() {
   for (int i = 0; i < NUM_LEDS; i++) 
