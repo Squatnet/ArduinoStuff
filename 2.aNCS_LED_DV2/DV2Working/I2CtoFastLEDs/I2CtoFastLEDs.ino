@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-//#define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -15,7 +15,7 @@
 // SET THESE PER DEVICE//
 #define NUM_STRIPS 1
 #define NUM_LEDS_PER_STRIP 28
-#define I2C_ADDR 4
+#define I2C_ADDR 1
 
 // - - - - - - - - - - //
 #define DEBUG_LED 13
@@ -34,7 +34,7 @@ int x = 0; // holder for i2c message
 String string = "";
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 int timeSinceBt = 0;
-int autoMode = 1;
+int autoMode = 2;
 int autoSecs = 2;
 bool debugLED = false;
 

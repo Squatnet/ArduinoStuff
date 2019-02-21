@@ -1,5 +1,5 @@
 // Varidaic Debug Macro //
-//#define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -13,7 +13,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
-String regString = "Reg,Strip,Debug"; // The command sent to register device with master
+String regString = "Reg,Strip,FuckMonkey"; // The command sent to register device with master
 #define I2C_SLAVES_NUM 4
 
 // I2C // 
@@ -174,7 +174,7 @@ void parser(){
         }
       }
     }
-    else {
+    else if (subs.startsWith("Ctl")){
      char c[string.length()+1];
      DPRINT("Control message");
      DPRINTLN(string);
@@ -184,10 +184,13 @@ void parser(){
       DPRINT("Sending to :");
       DPRINT(i);
       DPRINTLN(string);
-      Wire.write(c); 
+      Wire.write(c);
       Wire.endTransmission();
      }
      string = "";
+    }
+    else {
+      string.remove(0,string.indexOf(",")+1);
     }
    }
   DPRINT("STR = "); // prints after length < 1

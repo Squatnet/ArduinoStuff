@@ -5,10 +5,10 @@
 #include <EthernetUdp.h>
 #include <OSCBundle.h>
 byte mac[] = { 
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xFD }; 
-byte ip[] = { 192, 168, 1, 200 };
+  0xDE, 0xAD, 0xBE, 0xEF, 0x3E, 0xFD }; 
+byte ip[] = { 192, 168, 1, 221 };
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet
-unsigned int localPort = 9000; // OSC IN port
+unsigned int localPort = 9050; // OSC IN port
 int ledPin =  13;       
 int ledState = LOW;
 EthernetUDP Udp; // init ETH UDP lib
@@ -26,7 +26,7 @@ void setup(){
     Serial.print("."); 
   }
   Udp.begin(localPort); // listen to port 9000
-  Wire.begin(); //i2c
+  Wire.begin(10); //i2c
 }
 
 void loop(){
