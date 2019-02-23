@@ -189,7 +189,11 @@ void randX() {//choses a random pattern
     DPRINTLN(x);
   }
   if (individualStripMode!=0){
-      patternStore[stripNumber]=random(2,9);
+    int lastStripNumber=stripNumber;
+    FL(1,NUM_STRIPS+1){
+      patternStore[i]=random(2,9);
+    }
+  stripNumber=lastStripNumber;
   }
   }
 }
