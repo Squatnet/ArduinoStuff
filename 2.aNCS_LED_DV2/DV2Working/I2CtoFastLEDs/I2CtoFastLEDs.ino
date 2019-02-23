@@ -18,34 +18,34 @@
 #define FRAMES_PER_SECOND  120
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
-#define NUM_STRIPS 3
-#define NUM_LEDS_PER_STRIP 29
-#define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS
+#define NUM_STRIPS 3 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
+#define NUM_LEDS_PER_STRIP 29 //defines number of LED's per strip, see above.
+#define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 1
-#define FL(aa,bb) for (int i = aa; i < bb; i++)
-CRGB leds[NUM_LEDS];
-CRGB ourCol = CRGB(255, 255, 255);
-CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)};
+#define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
+CRGB leds[NUM_LEDS]; //makes an array of CRGB values, this allows us to address each LED individualy or as a group.
+CRGB ourCol = CRGB(255, 255, 255); //used to specify an individual color for use in patterns.
+CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)}; //used in setup to flash 3 colors ??
 
-String string = "";
-uint8_t gHue = 0;
-int x = 0; // holder for i2c message
-int y = 0;
-int timeSinceBt = 0;
-int autoMode = 1;
-int autoSecs = 2;
-int stripNumber = 3;
-int individualStripMode = 1;
-int LEDStart = 0;
-int LEDEnd = 0;
-int NoLEDs = 0;
-int patternStore[NUM_STRIPS+1];
-bool debugLED = false;
+String string = ""; //holder for the parser string.
+uint8_t gHue = 0;//this value rotates from 0-255 when auto mode is not 2, this is then used as one of the RGB values in several patterns.
+int x = 0; // holder for i2c message which sets pattern when we address the stips as one array.
+int y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
+int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
+int autoMode = 1;//used to 1). select a random pattern if 1. 2) increments gHue if not 2.
+int autoSecs = 2;//sets the upper bound for timeSinceBt function.
+int stripNumber = 3;//stores the strip that we wish to set the pattern on. 
+int individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
+int LEDStart = 0;//this holds the number of the first LED in the arry to start printing a pattern to.
+int LEDEnd = 0;//this holds the number of the last LED in the arry to start printing a pattern to.
+int NoLEDs = 0;//this holds how many LED's we need to address. (may be a better way of doin this ToDo)
+int patternStore[NUM_STRIPS+1];//this array holds the pattern number for each strip.
+bool debugLED = false;//when true will flash the onboard LED each time the loop compleates.
 
 void(* resetFunc) (void) = 0; // Software reset hack
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
-void receiveEvent(int howMany) {
+void receiveEvent(int howMany) { //if a message is coming in over 12c, this concatinates it into a string and passes the string to the parser.
   DPRINT("gotMessage  ");
   while (Wire.available()) { // loop through all but the last
     char c = Wire.read(); // receive byte as a character
@@ -56,30 +56,30 @@ void receiveEvent(int howMany) {
   string.trim();
   parser();
 }
-void setLEDs() {
+void setLEDs() {//this function sets the boundares for LED addressing.
   if (individualStripMode == 1) {
-    NoLEDs = NUM_LEDS_PER_STRIP;
-    FL(1, NUM_STRIPS + 1) {
+    NoLEDs = NUM_LEDS_PER_STRIP;//if we are adressing individual strips  the number of LEDs to change will be equal to the number of LEDs in one strip.
+    FL(1, NUM_STRIPS + 1) { //loops through each strip
 
-      if ((individualStripMode == 1) && (stripNumber == i)) {
+      if ((individualStripMode == 1) && (stripNumber == i)) {//if it is equal to the strip we wish to address, set the start and end number of the strip.
         LEDEnd = (NUM_LEDS_PER_STRIP * i);
         LEDStart = ((NUM_LEDS_PER_STRIP * i) - (NUM_LEDS_PER_STRIP));
       }
     }
   }
-  if (individualStripMode == 0) {
-    NoLEDs = NUM_LEDS;
+  if (individualStripMode == 0) {//if addressing all strips as one.
+    NoLEDs = NUM_LEDS;//number of LEDs is equal to the total number of LEDs
     stripNumber = 0;
-    LEDStart = 0;
+    LEDStart = 0;//set start and end possition in array
     LEDEnd = NUM_LEDS;
   }
 }
-void turnOn() {
+void turnOn() {// for each LED turn it to ourCol.
   FL(LEDStart, LEDEnd) {
     leds[i] = ourCol;
   }
 }
-void turnOff() {
+void turnOff() {//for each LED turn off.
   FL(LEDStart, LEDEnd) {
     leds[i] = CRGB( 0, 0, 0);
   }
@@ -123,7 +123,7 @@ void parser() {
       DPRINTLN(individualStripMode);
       string.remove(0, string.indexOf(",") + 1); // Remove the value
     if (individualStripMode==0){
-      setLEDs();
+      setLEDs();// if 0 set the LED bounds, (if 1 this is set in Ptn bellow)
     }
     }
     if (subs.startsWith("Ptn")) { // next value is pattern.
@@ -170,7 +170,7 @@ void parser() {
   DPRINTLN(string);
   string = ""; // empty it
 }
-void doPulse() {
+void doPulse() {//pulses LEDs white then turns them off.
   turnOff();
   FastLED.show();
   FL(LEDStart, LEDEnd) {
@@ -181,7 +181,7 @@ void doPulse() {
   turnOff();
   FastLED.show();
 }
-void randX() {
+void randX() {//choses a random pattern
   if (autoMode == 1) {
   if (individualStripMode==0){
     x = random(2, 9);
@@ -237,7 +237,7 @@ void bpm()
   uint8_t BeatsPerMinute = 62;
   CRGBPalette16 palette = PartyColors_p;
   uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
-  FL(LEDStart, LEDEnd) { //9948
+  FL(LEDStart, LEDEnd) { //9948 
     leds[i] = ourCol;
     leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
   }
@@ -358,7 +358,7 @@ void patternSelect(){
       break;
     }
   }
-  if (individualStripMode!=0){
+  if (individualStripMode!=0){//second switch case used to set patternSelect array.
     FL(1,NUM_STRIPS+1){
       stripNumber=i;
       setLEDs();
