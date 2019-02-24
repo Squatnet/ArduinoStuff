@@ -54,47 +54,46 @@ void(* resetFunc) (void) = 0; // Software reset hack
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) { //if a message is coming in over 12c, this concatinates it into a string and passes the string to the parser.
-  DPRINT("gotMessage  ");
-  while (Wire.available()) { // loop through all but the last
-    char c = Wire.read(); // receive byte as a character
-    string.concat(c);       // print the character
-  }
-  timeSinceBt = 0;
-  DPRINTLN(string);
-  string.trim();
-  parser();
+	DPRINT("gotMessage  ");
+	while (Wire.available()) { // loop through all but the last
+		char c = Wire.read(); // receive byte as a character
+		string.concat(c);       // print the character
+	}
+	timeSinceBt = 0;
+	DPRINTLN(string);
+	string.trim();
+	parser();
 }
 void setLEDs() {//this function sets the boundares for LED addressing.
-  if (individualStripMode == 1) {
-    NoLEDs = NUM_LEDS_PER_STRIP;//if we are adressing individual strips  the number of LEDs to change will be equal to the number of LEDs in one strip.
-    FL(1, NUM_STRIPS + 1) { //loops through each strip
-
-      if ((individualStripMode == 1) && (stripNumber == i)) {//if it is equal to the strip we wish to address, set the start and end number of the strip.
-        LEDEnd = (NUM_LEDS_PER_STRIP * i);
-        LEDStart = ((NUM_LEDS_PER_STRIP * i) - (NUM_LEDS_PER_STRIP));
-      }
-    }
-  }
-  if (individualStripMode == 0) {//if addressing all strips as one.
-    NoLEDs = NUM_LEDS;//number of LEDs is equal to the total number of LEDs
-    stripNumber = 0;
-    LEDStart = 0;//set start and end possition in array
-    LEDEnd = NUM_LEDS;
-  }
+	if (individualStripMode == 1) {
+		NoLEDs = NUM_LEDS_PER_STRIP;//if we are adressing individual strips  the number of LEDs to change will be equal to the number of LEDs in one strip.
+		FL(1, NUM_STRIPS + 1) { //loops through each strip
+			if ((individualStripMode == 1) && (stripNumber == i)) {//if it is equal to the strip we wish to address, set the start and end number of the strip.
+				LEDEnd = (NUM_LEDS_PER_STRIP * i);
+				LEDStart = ((NUM_LEDS_PER_STRIP * i) - (NUM_LEDS_PER_STRIP));
+			}
+		}
+	}
+	if (individualStripMode == 0) {//if addressing all strips as one.
+		NoLEDs = NUM_LEDS;//number of LEDs is equal to the total number of LEDs
+		stripNumber = 0;
+		LEDStart = 0;//set start and end possition in array
+		LEDEnd = NUM_LEDS;
+	}
 }
 void turnOn() {// for each LED turn it to ourCol.
-  FL(LEDStart, LEDEnd) {
-    leds[i] = ourCol;
-  }
+	FL(LEDStart, LEDEnd) {
+		leds[i] = ourCol;
+	}
 }
 void turnOff() {//for each LED turn off.
-  FL(LEDStart, LEDEnd) {
-    leds[i] = CRGB( 0, 0, 0);
-  }
+	FL(LEDStart, LEDEnd) {
+		leds[i] = CRGB( 0, 0, 0);
+	}
 }
 void parser() {
-  DPRINTLN("PARSER");
-  while (string.length() >= 1) { // While there message left to read.
+	DPRINTLN("PARSER");
+	while (string.length() >= 1) { // While there message left to read.
     DPRINT("Message is ");
     DPRINT(string);
     DPRINT(" With length ");
@@ -108,86 +107,86 @@ void parser() {
     DPRINTLN(string);
     if (subs.startsWith("Rst"))resetFunc();
     if (subs.startsWith("Pul")) {
-      doPulse();
-      string = "";
+		doPulse();
+		string = "";
     }
     if (subs.startsWith("SNo")) { // next value is strip No. to address.
-      DPRINT("Strip No. ");
-      String sno = string.substring(0, string.indexOf(",")); // get everything until the comma
-      DPRINT(sno);
-      DPRINT(" - ");
-      stripNumber = sno.toInt(); // Its going to be an integer.
-      DPRINTLN(stripNumber);
-      string.remove(0, string.indexOf(",") + 1); // Remove the value
-	  setLEDs();
+		DPRINT("Strip No. ");
+		String sno = string.substring(0, string.indexOf(",")); // get everything until the comma
+		DPRINT(sno);
+		DPRINT(" - ");
+		stripNumber = sno.toInt(); // Its going to be an integer.
+		DPRINTLN(stripNumber);
+		string.remove(0, string.indexOf(",") + 1); // Remove the value
+		setLEDs();
 	}
     if (subs.startsWith("ISt")) { // individual Strip Mode. next value if 0, addresses all strips, if 1 addresses strips individually.
-      DPRINT("individual Strip Mode ");
-      String ist = string.substring(0, string.indexOf(",")); // get everything until the comma
-      DPRINT(ist);
-      DPRINT(" - ");
-      individualStripMode = ist.toInt(); // Its going to be an integer.
-      DPRINTLN(individualStripMode);
-      string.remove(0, string.indexOf(",") + 1); // Remove the value
+		DPRINT("individual Strip Mode ");
+		String ist = string.substring(0, string.indexOf(",")); // get everything until the comma
+		DPRINT(ist);
+		DPRINT(" - ");
+		individualStripMode = ist.toInt(); // Its going to be an integer.
+		DPRINTLN(individualStripMode);
+		string.remove(0, string.indexOf(",") + 1); // Remove the value
     if (individualStripMode==0){
-      setLEDs();// if 0 set the LED bounds, (if 1 this is set in Ptn bellow)
-    }
+		setLEDs();// if 0 set the LED bounds, (if 1 this is set in Ptn bellow)
+		}
     }
     if (subs.startsWith("Ptn")) { // next value is pattern.
-      DPRINT("PTN ");
-      String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
-      DPRINT(ptn);
-      DPRINT(" - ");
-      x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-      DPRINTLN(x);
-      string.remove(0, string.indexOf(",") + 1); // Remove the value
+		DPRINT("PTN ");
+		String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
+		DPRINT(ptn);
+		DPRINT(" - ");
+		x = ptn.toInt(); // Its going to be an integer. its the pattern number,
+		DPRINTLN(x);
+		string.remove(0, string.indexOf(",") + 1); // Remove the value
     if(individualStripMode==1){
-      patternStore[stripNumber]=x;
-    }
+		patternStore[stripNumber]=x;
+		}
     }
     if (subs.startsWith("Atm")) { // next value is boolean for automode
-      DPRINT("ATM ");
-      String atm = string.substring(0, string.indexOf(",")); // get until first comma
-      autoMode = atm.toInt(); // also an integer
-      DPRINT(atm);
-      DPRINT(" - ");
-      DPRINTLN(autoMode);
-      string.remove(0, string.indexOf(",") + 1); // remove it
+		DPRINT("ATM ");
+		String atm = string.substring(0, string.indexOf(",")); // get until first comma
+		autoMode = atm.toInt(); // also an integer
+		DPRINT(atm);
+		DPRINT(" - ");
+		DPRINTLN(autoMode);
+		string.remove(0, string.indexOf(",") + 1); // remove it
     }
     if (subs.startsWith("Ats")) { // next value is autoSecs
-      DPRINT("ATS ");
-      String ats = string.substring(0, string.indexOf(",")); // get the value,
-      autoSecs = ats.toInt();
-      string.remove(0, string.indexOf(",") + 1); // remove the value and trailing comma
+		DPRINT("ATS ");
+		String ats = string.substring(0, string.indexOf(",")); // get the value,
+		autoSecs = ats.toInt();
+		string.remove(0, string.indexOf(",") + 1); // remove the value and trailing comma
     }
     if (subs.startsWith("Col")) { // its the color
-      String r = string.substring(0, string.indexOf(",")); // first bit is red,
-      ourCol.r = r.toInt(); // convert to an int
-      string.remove(0, string.indexOf(",") + 1); // remove red and comma
-      String b = string.substring(0, string.indexOf(",")); // next up its blue
-      ourCol.b = b.toInt(); // to integer
-      string.remove(0, string.indexOf(",") + 1); // remove blue and comma
-      String g = string.substring(0, string.indexOf(",")); // then green
-      ourCol.g = g.toInt(); // conver to int
-      string.remove(0, string.indexOf(",") + 1); // thats colour done, remove the value and the comma
+		String r = string.substring(0, string.indexOf(",")); // first bit is red,
+		ourCol.r = r.toInt(); // convert to an int
+		string.remove(0, string.indexOf(",") + 1); // remove red and comma
+		String b = string.substring(0, string.indexOf(",")); // next up its blue
+		ourCol.b = b.toInt(); // to integer
+		string.remove(0, string.indexOf(",") + 1); // remove blue and comma
+		String g = string.substring(0, string.indexOf(",")); // then green
+		ourCol.g = g.toInt(); // conver to int
+		string.remove(0, string.indexOf(",") + 1); // thats colour done, remove the value and the comma
     }
 	if (subs.startsWith("Pal")) { // next value is if paletteMode is on or off.
-      DPRINT("Pal ");
-      String pal = string.substring(0, string.indexOf(",")); // get everything until the comma
-      DPRINT(pal);
-      DPRINT(" - ");
-      paletteMode = pal.toInt(); // Its going to be an integer. its paletteMode
-      DPRINTLN(x);
-      string.remove(0, string.indexOf(",") + 1); // Remove the value
+		DPRINT("Pal ");
+		String pal = string.substring(0, string.indexOf(",")); // get everything until the comma
+		DPRINT(pal);
+		DPRINT(" - ");
+		paletteMode = pal.toInt(); // Its going to be an integer. its paletteMode
+		DPRINTLN(x);
+		string.remove(0, string.indexOf(",") + 1); // Remove the value
 	}
 	if (subs.startsWith("PNo")) { // next value is the number of the palette to use.
-      DPRINT("PNo ");
-      String pno= string.substring(0, string.indexOf(",")); // get everything until the comma
-      DPRINT(pno);
-      DPRINT(" - ");
-      paletteNumber = pno.toInt(); // Its going to be an integer. its the palette number.
-      DPRINTLN(x);
-      string.remove(0, string.indexOf(",") + 1); // Remove the value
+		DPRINT("PNo ");
+		String pno= string.substring(0, string.indexOf(",")); // get everything until the comma
+		DPRINT(pno);
+		DPRINT(" - ");
+		paletteNumber = pno.toInt(); // Its going to be an integer. its the palette number.
+		DPRINTLN(x);
+		string.remove(0, string.indexOf(",") + 1); // Remove the value
 	}
     DPRINTLN(string.length()); // prints the length of the command each iteration  
 	DPRINT("STR = "); // prints after length < 1
