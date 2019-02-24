@@ -5,10 +5,10 @@
 #include <EthernetUdp.h>
 #include <OSCBundle.h>
 byte mac[] = { 
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xFD }; 
-byte ip[] = { 192, 168, 1, 200 };
+  0xDE, 0xAD, 0xBE, 0xEF, 0x3E, 0xFD }; 
+byte ip[] = { 192, 168, 1, 221 };
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet
-unsigned int localPort = 9000; // OSC IN port
+unsigned int localPort = 9050; // OSC IN port
 int ledPin =  13;       
 int ledState = LOW;
 EthernetUDP Udp; // init ETH UDP lib
@@ -26,7 +26,7 @@ void setup(){
     Serial.print("."); 
   }
   Udp.begin(localPort); // listen to port 9000
-  Wire.begin(); //i2c
+  Wire.begin(10); //i2c
 }
 
 void loop(){
@@ -66,9 +66,9 @@ void KICK(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receiv
   if(b !=  0){  
     Serial.print("KICK = : ");
     Serial.println(b);
-    String toSend = "Kick,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(1,toSend); // send the clock value/pulse to pjon.
   }
 }
 void SNARE(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
@@ -76,9 +76,9 @@ void SNARE(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Recei
     if(b !=  0){  
     Serial.print("Snare = : ");
     Serial.println(b);
-    String toSend = "Snare,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(2,toSend); // send the clock value/pulse to pjon.
   }
 }
 void HH(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
@@ -86,19 +86,19 @@ void HH(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive 
   if(b != 0){
     Serial.print("HH = : ");
     Serial.println(b);
-    String toSend = "HiHat,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(3,toSend); // send the clock value/pulse to pjon.
   }
 }
 void HHO(OSCMessage &msg, int addrOffset ){ // get float from clock #1 - Receive int/pulse
   int b = msg.getFloat(0);
   if(b != 0){
-    Serial.print("HH = : ");
+    Serial.print("HHo = : ");
     Serial.println(b);
-    String toSend = "HiHat,";
+    String toSend = "Pulse,";
     toSend.concat(String(b));
-    iic(8,toSend); // send the clock value/pulse to pjon.
+    iic(4,toSend); // send the clock value/pulse to pjon.
   }
 }
 void IO(OSCMessage &msg, int addrOffset){ // Get float from message
