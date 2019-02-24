@@ -15,7 +15,7 @@
 #define DEBUG_LED 13
 #include "FastLED.h"
 #include <Wire.h>
-#define FRAMES_PER_SECOND  120
+#define FRAMES_PER_SECOND  10
 #define ZOOMING_BEATS_PER_MINUTE 122
 #define STROBE_BEATS_PER_MINUTE 97.5
 #define NUM_STRIPS 3 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
@@ -23,6 +23,12 @@
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 1
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
+DEFINE_GRADIENT_PALETTE(palette1){
+  0,0,255,0,
+  20,0,90,0,
+  40,0,6,91,
+  128,24,242,249,
+  255,242,24,249};
 CRGB leds[NUM_LEDS]; //makes an array of CRGB values, this allows us to address each LED individualy or as a group.
 CRGB ourCol = CRGB(255, 255, 255); //used to specify an individual color for use in patterns.
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)}; //used in setup to flash 3 colors ??
@@ -32,10 +38,12 @@ uint8_t gHue = 0;//this value rotates from 0-255 when auto mode is not 2, this i
 int x = 0; // holder for i2c message which sets pattern when we address the stips as one array.
 int y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
 int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
-int autoMode = 1;//used to 1). select a random pattern if 1. 2) increments gHue if not 2.
+int autoMode = 0;//used to 1). select a random pattern if 1. 2) increments gHue if not 2.
 int autoSecs = 2;//sets the upper bound for timeSinceBt function.
 int stripNumber = 3;//stores the strip that we wish to set the pattern on. 
 int individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
+int paletteMode = 0;//holds if we sending indivdual colors to the patterns or a palette array.
+int paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 int LEDStart = 0;//this holds the number of the first LED in the arry to start printing a pattern to.
 int LEDEnd = 0;//this holds the number of the last LED in the arry to start printing a pattern to.
 int NoLEDs = 0;//this holds how many LED's we need to address. (may be a better way of doin this ToDo)
@@ -111,9 +119,8 @@ void parser() {
       stripNumber = sno.toInt(); // Its going to be an integer.
       DPRINTLN(stripNumber);
       string.remove(0, string.indexOf(",") + 1); // Remove the value
-    setLEDs();
-  
-  }
+	  setLEDs();
+	}
     if (subs.startsWith("ISt")) { // individual Strip Mode. next value if 0, addresses all strips, if 1 addresses strips individually.
       DPRINT("individual Strip Mode ");
       String ist = string.substring(0, string.indexOf(",")); // get everything until the comma
@@ -164,300 +171,324 @@ void parser() {
       ourCol.g = g.toInt(); // conver to int
       string.remove(0, string.indexOf(",") + 1); // thats colour done, remove the value and the comma
     }
-    DPRINTLN(string.length()); // prints the length of the command each iteration
-  }
-  DPRINT("STR = "); // prints after length < 1
-  DPRINTLN(string);
-  string = ""; // empty it
+	if (subs.startsWith("Pal")) { // next value is if paletteMode is on or off.
+      DPRINT("Pal ");
+      String pal = string.substring(0, string.indexOf(",")); // get everything until the comma
+      DPRINT(pal);
+      DPRINT(" - ");
+      paletteMode = pal.toInt(); // Its going to be an integer. its paletteMode
+      DPRINTLN(x);
+      string.remove(0, string.indexOf(",") + 1); // Remove the value
+	}
+	if (subs.startsWith("PNo")) { // next value is the number of the palette to use.
+      DPRINT("PNo ");
+      String pno= string.substring(0, string.indexOf(",")); // get everything until the comma
+      DPRINT(pno);
+      DPRINT(" - ");
+      paletteNumber = pno.toInt(); // Its going to be an integer. its the palette number.
+      DPRINTLN(x);
+      string.remove(0, string.indexOf(",") + 1); // Remove the value
+	}
+    DPRINTLN(string.length()); // prints the length of the command each iteration  
+	DPRINT("STR = "); // prints after length < 1
+	DPRINTLN(string);
+	string = ""; // empty it
 }
 void doPulse() {//pulses LEDs white then turns them off.
-  turnOff();
-  FastLED.show();
-  FL(LEDStart, LEDEnd) {
-    leds[i] = CRGB::White;
-  }
-  FastLED.show();
-  FastLED.delay(100);
-  turnOff();
-  FastLED.show();
+	turnOff();
+	FastLED.show();
+	FL(LEDStart, LEDEnd) {
+		leds[i] = CRGB::White;
+	}
+	FastLED.show();
+	FastLED.delay(100);
+	turnOff();
+	FastLED.show();
 }
 void randX() {//choses a random pattern
-  if (autoMode == 1) {
-  if (individualStripMode==0){
-    x = random(2, 9);
-    DPRINT("RANDOM ");
-    DPRINTLN(x);
-  }
-  if (individualStripMode!=0){
-    int lastStripNumber=stripNumber;
-    FL(1,NUM_STRIPS+1){
-      patternStore[i]=random(2,9);
-    }
-  stripNumber=lastStripNumber;
-  }
-  }
+	if (autoMode == 1) {
+		if (individualStripMode==0){
+			x = random(2, 9);
+			DPRINT("RANDOM ");
+			DPRINTLN(x);
+		}
+		if (individualStripMode!=0){
+			int lastStripNumber=stripNumber;
+			FL(1,NUM_STRIPS+1){
+				patternStore[i]=random(2,9);
+			}
+		stripNumber=lastStripNumber;
+		}
+	}
 }
 void theLights() { //  speckles and strobes
-  fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
-  int pos = random16(LEDStart, LEDEnd);
-  leds[pos] = ourCol;
+	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
+	int pos = random16(LEDStart, LEDEnd);
+	leds[pos] = ourCol;
 }
-void rainbow()
-{
-  // FastLED's built-in rainbow generator
-  fill_rainbow(&(leds[LEDStart]), NoLEDs, 7);
+void rainbow(){
+	// FastLED's built-in rainbow generator
+	fill_rainbow(&(leds[LEDStart]), NoLEDs, 7);
 }
-void addGlitter( fract8 chanceOfGlitter)
-{
-  if ( random8() < chanceOfGlitter) {
-    leds[ random16(LEDStart, LEDEnd) ] += CRGB::White;
-  }
+void addGlitter( fract8 chanceOfGlitter){
+	if ( random8() < chanceOfGlitter) {
+		leds[ random16(LEDStart, LEDEnd) ] += CRGB::White;
+	}
 }
-void rainbowWithGlitter()
-{
-  // built-in FastLED rainbow, plus some random sparkly glitter
-  rainbow();
-  addGlitter(80);
+void rainbowWithGlitter(){
+	// built-in FastLED rainbow, plus some random sparkly glitter
+	rainbow();
+	addGlitter(80);
 }
-void confetti()
-{
-  // random colored speckles that blink in and fade smoothly
-  fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
-  int pos = random16(LEDStart, LEDEnd);
-  leds[pos] = ourCol;
-  leds[pos] += CHSV( gHue + random8(64), 200, 255);
+void confetti(){
+	// random colored speckles that blink in and fade smoothly
+	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
+	int pos = random16(LEDStart, LEDEnd);
+	leds[pos] = ourCol;
+	leds[pos] += CHSV( gHue + random8(64), 200, 255);
 }
-void sinelon()
-{
-  // a colored dot sweeping back and forth, with fading trails
-  fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 20);
-  int pos = beatsin16( 13, LEDStart, LEDEnd - 1 );
-  leds[pos] = ourCol;
-  leds[pos] += CHSV( gHue, 255, 192);
+void sinelon(){
+	// a colored dot sweeping back and forth, with fading trails
+	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 20);
+	int pos = beatsin16( 13, LEDStart, LEDEnd - 1 )	;
+	leds[pos] = ourCol;
+	leds[pos] += CHSV( gHue, 255, 192);
 }
-void bpm()
-{
-  // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-  uint8_t BeatsPerMinute = 62;
-  CRGBPalette16 palette = PartyColors_p;
-  uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
-  FL(LEDStart, LEDEnd) { //9948 
-    leds[i] = ourCol;
-    leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
-  }
+void bpm(){
+	// colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+	uint8_t BeatsPerMinute = 62;
+	CRGBPalette16 palette = PartyColors_p;
+	uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
+	FL(LEDStart, LEDEnd) { //9948 
+		leds[i] = ourCol;
+		leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
+	}
 }
 void juggle() {
-  // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 20);
-  byte dothue = 0;
-  FL(0, 8) {
-    leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ourCol;
-    leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
-    dothue += 32;
-  }
+	// eight colored dots, weaving in and out of sync with each other
+	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 20);
+	byte dothue = 0;
+	FL(0, 8) {
+		leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ourCol;
+		leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
+		dothue += 32;
+	}
 }
 void simpleStrobe () {
-  fill_solid(&(leds[LEDStart]), NoLEDs, CRGB::Black);
-  const uint8_t kStrobeCycleLength = 6; // light every Nth frame
-  static uint8_t sStrobePhase = 0;
-  sStrobePhase = sStrobePhase + 1;
-  if ( sStrobePhase >= kStrobeCycleLength ) {
-    sStrobePhase = 0;
-  }
-  if ( sStrobePhase == 0 ) {
-    uint8_t dashperiod = beatsin8( 8/*cycles per minute*/, 4, 10);
-    uint8_t dashwidth = (dashperiod / 4) + 1;
-    uint8_t zoomBPM = STROBE_BEATS_PER_MINUTE;
-    int8_t  dashmotionspeed = beatsin8( (zoomBPM / 2), 1, dashperiod);
-    if ( dashmotionspeed >= (dashperiod / 2)) {
-      dashmotionspeed = 0 - (dashperiod - dashmotionspeed );
-    }
-    uint8_t cycle = beat8(2); // two cycles per minute
-    uint8_t easedcycle = ease8InOutCubic( ease8InOutCubic( cycle));
-    uint8_t wavecycle = cubicwave8( easedcycle);
-    // uint8_t hueShift = 0; // NO SHIFT OF HUE IN COLOUR (we should rebuild in RGB...)
-    uint8_t hueShift = scale8( wavecycle, 130); // METHOD HOW HUE VALUE SHIFTS
-    uint8_t strobesPerPosition = 2; // try 1..4
-    strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
-  }
+	fill_solid(&(leds[LEDStart]), NoLEDs, CRGB::Black);
+	const uint8_t kStrobeCycleLength = 6; // light every Nth frame
+	static uint8_t sStrobePhase = 0;
+	sStrobePhase = sStrobePhase + 1;
+	if ( sStrobePhase >= kStrobeCycleLength ) {
+		sStrobePhase = 0;
+	}
+	if ( sStrobePhase == 0 ) {
+		uint8_t dashperiod = beatsin8( 8/*cycles per minute*/, 4, 10);
+		uint8_t dashwidth = (dashperiod / 4) + 1;
+		uint8_t zoomBPM = STROBE_BEATS_PER_MINUTE;
+		int8_t  dashmotionspeed = beatsin8( (zoomBPM / 2), 1, dashperiod);
+		if ( dashmotionspeed >= (dashperiod / 2)) {
+			dashmotionspeed = 0 - (dashperiod - dashmotionspeed );
+		}
+		uint8_t cycle = beat8(2); // two cycles per minute
+		uint8_t easedcycle = ease8InOutCubic( ease8InOutCubic( cycle));
+		uint8_t wavecycle = cubicwave8( easedcycle);
+		// uint8_t hueShift = 0; // NO SHIFT OF HUE IN COLOUR (we should rebuild in RGB...)
+		uint8_t hueShift = scale8( wavecycle, 130); // METHOD HOW HUE VALUE SHIFTS
+		uint8_t strobesPerPosition = 2; // try 1..4
+		strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
+	}
 }
 void strobeCore(
-  uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats,
-  uint8_t huedelta) {
-  static uint8_t sRepeatCounter = 0;
-  static int8_t sStartPosition = 0;
-  static uint8_t sStartHue = 0;
-  sStartHue += 1; //Shift the Colour little by little
-  sRepeatCounter = sRepeatCounter + 1;
-  if ( sRepeatCounter >= stroberepeats) {
-    sRepeatCounter = 0;
-    sStartPosition = sStartPosition + dashmotionspeed;
-    if ( sStartPosition >= dashperiod ) {
-      while ( sStartPosition >= dashperiod) {
-        sStartPosition -= dashperiod;
-      }
-      sStartHue  -= huedelta;
-    } else if ( sStartPosition < LEDEnd) {
-      while ( sStartPosition < LEDEnd) {
-        sStartPosition += dashperiod;
-      }
-      sStartHue  += huedelta;
-    }
-  }
-  const uint8_t kSaturation = 208; // WHITE >> CURRENT COLOUR control (def 208)
-  const uint8_t kValue = 200; // Brightness??
-  strobeDraw( sStartPosition, LEDEnd - 1, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
+uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats,
+uint8_t huedelta) {
+	static uint8_t sRepeatCounter = 0;
+	static int8_t sStartPosition = 0;
+	static uint8_t sStartHue = 0;
+	sStartHue += 1; //Shift the Colour little by little
+	sRepeatCounter = sRepeatCounter + 1;
+	if ( sRepeatCounter >= stroberepeats) {
+		sRepeatCounter = 0;
+		sStartPosition = sStartPosition + dashmotionspeed;
+		if ( sStartPosition >= dashperiod ) {
+			while ( sStartPosition >= dashperiod) {
+			sStartPosition -= dashperiod;
+			}
+		sStartHue  -= huedelta;
+		}
+		else if ( sStartPosition < LEDEnd) {
+			while ( sStartPosition < LEDEnd) {
+			sStartPosition += dashperiod;
+			}
+		sStartHue  += huedelta;
+		}
+	}
+	const uint8_t kSaturation = 208; // WHITE >> CURRENT COLOUR control (def 208)
+	const uint8_t kValue = 200; // Brightness??
+	strobeDraw( sStartPosition, LEDEnd - 1, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
 }
-static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width,  uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value)
-{
-  uint8_t hue = huestart;
-  for ( uint16_t i = LEDStart; i <= LEDEnd; i += period) {
-    CRGB color = CHSV( hue, saturation, value);
-    //CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
-    uint16_t pos = i;
-    for ( uint8_t w = 0; w < width; w++) {
-      leds[ pos ] = color;
-      pos++;
-      if ( pos >= LEDEnd) {
-        break;
-      }
-    }
-    hue += huedelta;
-  }
+static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width,  uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value){
+uint8_t hue = huestart;
+	for ( uint16_t i = LEDStart; i <= LEDEnd; i += period) {
+		CRGB color = CHSV( hue, saturation, value);
+		//CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
+		uint16_t pos = i;
+		for ( uint8_t w = 0; w < width; w++) {
+			leds[ pos ] = color;
+			pos++;
+			if ( pos >= LEDEnd) {
+				break;
+			}
+		}
+		hue += huedelta;
+	}
+}
+void kikiNew1(){
+	CRGBPalette16 myPal = palette1;
+	static uint8_t myMap=0;
+	FL(0,NUM_LEDS){
+		myMap++;
+		if(i%2==1){
+			leds[i]=ColorFromPalette(myPal,myMap);
+			//leds[i+1]=gHue;
+		}
+	}
 }
 void patternSelect(){
-  int lastStripNumber=stripNumber;
-  if (individualStripMode==0){
-    setLEDs();
-      switch (x) {
-    case 0:
-      turnOff();
-      break;
-    case 1:
-      turnOn();
-        break;
-    case 2:
-      theLights();
-      break;
-    case 3:
-      rainbow();
-      break;
-    case 4:
-      rainbowWithGlitter();
-      break;
-    case 5:
-      confetti();
-      break;
-    case 6:
-      sinelon();
-      break;
-    case 7:
-      bpm();
-      break;
-    case 8:
-      juggle();
-      break;
-    case 9:
-      simpleStrobe();
-      break;
-    }
-  }
-  if (individualStripMode!=0){//second switch case used to set patternSelect array.
-    FL(1,NUM_STRIPS+1){
-      stripNumber=i;
-      setLEDs();
-      y=patternStore[i];
-      switch (y) {
-        case 0:
-          turnOff();
-          break;
-        case 1:
-          turnOn();
-          break;
-        case 2:
-          theLights();
-          break;
-        case 3:
-          rainbow();
-          break;
-        case 4:
-          rainbowWithGlitter();
-          break;
-        case 5:
-          confetti();
-          break;
-        case 6:
-          sinelon();
-          break;
-        case 7:
-          bpm();
-          break;
-        case 8:
-          juggle();
-          break;
-        case 9:
-          simpleStrobe();
-          break;
-      }
-    stripNumber=lastStripNumber;
-    }
-  }
+	int lastStripNumber=stripNumber;
+	if (individualStripMode==0){
+		setLEDs();
+		switch (x) {
+			case 0:
+				turnOff();
+				break;
+			case 1:
+				turnOn();
+				break;
+			case 2:
+				theLights();
+				break;
+			case 3:
+				rainbow();
+				break;
+			case 4:
+				rainbowWithGlitter();
+				break;
+			case 5:
+				confetti();
+				break;
+			case 6:
+				sinelon();
+				break;
+			case 7:
+				bpm();
+				break;
+			case 8:
+				juggle();
+				break;
+			case 9:
+				simpleStrobe();
+				break;
+		}
+	}
+	if (individualStripMode!=0){//second switch case used to set patternSelect array.
+		FL(1,NUM_STRIPS+1){
+			stripNumber=i;
+			setLEDs();
+			y=patternStore[i];
+			switch (y) {
+				case 0:
+					turnOff();
+					break;
+				case 1:
+					turnOn();
+					break;
+				case 2:
+					theLights();
+					break;
+				case 3:
+					rainbow();
+					break;
+				case 4:
+					rainbowWithGlitter();
+					break;
+				case 5:
+					confetti();
+					break;
+				case 6:
+					sinelon();
+					break;
+				case 7:
+					bpm();
+					break;
+				case 8:
+					juggle();
+					break;
+				case 9:
+					simpleStrobe();
+					break;
+			}
+			stripNumber=lastStripNumber;
+		}
+	}
 }
 void setup() {
-  Wire.begin(I2C_ADDR);
-  Wire.onReceive(receiveEvent);
-  pinMode(DEBUG_LED, OUTPUT);
-  DBEGIN(115200);
-  DPRINTLN("Ready for i2c");
-  //sets one long array containing multiple data pins in the following format.
-  //type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
-  FastLED.addLeds<WS2812B, 2, GRB>(leds, 0, NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<WS2812B, 3, GRB>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<WS2812B, 4, GRB>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
-
-  FastLED.setBrightness(128);
-  int i = 0;
-  while (i < NUM_STRIPS+1) {
-    ourCol = startup[i];
-    setLEDs();
-    turnOn();
-    FastLED.show();
-    FastLED.delay(300);
-    i++;
-  }
-  turnOff();
-  FastLED.show();
-  FL(1,NUM_STRIPS+1){
-    patternStore[i]=i+1;
-  } 
+	Wire.begin(I2C_ADDR);
+	Wire.onReceive(receiveEvent);
+	pinMode(DEBUG_LED, OUTPUT);
+	DBEGIN(115200);
+	DPRINTLN("Ready for i2c");
+	//sets one long array containing multiple data pins in the following format.
+	//type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
+	FastLED.addLeds<WS2812B, 2, GRB>(leds, 0, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2812B, 3, GRB>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2812B, 4, GRB>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+	FastLED.setBrightness(128);
+	int i = 0;
+	while (i < NUM_STRIPS+1) {
+		ourCol = startup[i];
+		setLEDs();
+		turnOn();
+		FastLED.show();
+		FastLED.delay(300);
+		i++;
+	}
+	turnOff();
+	FastLED.show();
+	FL(1,NUM_STRIPS+1){
+		patternStore[i]=i+1;
+	} 
 }
 void loop() {
-  EVERY_N_SECONDS(2)  // this flashes the onboard LED when loop is completed.
-    if(debugLED){
-      randX();
-      debugLED = false;
-      digitalWrite(DEBUG_LED,HIGH);
-    }
-    else{
-      randX();
-      debugLED = true;
-      digitalWrite(DEBUG_LED,LOW);
-    }
-  if (autoMode != 2) {
-    EVERY_N_MILLISECONDS(30) {
-      gHue++;
-    if (gHue>=255){
-      gHue=0;
-    }
-   }
-    EVERY_N_SECONDS(1) {      
-      timeSinceBt++;
-      if (timeSinceBt == autoSecs) {
-    timeSinceBt = 0;}
-    }
-  }
-  patternSelect();
-    FastLED.show();
-    FastLED.delay(1000 / FRAMES_PER_SECOND);
-  
+	EVERY_N_SECONDS(2)  // this flashes the onboard LED when loop is completed.
+	if(debugLED){
+		//randX();
+		debugLED = false;
+		digitalWrite(DEBUG_LED,HIGH);
+	}
+	else{
+		// randX();
+		debugLED = true;
+		digitalWrite(DEBUG_LED,LOW);
+	}
+	if (autoMode != 2) {
+		EVERY_N_MILLISECONDS(30) {
+			gHue++;
+			if (gHue>=255){
+				gHue=0;
+			}
+		}
+		EVERY_N_SECONDS(1) {      
+			timeSinceBt++;
+			if (timeSinceBt == autoSecs) {
+				timeSinceBt = 0;}
+		}
+	}
+	kikiNew1();
+	// patternSelect();
+	//sinelon();
+	//confetti(); 
+	//juggle();
+	FastLED.show();
+	FastLED.delay(1000 / FRAMES_PER_SECOND);  
 }
