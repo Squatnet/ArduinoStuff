@@ -313,6 +313,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.namee);
       DPRINTLN();
       DFLUSH();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
         DPRINT("found strip with name ");
         DPRINTLN(nme);
@@ -326,6 +329,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if(nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Matrix with name ");
         DPRINTLN(nme);
@@ -340,6 +346,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(" - ");
       DPRINT(dev.namee);
       DPRINTLN();
+      if( nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
@@ -353,6 +362,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
@@ -367,6 +379,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if( nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
         DPRINT("found strip with name ");
         DPRINTLN(nme);
@@ -382,6 +397,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Matrix with name ");
         DPRINTLN(nme);
@@ -398,6 +416,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(" - ");
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
@@ -413,6 +434,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
