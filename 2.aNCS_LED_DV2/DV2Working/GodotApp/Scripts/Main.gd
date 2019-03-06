@@ -1,4 +1,5 @@
 extends Control
+var menuBtn = load("res://Assets/Objects/Menu_A_Btn.tscn")
 var TheDict = {}
 var TypeNums = []
 func _ready():
@@ -40,7 +41,7 @@ func _on_reg_finished():
 	addMenuButton("Types")
 
 func addMenuButton(name):
-	var btn = Button.new()
+	var btn = menuBtn.instance()
 	btn.set_text(name)
 	btn.rect_scale = Vector2(2,2)
 	btn.connect("pressed",self,"_on_Menu_A_Btn_Pressed",[btn.text])
@@ -86,12 +87,28 @@ func _on_Menu_A_Btn_Pressed(btn):
 	$Control/ContentArea.add_child(newInsScn)
 	
 func _on_Connect_pressed():
-	if GS.BT:
-		GS.BT.getPairedDevices(true)
+	if GS.getSetting("fakeData") == false:
+		if !GS.BT:
+			print("Setup BT true")
+			GS.setupBT(true)
 	else:
+		print("Setup BT false")
+		GS.setupBT(false)
+	
+	if GS.BT: #got bluetooth
+		GS.BT.getPairedDevices(true) ## show bluetooth device list
+	else: ## no bluetooth module
 		if $Connect.text == "Connect":
 			GS.emit_signal("connected")
 			OS.alert("BT Module not initialised, Using FakeData","Alert!")
 		else:
 			GS.emit_signal("disconnected")
 			GS._on_disconnected()
+
+func _on_SettingsBtn_pressed():
+	$Settings.setOpen()
+	print($Settings.getOpen())
+	if $Settings.getOpen():
+		$Settings.show()
+	else:
+		$Settings.hide()

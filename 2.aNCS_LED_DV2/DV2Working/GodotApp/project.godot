@@ -25,7 +25,7 @@ GS="*res://global.gd"
 [display]
 
 window/size/width=720
-window/size/height=1440
+window/size/height=1480
 window/size/test_width=360
 window/size/test_height=720
 window/handheld/orientation="portrait"

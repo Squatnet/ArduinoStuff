@@ -1,5 +1,6 @@
 extends ScrollContainer
 var listType = -1
+var listBtn = load("res://Assets/Objects/ListButton.tscn")
 var page = load("res://Scenes/Page.tscn")
 func setup(args):
 	print("DevList: List Type :"+str(args))
@@ -16,7 +17,7 @@ func setup(args):
 		for key in GS.knownDevs:
 			var tmp = GS.knownDevs[key]
 			for item in tmp:
-				var but = Button.new()
+				var but = listBtn.instance()
 				var thisItm = tmp[item]
 				#print(thisItm)
 				but.set_text(key+":"+thisItm[0]+":"+str(thisItm[1]))
@@ -26,7 +27,7 @@ func setup(args):
 				buttonsMade += 1
 	if listType == 1: # list types
 		for key in GS.knownDevs:
-			var but = Button.new()
+			var but = listBtn.instance()
 			but.set_text(key)
 			but.rect_scale = Vector2(2,2)
 			but.connect("pressed",self,"_list_type_1_btn_pressed",[but.text])
@@ -34,7 +35,7 @@ func setup(args):
 			buttonsMade += 1
 	if listType == 2:
 		for i in GS.knownGroups:
-			var but = Button.new()
+			var but = listBtn.instance()
 			but.set_text(i)
 			but.rect_scale = Vector2(2,2)
 			but.connect("pressed",self,"_list_type_2_btn_pressed",[but.text])
