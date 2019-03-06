@@ -35,9 +35,15 @@ struct device { // struct for a device
   int id = NULL;// device id num
   String namee = NULL; // device name
 };
+struct deviceStr {
+  int id = NULL;
+  String namee = NULL;
+  int attachedStr = NULL;
+};
+
 // declare an array of our devices and a tracking number.
 // Strips
-device strips[100];
+deviceStr strips[100];
 int numStrip = 0;
 // TFTs
 device term[30];
@@ -72,6 +78,7 @@ void compressStruct(String type){
     DPRINTLN(i);
     strips[i].id = strips[i+1].id; // Copy the next record downs id
     strips[i].namee = strips[i+1].namee; // Copy its name
+    strips[i].attachedStr = strips[i+1].attachedStr;
     strips[i+1].id = NULL; // Make the next record null
     DPRINT("got name ");
     DPRINTLN(strips[i].namee);
@@ -149,6 +156,7 @@ void removeDevice(int id){
           DPRINTLN(" is a Strip");
           strips[i].id = NULL;
           strips[i].namee = ""; // Assign a NULL value... Bye!
+          strips[i].attachedStr = NULL;
           compressStruct("Str"); // Run the function to remove gaps in the array. sending the type.
         } // end if id=id ;
       } // we checked every strip...
@@ -299,7 +307,7 @@ int * findDeviceByName(String type, String nme){
   if(type.startsWith("Al")){
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
       DPRINT("Stepped into string");
-      device dev = strips[i]; // get a device to compare
+      deviceStr dev = strips[i]; // get a device to compare
       DPRINT("Strip ");
       DPRINT(dev.id);
       DPRINT(dev.namee);
@@ -354,7 +362,7 @@ int * findDeviceByName(String type, String nme){
   else if (type.startsWith("St")){ // look at the right array
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
       DPRINT("Stepped into string");
-      device dev = strips[i]; // get a device to compare
+      deviceStr dev = strips[i]; // get a device to compare
       DPRINT("Strip ");
       DPRINT(dev.id);
       DPRINT(dev.namee);
@@ -509,6 +517,8 @@ void regWithApp(String arg){
       BtMessge.concat(strips[i].namee);
       BtMessge.concat("\",");
       BtMessge.concat(strips[i].id);
+      BtMessge.concat(",");
+      BtMessge.concat(strips[i].attachedStr);
       BtMessge.concat("]}");
     }
     if(typ.startsWith("Mat")){
@@ -558,13 +568,15 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       reg.remove(0,reg.indexOf(',')+1); // removes the type and the trailing comma
       DPRINTLN(reg); // now its just Name
       strips[numStrip].id = id; // store the ID
-      strips[numStrip].namee = reg; // store the name
+      strips[numStrip].namee = reg.substring(0,reg.indexOf(",")); // store the name
       DPRINT("Strip : ");
       DPRINT(numStrip);
       DPRINT(" name : ");
       DPRINT(strips[numStrip].namee);
       DPRINT(" id : ");
       DPRINTLN(strips[numStrip].id);
+      DPRINT(" attachedStr : ");
+      DPRINTLN(strips[numStrip].attachedStr);
       numStrip++; // We have 1 more strip
   }
   else if( reg.startsWith("Mat")){
