@@ -15,7 +15,7 @@
 #define DEBUG_LED 13
 #include "FastLED.h"
 #include <Wire.h>
-#define FRAMES_PER_SECOND  60
+#define FRAMES_PER_SECOND  40
 #define ZOOMING_BEATS_PER_MINUTE 200
 #define STROBE_BEATS_PER_MINUTE 300
 #define NUM_STRIPS 3 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
@@ -34,9 +34,9 @@ uint8_t gHue = 0;//this value rotates from 0-255 when auto mode is not 2, this i
 int x = 0; // holder for i2c message which sets pattern when we address the stips as one array.
 int y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
 int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
-int autoMode = 1;//used to 1). select a random pattern if 1. 2) increments gHue if not 2.
+int autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
 int autoSecs = 2;//sets the upper bound for timeSinceBt function.
-int stripNumber = 3;//stores the strip that we wish to set the pattern on. 
+int stripNumber = 1;//stores the strip that we wish to set the pattern on. 
 int individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
 int paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 int paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
@@ -606,7 +606,14 @@ void theLights() { //  speckles and strobes
 }
 void rainbow(){
   // FastLED's built-in rainbow generator
-  fill_rainbow(&(leds[LEDStart]), NoLEDs, 7);
+  if (paletteMode==0){
+    fill_rainbow(&(leds[LEDStart]), NoLEDs, 7);
+  }
+  else{
+    FL(LEDStart,LEDEnd){
+      leds[i]=ColorFromPalette( currentPalette,(i*5), brightness, currentBlending);
+    }
+  }
 }
 void addGlitter( fract8 chanceOfGlitter){
   if ( random8() < chanceOfGlitter) {
@@ -680,6 +687,102 @@ void juggle() {//palette not currently supported
     leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
     dothue += 32;
   }
+}
+void bouncingTrails(){
+  static int counter=0;
+  static int lastCount=0;
+  static int paletteRef=0;
+  static int posUp=0;
+  static int posDown=0;
+  static int upReversed=0;
+  static int downReversed=0;
+  static int pos=0;
+  counter++;
+  DPRINTLN(counter);
+  if (counter==(NUM_LEDS_PER_STRIP*4)){
+    counter=0;
+  }
+  if (lastCount!=counter){
+    fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 60);
+    paletteRef=(counter*5);
+
+  }
+  if ((counter==1)&&(lastCount!=counter)){   
+    pos = random16((NUM_LEDS_PER_STRIP/4),((NUM_LEDS_PER_STRIP/4)*3));
+    downReversed=0;
+    upReversed=0;
+    posUp=pos;
+    posDown=pos;
+
+  if (individualStripMode==0){
+    FL(0,NUM_STRIPS){
+      if (paletteMode==1){
+        leds[(pos+(i*NUM_LEDS_PER_STRIP))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+      }
+      else{
+        leds[(pos+(i*NUM_LEDS_PER_STRIP))]=ourCol;
+      } 
+    }
+  } 
+  else {//if indivdual strip mode is on
+    if (paletteMode==1){
+        leds[(pos+LEDStart)]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+    }
+    else{
+      leds[(pos+LEDStart)]=ourCol;
+    } 
+  }
+  }  
+    if ((counter!=1)&&(lastCount!=counter)){
+    if ((posUp!=NUM_LEDS_PER_STRIP)&&(upReversed==0)){
+      posUp++;
+    }
+    if (posUp==NUM_LEDS_PER_STRIP-1){
+      upReversed=1;
+    }
+    if ((posUp!=0)&&(upReversed==1)){
+      posUp--;
+    }
+    if (posUp==0){
+      upReversed=0;
+    }
+    if ((posDown!=0)&&(downReversed==0)){
+      posDown--;
+    }
+    if (posDown==NUM_LEDS_PER_STRIP-1){
+      downReversed=0;
+    }
+    if (posDown==0){
+      downReversed=1;
+      posDown++;
+    }
+    if ((posDown!=0)&&(downReversed==1)){
+      posDown++;
+    }
+  if (individualStripMode==0){
+    FL(0,NUM_STRIPS){
+      if (paletteMode==1){
+        leds[(posUp+(i*NUM_LEDS_PER_STRIP))]=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
+        leds[(posDown+(i*NUM_LEDS_PER_STRIP))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+      }
+      else{
+        leds[(posUp+(i*NUM_LEDS_PER_STRIP))]=ourCol;
+        leds[(posDown+(i*NUM_LEDS_PER_STRIP))]=ourCol;
+      }
+    }
+  }
+  else{
+    if (paletteMode==1){
+      leds[(posUp+LEDStart)]=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
+      leds[(posDown+LEDStart)]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+    }
+    else{
+      leds[(posUp+LEDStart)]=ourCol;
+      leds[(posDown+LEDStart)]=ourCol;
+    }
+  }
+  }
+  lastCount=counter;
 }
 void simpleStrobe () { //doesn't currently play nicely with palettes.
   fill_solid(&(leds[LEDStart]), NoLEDs, CRGB::Black);
@@ -825,7 +928,7 @@ void patternSelect(){
         turnOn();
         break;
       case 2:
-    theLights();
+        theLights();
         break;
       case 3:
         rainbow();
@@ -847,6 +950,9 @@ void patternSelect(){
         break;
       case 9:
         simpleStrobe();
+        break;
+      case 10:
+        bouncingTrails();
         break;
     }
   }
@@ -885,6 +991,9 @@ void patternSelect(){
         break;
       case 9:
         simpleStrobe();
+        break;
+      case 10:
+        bouncingTrails();
         break;    
     }
       stripNumber=lastStripNumber;
@@ -915,9 +1024,7 @@ void setup() {
   }
   turnOff();
   FastLED.show();
-  FL(1,NUM_STRIPS+1){
-    patternStore[i]=i+1;
-  } 
+
 }
 void loop() {
   EVERY_N_SECONDS(10){  // this flashes the onboard LED when loop is completed.
@@ -930,30 +1037,54 @@ void loop() {
     digitalWrite(DEBUG_LED,LOW);
     }
   }
-  if (autoMode != 2) {
+  if (autoMode == 1) {//if auto mode on
     EVERY_N_MILLISECONDS(30) {
-      gHue++;
+      gHue++;//cycle hue number
       if (gHue>=255){
         gHue=0;
       }
     }
     EVERY_N_SECONDS(1) {      
-      timeSinceBt++;
+      timeSinceBt++;//count the time since beat
       if (timeSinceBt == autoSecs) {
         timeSinceBt = 0;}
     }
   EVERY_N_SECONDS(10){
-    x++;
-    if(x>9){
+    if (individualStripMode==0){
+    if (x==0){
+    x=2;
+  }
+  x++;//cycle the pattern
+    if(x>10){
       x=2;
     }
   }
+  else{
+    int holder=patternStore[stripNumber];
+  if (holder==0){
+    holder=2;
+  }
+    holder++;
+  if (holder>10){
+      holder=2;
+    }
+    patternStore[stripNumber]=holder;
+  }
+  }
   EVERY_N_SECONDS(5){
-    paletteNumber++;
+    paletteNumber++;//cycle the palette
     if (paletteNumber>numberOfPalettes){
       paletteNumber=0;
     }    
   }
+  }
+  if (autoMode==2){
+      EVERY_N_SECONDS(5){
+      paletteNumber++;//cycle the palette
+      if (paletteNumber>numberOfPalettes){
+        paletteNumber=0;
+      } 
+    }
   }
   paletteSelect();
   patternSelect();
