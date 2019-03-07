@@ -37,10 +37,10 @@ int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, 
 int autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
 int autoSecs = 2;//sets the upper bound for timeSinceBt function.
 int stripNumber = 1;//stores the strip that we wish to set the pattern on. 
-int individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
-int paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
-int paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
-int numberOfPalettes=18;//total number of palettes available -1.
+byte individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
+byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
+byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
+byte numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 int LEDStart = 0;//this holds the number of the first LED in the arry to start printing a pattern to.
 int LEDEnd = 0;//this holds the number of the last LED in the arry to start printing a pattern to.
@@ -473,6 +473,7 @@ void doPulse() {//pulses LEDs white then turns them off.
 }
 void parser() {
   DPRINTLN("PARSER");
+  byte randTrigger=0;//initializes a randX trigger (didn't need to be global);
   while (string.length() >= 1) { // While there message left to read.
     DPRINT("Message is ");
     DPRINT(string);
@@ -568,6 +569,19 @@ void parser() {
       DPRINTLN(pno);
       string.remove(0, string.indexOf(",") + 1); // Remove the value
     }
+    if (subs.startsWith("Ran")) { // next value will trigger randX
+      DPRINT("Ran ");
+      String ran= string.substring(0, string.indexOf(",")); // get everything until the comma
+      DPRINT(ran);
+      DPRINT(" - ");
+      randTrigger = ran.toInt(); // Its going to be an integer. its the palette number.
+      DPRINTLN(ran);
+      string.remove(0, string.indexOf(",") + 1); // Remove the value
+    if (randTrigger!=0){
+      randX();
+      randTrigger=0;
+    }
+    } 
     DPRINTLN(string.length()); // prints the length of the command each iteration  
     DPRINT("STR = "); // prints after length < 1
     DPRINTLN(string);
@@ -575,20 +589,20 @@ void parser() {
   }
 }
 void randX() {//choses a random pattern
-  if (autoMode == 1) {
     if (individualStripMode==0){
       x = random(2, 9);
       DPRINT("RANDOM ");
       DPRINTLN(x);
     }
     if (individualStripMode!=0){
-      int lastStripNumber=stripNumber;
+      byte lastStripNumber=stripNumber;
       FL(1,NUM_STRIPS+1){
-        patternStore[i]=random(2,9);
+      if (i==stripNumber){
+      patternStore[i]=random(2,9);
+      }
       }
     stripNumber=lastStripNumber;
     }
-  }
 }
 void theLights() { //  speckles and strobes
   fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
@@ -694,8 +708,8 @@ void bouncingTrails(){
   static int paletteRef=0;
   static int posUp=0;
   static int posDown=0;
-  static int upReversed=0;
-  static int downReversed=0;
+  static byte upReversed=0;
+  static byte downReversed=0;
   static int pos=0;
   counter++;
   DPRINTLN(counter);
