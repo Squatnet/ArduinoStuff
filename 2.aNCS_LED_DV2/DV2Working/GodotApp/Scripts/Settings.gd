@@ -30,10 +30,6 @@ func _on_SaveButton_pressed():
 	GS.setSetting("fakeData",$FakeData.pressed)
 	GS.setSetting("adminMode",$AdminMode.pressed)
 	GS.setSetting("debugMode",$DebugMode.pressed)
-	if pallet == 0:
-		pass
-	else:
-		GS.setSetting("pallettes",pallet)
 	if GS.getSetting("debugMode") == true:
 		OS.alert("Settings Saved: "+str(GS.settings),"Success!")
 	else:

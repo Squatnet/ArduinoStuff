@@ -51,6 +51,7 @@ func savePallettes():
 	var f = File.new()
 	f.open("user://pallettes.xws", File.WRITE)
 	f.store_var(pallettes)
+	f.store_var(pallettesList)
 	f.close()
 	print("GS: Saved Pallettes")
 func LoadPallettes(): # Loads settings (volume, etc)
@@ -61,6 +62,10 @@ func LoadPallettes(): # Loads settings (volume, etc)
 		if f.is_open():
 			# if its open, get the var
 			pallettes = f.get_var() # get the variable
+			#print(pallettes)
+			OS.delay_msec(100)
+			pallettesList = f.get_var()
+			print(pallettesList)
 			for key in pallettes:
 				if !pallettesList.has(key):
 					pallettesList.push_back(key)

@@ -41,7 +41,7 @@ func showChkBox():
 func setup(args):
 	knownPatterns = GS.knownPatterns
 	numPatterns = knownPatterns.size()
-	$PatternName.set_text(knownPatterns[0])
+	$PatternName.set_text(knownPatterns[1])
 	pageType = args[0]
 	if pageType == 0:
 		$PAGE.set_text("Single Device: "+str(args[1]))
@@ -160,6 +160,12 @@ func _on_SendButton_pressed():
 			if chkStr == true && chkMat == true && chkRtr == true && chkTerm == true:
 				commandDevClassOrID = "All,"
 				sendMessage()
+			elif chkStr == false && chkMat == false && chkRtr == false && chkTerm == false:
+				if GS.getSetting("debugMode") == true:
+					OS.alert("All chkBox Values are false. There is to type to send to","Whoops")
+				else:
+					OS.alert("No device type selected","Whoops")
+				commandToRelay = ""
 			else:
 				var savedCommand = commandToRelay
 				if chkStr:
