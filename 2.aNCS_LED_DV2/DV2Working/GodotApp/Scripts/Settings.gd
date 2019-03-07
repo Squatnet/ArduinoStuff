@@ -10,7 +10,7 @@ func setup():
 	$FakeData.pressed = GS.getSetting("fakeData")
 	$DebugMode.pressed = GS.getSetting("debugMode")
 	$AdminMode.pressed = GS.getSetting("adminMode")
-	$PallettesAvail.text = str(GS.getSetting("pallettes"))
+	$PallettesAvail.text = str(GS.pallettes.size())
 func _ready():
 	setup()
 func getOpen():
@@ -41,6 +41,16 @@ func _on_SaveButton_pressed():
 	setOpen()
 	hide()
 
+func _on_ParsePallettes_pressed():
+	print("Settings: Parse pallettes")
+	var pallParser = load("res://Scripts/PallParser.gd").new()
+	pallParser.parse()
+	setup()
 
-func _on_PallettesAvail_text_changed(new_text):
-	pallet = int(new_text)
+
+
+func _on_DeletePallettes_pressed():
+	print("Settings: Delete All Palletes")
+	GS.remAllPallettes()
+	setup()
+		

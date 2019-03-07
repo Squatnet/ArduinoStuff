@@ -12,7 +12,7 @@ func set_signals():
 	GS.connect("reg_finished", self, "_on_reg_finished")
 
 func _on_connected():
-	print("MAIN - Connected")
+	print("Main - Connected")
 	$Connect.set_text("Disconnect")
 	if GS.BT:
 		$ModeLbl.set_text("BlueTooth")
@@ -22,6 +22,7 @@ func _on_connected():
 		GS.fakeReg()
 
 func _on_disconnected():
+	print("Main: Disconnected")
 	$Connect.set_text("Connect")
 	$ModeLbl.set_text("Disconnected")
 	$Control.hide()
@@ -78,7 +79,7 @@ func _on_data_received(data_received):
 			print(str(GS.knownDevs))
 			GS.doRegStep()
 func _on_Menu_A_Btn_Pressed(btn):
-	print("MAIN: Menu_A_Btn_Pressed("+btn+")")
+	print("Main: Menu_A_Btn_Pressed("+btn+")")
 	for i in $Control/ContentArea.get_children():
 		i.queue_free()
 	var newSc = load("res://Scenes/"+btn+".tscn")
@@ -89,10 +90,10 @@ func _on_Menu_A_Btn_Pressed(btn):
 func _on_Connect_pressed():
 	if GS.getSetting("fakeData") == false:
 		if !GS.BT:
-			print("Setup BT true")
+			print("Main: Setup BT true")
 			GS.setupBT(true)
 	else:
-		print("Setup BT false")
+		print("Main: Setup BT false")
 		GS.setupBT(false)
 	
 	if GS.BT: #got bluetooth
@@ -107,7 +108,7 @@ func _on_Connect_pressed():
 
 func _on_SettingsBtn_pressed():
 	$Settings.setOpen()
-	print($Settings.getOpen())
+	print("Main: "+str($Settings.getOpen()))
 	if $Settings.getOpen():
 		$Settings.show()
 	else:

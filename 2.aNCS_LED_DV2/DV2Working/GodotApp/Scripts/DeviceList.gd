@@ -20,7 +20,11 @@ func setup(args):
 				var but = listBtn.instance()
 				var thisItm = tmp[item]
 				#print(thisItm)
-				but.set_text(key+":"+thisItm[0]+":"+str(thisItm[1]))
+				if key == "Str":
+					but.set_text(key+":"+thisItm[0]+":"+str(thisItm[1])+":"+str(thisItm[2]))
+				else:
+					but.set_text(key+":"+thisItm[0]+":"+str(thisItm[1]))
+					
 				but.rect_scale = Vector2(2,2)
 				but.connect("pressed",self,"_list_type_0_btn_pressed",[but.text])
 				$VBoxContainer.add_child(but)
