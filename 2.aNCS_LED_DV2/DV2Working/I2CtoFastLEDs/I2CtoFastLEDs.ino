@@ -23,6 +23,7 @@
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 1
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
+
 CRGB leds[NUM_LEDS]; //makes an array of CRGB values, this allows us to address each LED individualy or as a group.
 CRGB ourCol = CRGB(255, 255, 255); //used to specify an individual color for use in patterns.
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)}; //used in setup to flash 3 colors ??
@@ -420,6 +421,7 @@ DEFINE_GRADIENT_PALETTE( saga_17_gp ) {//group green -> red.
 };
 
 void(* resetFunc) (void) = 0; // Software reset hack
+
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) { //if a message is coming in over 12c, this concatinates it into a string and passes the string to the parser.
@@ -703,26 +705,27 @@ void juggle() {//palette not currently supported
   }
 }
 void bouncingTrails(){
-  static int counter=0;
-  static int lastCount=0;
-  static int paletteRef=0;
-  static int posUp=0;
-  static int posDown=0;
-  static byte upReversed=0;
-  static byte downReversed=0;
-  static int pos=0;
+	//sets a "spawn" in the middle half of a strip then sends a trail in either direction which bounces of the ends of the strip.
+  static int counter=0;//used to set a start point at 1
+  static int lastCount=0;//i use this to be able to tell when the counter has increased. (had problems with if(counter++))
+  static int paletteRef=0;//the number of the color, in the palette, to set.
+  static int posUp=0;//holds the light that goes up the strip
+  static int posDown=0;//holds the light that goes down the strip
+  static byte upReversed=0;//if up hits the top of the strip, sets this to 1 and and runs back down the strip
+  static byte downReversed=0;//as above, in reverse
+  static int pos=0;//holds the initial position from which the two trails emerge
+  
   counter++;
-  DPRINTLN(counter);
-  if (counter==(NUM_LEDS_PER_STRIP*4)){
+  if (counter==(NUM_LEDS_PER_STRIP*4)){//used a multiple of 2 so that a new point s formed when the two trails are close to each other (looks better in my opinon)
     counter=0;
   }
-  if (lastCount!=counter){
+  if (lastCount!=counter){//if the counter has progressed
     fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 60);
-    paletteRef=(counter*5);
+    paletteRef=(counter*5);//used a multiple here as we want to adress as broad a rang from 0 - 256 as possible, with more LEDs be worth lowering this value.
 
   }
   if ((counter==1)&&(lastCount!=counter)){   
-    pos = random16((NUM_LEDS_PER_STRIP/4),((NUM_LEDS_PER_STRIP/4)*3));
+    pos = random16((NUM_LEDS_PER_STRIP/4),((NUM_LEDS_PER_STRIP/4)*3));//if on count 1, set the spawn, and clear the reversed states.
     downReversed=0;
     upReversed=0;
     posUp=pos;
@@ -747,7 +750,7 @@ void bouncingTrails(){
     } 
   }
   }  
-    if ((counter!=1)&&(lastCount!=counter)){
+    if ((counter!=1)&&(lastCount!=counter)){//this set of if statements increment the trailing dots, and tarcks if they are reversed
     if ((posUp!=NUM_LEDS_PER_STRIP)&&(upReversed==0)){
       posUp++;
     }
@@ -773,7 +776,7 @@ void bouncingTrails(){
     if ((posDown!=0)&&(downReversed==1)){
       posDown++;
     }
-  if (individualStripMode==0){
+  if (individualStripMode==0){//paint the trails
     FL(0,NUM_STRIPS){
       if (paletteMode==1){
         leds[(posUp+(i*NUM_LEDS_PER_STRIP))]=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
