@@ -18,8 +18,8 @@
 #define FRAMES_PER_SECOND  40
 #define ZOOMING_BEATS_PER_MINUTE 200
 #define STROBE_BEATS_PER_MINUTE 300
-#define NUM_STRIPS 3 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
-#define NUM_LEDS_PER_STRIP 29 //defines number of LED's per strip, see above.
+#define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
+#define NUM_LEDS_PER_STRIP 42 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 1
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
@@ -32,12 +32,12 @@ TBlendType currentBlending;//blending type
 
 String string = ""; //holder for the parser string.
 uint8_t gHue = 0;//this value rotates from 0-255 when auto mode is not 2, this is then used as one of the RGB values in several patterns.
-int x = 0; // holder for i2c message which sets pattern when we address the stips as one array.
-int y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
+byte x = 0; // holder for i2c message which sets pattern when we address the stips as one array.
+byte y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
 int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
-int autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
-int autoSecs = 2;//sets the upper bound for timeSinceBt function.
-int stripNumber = 1;//stores the strip that we wish to set the pattern on. 
+byte autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
+byte autoSecs = 2;//sets the upper bound for timeSinceBt function.
+byte stripNumber = 1;//stores the strip that we wish to set the pattern on. 
 byte individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
@@ -705,7 +705,7 @@ void juggle() {//palette not currently supported
   }
 }
 void bouncingTrails(){
-	//sets a "spawn" in the middle half of a strip then sends a trail in either direction which bounces of the ends of the strip.
+  //sets a "spawn" in the middle half of a strip then sends a trail in either direction which bounces of the ends of the strip.
   static int counter=0;//used to set a start point at 1
   static int lastCount=0;//i use this to be able to tell when the counter has increased. (had problems with if(counter++))
   static int paletteRef=0;//the number of the color, in the palette, to set.
@@ -801,69 +801,67 @@ void bouncingTrails(){
   }
   lastCount=counter;
 }
-void simpleStrobe () { //doesn't currently play nicely with palettes.
-  fill_solid(&(leds[LEDStart]), NoLEDs, CRGB::Black);
-  const uint8_t kStrobeCycleLength = 6; // light every Nth frame
+void simpleStrobe () {
+ fill_solid( leds, NUM_LEDS, CRGB::Black);
+ const uint8_t kStrobeCycleLength = 6; // light every Nth frame
   static uint8_t sStrobePhase = 0;
   sStrobePhase = sStrobePhase + 1;
-  if ( sStrobePhase >= kStrobeCycleLength ) {
-    sStrobePhase = 0;
+  if( sStrobePhase >= kStrobeCycleLength ) { 
+    sStrobePhase = 0; 
   }
-  if ( sStrobePhase == 0 ) {
-    uint8_t dashperiod = beatsin8( 8/*cycles per minute*/, 4, 10);
+ if( sStrobePhase == 0 ) {
+    uint8_t dashperiod= beatsin8( 8/*cycles per minute*/, 4,10);
     uint8_t dashwidth = (dashperiod / 4) + 1;
     uint8_t zoomBPM = STROBE_BEATS_PER_MINUTE;
-    int8_t  dashmotionspeed = beatsin8( (zoomBPM / 2), 1, dashperiod);
-    if ( dashmotionspeed >= (dashperiod / 2)) {
+    int8_t  dashmotionspeed = beatsin8( (zoomBPM /2), 1,dashperiod);
+    if( dashmotionspeed >= (dashperiod/2)) { 
       dashmotionspeed = 0 - (dashperiod - dashmotionspeed );
     }
     uint8_t cycle = beat8(2); // two cycles per minute
     uint8_t easedcycle = ease8InOutCubic( ease8InOutCubic( cycle));
     uint8_t wavecycle = cubicwave8( easedcycle);
-    // uint8_t hueShift = 0; // NO SHIFT OF HUE IN COLOUR (we should rebuild in RGB...)
-    uint8_t hueShift = scale8( wavecycle, 130); // METHOD HOW HUE VALUE SHIFTS
+   // uint8_t hueShift = 0; // NO SHIFT OF HUE IN COLOUR (we should rebuild in RGB...) 
+    uint8_t hueShift = scale8( wavecycle,130); // METHOD HOW HUE VALUE SHIFTS
     uint8_t strobesPerPosition = 2; // try 1..4
     strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
   }
 }
-void strobeCore(
-uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats,
-uint8_t huedelta) {
+void strobeCore( 
+    uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats,
+    uint8_t huedelta) {
   static uint8_t sRepeatCounter = 0;
   static int8_t sStartPosition = 0;
   static uint8_t sStartHue = 0;
   sStartHue += 1; //Shift the Colour little by little
   sRepeatCounter = sRepeatCounter + 1;
-  if ( sRepeatCounter >= stroberepeats) {
+  if( sRepeatCounter>= stroberepeats) {
     sRepeatCounter = 0;
     sStartPosition = sStartPosition + dashmotionspeed;
-    if ( sStartPosition >= dashperiod ) {
-      while ( sStartPosition >= dashperiod) {
-      sStartPosition -= dashperiod;
-      }
-    sStartHue  -= huedelta;
-    }
-    else if ( sStartPosition < LEDEnd) {
-      while ( sStartPosition < LEDEnd) {
-      sStartPosition += dashperiod;
-      }
-    sStartHue  += huedelta;
+    if( sStartPosition >= dashperiod ) {
+      while( sStartPosition >= dashperiod) { sStartPosition -= dashperiod; }
+      sStartHue  -= huedelta;
+    } else if( sStartPosition < 0) {
+      while( sStartPosition < 0) { sStartPosition += dashperiod; }
+      sStartHue  += huedelta;
     }
   }
   const uint8_t kSaturation = 208; // WHITE >> CURRENT COLOUR control (def 208)
   const uint8_t kValue = 200; // Brightness??
-  strobeDraw( sStartPosition, LEDEnd - 1, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
+  strobeDraw( sStartPosition, NUM_LEDS-1, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
 }
-static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width,  uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value){
-uint8_t hue = huestart;
-  for ( uint16_t i = LEDStart; i <= LEDEnd; i += period) {
-    CRGB color = CHSV( hue, saturation, value);
+static void strobeDraw( 
+  uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width, 
+  uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value) 
+  {
+  uint8_t hue = huestart;
+  for( uint16_t i = startpos; i <= lastpos; i += period) {
+    CRGB color = CHSV( hue, saturation, value);  
     //CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
     uint16_t pos = i;
-    for ( uint8_t w = 0; w < width; w++) {
+    for( uint8_t w = 0; w < width; w++) {
       leds[ pos ] = color;
       pos++;
-      if ( pos >= LEDEnd) {
+      if( pos >= NUM_LEDS) {
         break;
       }
     }
@@ -965,7 +963,7 @@ void patternSelect(){
       case 8:
     juggle();
         break;
-      case 9:
+    case 9:
         simpleStrobe();
         break;
       case 10:
@@ -1001,12 +999,12 @@ void patternSelect(){
     sinelon();
         break;
       case 7:
-    bpm();
+      bpm();
         break;
       case 8:
     juggle();
         break;
-      case 9:
+    case 9:
         simpleStrobe();
         break;
       case 10:
@@ -1028,6 +1026,7 @@ void setup() {
   FastLED.addLeds<WS2812B, 2, GRB>(leds, 0, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<WS2812B, 3, GRB>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<WS2812B, 4, GRB>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<WS2812B, 5, GRB>(leds, 3* NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
   FastLED.setBrightness(128);
   currentBlending = LINEARBLEND;
   int i = 0;
@@ -1106,5 +1105,10 @@ void loop() {
   paletteSelect();
   patternSelect();
   FastLED.show();
-  FastLED.delay(1000 / FRAMES_PER_SECOND);  
+  if (x==9){
+    FastLED.delay(1000/80);//shorter delay for strobe affect.
+  }
+  else{
+    FastLED.delay(1000 / FRAMES_PER_SECOND); 
+  }
 }
