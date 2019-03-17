@@ -18,7 +18,7 @@
 #define FRAMES_PER_SECOND  40
 #define ZOOMING_BEATS_PER_MINUTE 200
 #define STROBE_BEATS_PER_MINUTE 300
-#define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
+#define NUM_STRIPS 1 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
 #define NUM_LEDS_PER_STRIP 42 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 1
@@ -955,15 +955,15 @@ void patternSelect(){
         confetti();
         break;
       case 6:
-    sinelon();
+        sinelon();
         break;
       case 7:
-    bpm();
+        bpm();
         break;
       case 8:
-    juggle();
+        juggle();
         break;
-    case 9:
+      case 9:
         simpleStrobe();
         break;
       case 10:
@@ -984,7 +984,7 @@ void patternSelect(){
         turnOn();
         break;
       case 2:
-    theLights();
+        theLights();
         break;
       case 3:
         rainbow();
@@ -996,15 +996,15 @@ void patternSelect(){
         confetti();
         break;
       case 6:
-    sinelon();
+        sinelon();
         break;
       case 7:
-      bpm();
+        bpm();
         break;
       case 8:
-    juggle();
+        juggle();
         break;
-    case 9:
+      case 9:
         simpleStrobe();
         break;
       case 10:
@@ -1040,8 +1040,8 @@ void setup() {
   }
   turnOff();
   FastLED.show();
-
 }
+
 void loop() {
   EVERY_N_SECONDS(10){  // this flashes the onboard LED when loop is completed.
   if(debugLED){
@@ -1077,15 +1077,15 @@ void loop() {
   }
   else{
     int holder=patternStore[stripNumber];
-  if (holder==0){
-    holder=2;
-  }
+    if (holder==0){
+      holder=2;
+    }
     holder++;
-  if (holder>10){
+    if (holder>10){
       holder=2;
     }
     patternStore[stripNumber]=holder;
-  }
+    }
   }
   EVERY_N_SECONDS(5){
     paletteNumber++;//cycle the palette
