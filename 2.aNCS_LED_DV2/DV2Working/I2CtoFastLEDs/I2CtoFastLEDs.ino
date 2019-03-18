@@ -31,8 +31,7 @@ CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
 
 String string = ""; //holder for the parser string.
-uint8_t gHue = 0;//this value rotates from 0-255 when auto mode is not 2, this is then used as one of the RGB values in several patterns.
-byte x = 0; // holder for i2c message which sets pattern when we address the stips as one array.
+byte patternNumber = 0; // holder for i2c message which sets pattern when we address the stips as one array.
 byte y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
 int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
 byte autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
@@ -520,11 +519,11 @@ void parser() {
       String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
       DPRINT(ptn);
       DPRINT(" - ");
-      x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-      DPRINTLN(x);
+      patternNumber = ptn.toInt(); // Its going to be an integer. its the pattern number,
+      DPRINTLN(patternNumber);
       string.remove(0, string.indexOf(",") + 1); // Remove the value
       if(individualStripMode==1){
-        patternStore[stripNumber]=x;
+        patternStore[stripNumber]=patternNumber;
       }
     }
     if (subs.startsWith("Atm")) { // next value is boolean for automode
@@ -592,9 +591,9 @@ void parser() {
 }
 void randX() {//choses a random pattern
     if (individualStripMode==0){
-      x = random(2, 9);
+      patternNumber = random(2, 9);
       DPRINT("RANDOM ");
-      DPRINTLN(x);
+      DPRINTLN(patternNumber);
     }
     if (individualStripMode!=0){
       byte lastStripNumber=stripNumber;
@@ -654,7 +653,7 @@ void confetti(){
   }
   else {
   leds[pos] = ourCol;
-  leds[pos] += CHSV( gHue + random8(64), 200, 255);
+  leds[pos] += CHSV( colorIndex + random8(64), 200, 255);
   }
 }
 void sinelon(){
@@ -670,7 +669,7 @@ void sinelon(){
   }
   else{
   leds[pos] = ourCol;
-  leds[pos] += CHSV( gHue, 255, 192);
+  leds[pos] += CHSV( colorIndex, 255, 192);
   }
 }
 void bpm(){
@@ -690,7 +689,7 @@ void bpm(){
   }
   else{
     leds[i] = ourCol;
-    leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
+    leds[i] = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
   }
   }
 }
@@ -859,7 +858,7 @@ static void strobeDraw(
     //CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
     uint16_t pos = i;
     for( uint8_t w = 0; w < width; w++) {
-      leds[ pos ] = color;
+      leds[ pos ] = ColorFromPalette(currentPalette,colorIndex);
       pos++;
       if( pos >= NUM_LEDS) {
         break;
@@ -935,7 +934,7 @@ void patternSelect(){
   int lastStripNumber=stripNumber;
   if (individualStripMode==0){
     setLEDs();
-    switch (x) {
+    switch (patternNumber) {
       case 0:
         turnOff();
         break;
@@ -1055,9 +1054,9 @@ void loop() {
   }
   if (autoMode == 1) {//if auto mode on
     EVERY_N_MILLISECONDS(30) {
-      gHue++;//cycle hue number
-      if (gHue>=255){
-        gHue=0;
+      colorIndex++;//cycle hue number
+      if (colorIndex>=255){
+        colorIndex=0;
       }
     }
     EVERY_N_SECONDS(1) {      
@@ -1067,12 +1066,12 @@ void loop() {
     }
   EVERY_N_SECONDS(10){
     if (individualStripMode==0){
-    if (x==0){
-    x=2;
+    if (patternNumber==0){
+    patternNumber=2;
   }
-  x++;//cycle the pattern
-    if(x>10){
-      x=2;
+  patternNumber++;//cycle the pattern
+    if(patternNumber>10){
+      patternNumber=2;
     }
   }
   else{
@@ -1105,7 +1104,7 @@ void loop() {
   paletteSelect();
   patternSelect();
   FastLED.show();
-  if (x==9){
+  if (patternNumber==9){
     FastLED.delay(1000/80);//shorter delay for strobe affect.
   }
   else{
