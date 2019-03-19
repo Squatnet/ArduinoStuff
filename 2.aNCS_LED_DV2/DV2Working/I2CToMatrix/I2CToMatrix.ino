@@ -32,9 +32,9 @@
 #define STROBE_BEATS_PER_MINUTE 97.5
 #define CONNECTED_STRIPS 1
 
-cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
+cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix;
 cLEDText ScrollingMsg;
-CRGB tst[256];
+CRGB leds[256];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
@@ -50,6 +50,7 @@ byte paletteNumber = 0;//holds the number for which palette is in use when palet
 byte numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 uint8_t brightness = 255;
+int gHue=0;
 
 DEFINE_GRADIENT_PALETTE( Pastel1_08_gp ) {//group 1
   0, 244, 118, 98,
@@ -425,12 +426,12 @@ void setup() {
   Wire.begin(I2C_ADDR); //2,3,4 for A,B+C aNCS_2560 boards.
   Wire.onReceive(receiveEvent);
   DBEGIN(115200);
-  FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds[0], leds.Size());
+  FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(matrix[0], matrix.Size());
   FastLED.setBrightness(64); // Limit Power Consumption 
   currentBlending = LINEARBLEND;
   FastLED.clear(true);
   ScrollingMsg.SetFont(MatriseFontData); // or Robotron.
-  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
+  ScrollingMsg.Init(&matrix, matrix.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
   ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
   ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
@@ -555,6 +556,11 @@ void parser() {
   string = ""; // empty it
   }
 }
+void setLEDs(){
+  FL(0,256){
+    matrix(i)=leds[i];
+  }
+}
 ////////////////////////start of patterns///////////////////////
 void turnOn() {// for each LED turn it to ourCol.
   FL(0, NUM_LEDS) {
@@ -581,7 +587,7 @@ void scrollText(){
     FastLED.show();
 }
 void solidWhite(){
-  fill_solid( leds, NUM_LEDS, CRGB::Grey );
+  fill_solid( leds, NUM_LEDS, CRGB::White);
 }
 void theLights() { //  speckles and strobes
   fadeToBlackBy(&(leds[0]), NUM_LEDS, 10);
