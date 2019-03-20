@@ -119,3 +119,16 @@ func _on_SettingsBtn_pressed():
 		$Settings.show()
 	else:
 		$Settings.hide()
+
+func updateLock():
+	var lock = GS.getSetting("lockout")
+	var LoadIcon
+	if lock == true:
+		LoadIcon = load("res://Assets/Locked.png")
+	else:
+		LoadIcon = load("res://Assets/Unlocked.png")
+	$LockIcon.set_texture(LoadIcon)
+	if GS.BT:
+		GS.BT.sendData("Lck,"+str(int(lock)))
+	else:
+		OS.alert("LOCKOUT: "+str(lock),str(int(lock)))

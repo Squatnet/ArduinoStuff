@@ -7,7 +7,7 @@ signal reg_finished
 var version = 0.1
 var BTMast
 var BT
-var settings = {"fakeData":false,"adminMode":false,"debugMode":true}
+var settings = {"fakeData":false,"adminMode":false,"debugMode":true,"lockout":true}
 var devNums = [0,0,0,0]
 var knownDevs = {"Str":{},
 				"Mat":{},

@@ -52,3 +52,8 @@ func _on_DeletePallettes_pressed():
 	GS.remAllPallettes()
 	setup()
 		
+
+func _on_LockoutButton_toggled(button_pressed):
+	GS.setSetting("lockout",button_pressed)
+	get_parent().updateLock()
+	

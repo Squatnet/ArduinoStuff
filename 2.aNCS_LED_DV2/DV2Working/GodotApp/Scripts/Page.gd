@@ -3,9 +3,11 @@ var gotAck = false
 var updated = []
 var knownPatterns = []
 var numPatterns = 0
+var numMirror = 0
 var automode = 0
 var autoSecs = 10
 var patternSel = 1
+var mirrorSel = 0
 var paletteMode = 0
 var currCol = [0,0,0]
 var currPallette = 0
@@ -20,6 +22,8 @@ var chkTerm = false
 var shwChks = false
 var pageType = 0
 var pageTypeText = ["Single Device","Type","Group"]
+var mirrorOpts = ["Off","Quadrant","Quad. Rotate","Vertical"]
+var autoOpts = ["Off", "All", "Pattern", "Pallette"]
 var deviceClass = 0
 var deviceClassText = ["Str","Mat","Ter","Rou"]
 var commandPrefix = "Ctl,"
@@ -41,13 +45,18 @@ func showChkBox():
 func setup(args):
 	knownPatterns = GS.knownPatterns
 	numPatterns = knownPatterns.size()
+	numMirror = mirrorOpts.size()
+	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
 	$PatternName.set_text(knownPatterns[1])
+	$AutoMode/Label.set_text(autoOpts[automode])
 	pageType = args[0]
 	if pageType == 0:
 		$PAGE.set_text("Single Device: "+str(args[1]))
 		var x = str(args[1]).split(":")
 		print("Page: "+str(x))
 		if x[0] != "Mat":
+			$MirrorModeName.hide()
+			$MirrorModeLbl.hide()
 			$Messge.hide()
 		if x[0] == "Str":
 			attchStr = int(x[3])
@@ -58,6 +67,8 @@ func setup(args):
 		$PAGE.set_text("Device Type :"+str(args[1]))
 		if args[1] != "Mat":
 			$Messge.hide()
+			$MirrorModeLbl.hide()
+			$MirrorModeName.hide()
 		if args[1] == "Str":
 			attchStr = GS.mostKnownStrips
 		commandDevClassOrID += str(args[1])+",All,"
@@ -156,12 +167,14 @@ func _on_SendButton_pressed():
 				commandToRelay += "PNo,"+str(currPallette)+","
 			elif i == "palMode":
 				commandToRelay += "Pal,"+str(paletteMode)+","
+			elif i == "mirror":
+				commandToRelay += "Mir,"+str(mirrorSel)+","
 			elif i == "inSt":
 				commandToRelay += "ISt,"+str(indStrAddr)+","
 			elif i == "strNo":
 				commandToRelay += "SNo,"+str(AddrStrNo)+","
 				
-		print("Page: commandToRelay: "+commandToRelay)
+		OS.alert("Page: commandToRelay: "+commandToRelay,"Cmd")
 		if pageType == 2:
 			if chkStr == true && chkMat == true && chkRtr == true && chkTerm == true:
 				commandDevClassOrID = "All,"
@@ -270,3 +283,38 @@ func _on_PatNextBtn_pressed():
 		updated.push_back("pattern")
 func onAck():
 	gotAck = true
+
+func _on_MirPrevBtn_pressed():
+	mirrorSel -= 1
+	if mirrorSel < 0:
+		mirrorSel = numMirror-1
+	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
+	if !updated.has("mirror"):
+		updated.push_back("mirror")
+
+
+func _on_MirNextBtn_pressed():
+	mirrorSel += 1
+	if mirrorSel > numMirror-1:
+		mirrorSel = 0
+	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
+	if !updated.has("mirror"):
+		updated.push_back("mirror")
+
+
+func _on_Prev_pressed():
+	automode += 1
+	if automode < 0:
+		automode = autoOpts.size()-1
+	$AutoMode/Label.set_text(autoOpts[automode])
+	if !updated.has("automode"):
+		updated.push_back("automode")
+
+
+func _on_Next_pressed():
+	automode += 1
+	if automode > autoOpts.size()-1:
+		automode = 0
+	$AutoMode/Label.set_text(autoOpts[automode])
+	if !updated.has("automode"):
+		updated.push_back("automode")
