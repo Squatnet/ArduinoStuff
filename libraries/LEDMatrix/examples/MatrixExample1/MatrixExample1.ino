@@ -4,13 +4,13 @@
 
 // Change the next 6 defines to match your matrix type and size
 
-#define LED_PIN        2
+#define LED_PIN        3
 #define COLOR_ORDER    GRB
 #define CHIPSET        WS2812B
 
-#define MATRIX_WIDTH   80  // Set this negative if physical led 0 is opposite to where you want logical 0
-#define MATRIX_HEIGHT  10  // Set this negative if physical led 0 is opposite to where you want logical 0
-#define MATRIX_TYPE    HORIZONTAL_MATRIX  // See top of LEDMatrix.h for matrix wiring types
+#define MATRIX_WIDTH   32  // Set this negative if physical led 0 is opposite to where you want logical 0
+#define MATRIX_HEIGHT  8  // Set this negative if physical led 0 is opposite to where you want logical 0
+#define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX  // See top of LEDMatrix.h for matrix wiring types
 
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 
@@ -92,4 +92,3 @@ void loop()
     counter = 0;
   FastLED.show();
 }
-

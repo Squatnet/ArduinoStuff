@@ -50,6 +50,7 @@ byte paletteNumber = 0;//holds the number for which palette is in use when palet
 byte numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 uint8_t brightness = 255;
+int mirrorNumber=0;
 
 DEFINE_GRADIENT_PALETTE( Pastel1_08_gp ) {//group 1
 	0, 244, 118, 98,
@@ -528,6 +529,15 @@ void parser() {
 			DPRINTLN(paletteNumber);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 		}
+		if (subs.startsWith("Mir")) { // next value is the number of the mirror mode to use. 0==off.
+			DPRINT("Mir ");
+			String mir= string.substring(0, string.indexOf(",")); // get  everything until the comma
+			DPRINT(mir);
+			DPRINT(" - ");
+			mirrorNumber = mir.toInt(); // Its going to be an integer. its the mirror number.
+			DPRINTLN(mirrorNumber);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+		}
 		if (subs.startsWith("Ran")) { // next value will trigger randX
 			DPRINT("Ran ");
 			String ran= string.substring(0, string.indexOf(",")); // get  everything until the comma
@@ -778,7 +788,7 @@ void bouncingTrails(){
 		if ((posUp!=MATRIX_WIDTH)&&(upReversed==0)){
 			posUp++;
 		}
-		if (posUp==MATRIX_WIDTH-1){
+		if (posUp==MATRIX_WIDTH){
 			upReversed=1;
 		}
 		if ((posUp!=0)&&(upReversed==1)){
@@ -790,7 +800,7 @@ void bouncingTrails(){
 		if ((posDown!=0)&&(downReversed==0)){
 			posDown--;
 		}
-		if (posDown==MATRIX_WIDTH-1){
+		if (posDown==MATRIX_WIDTH){
 			downReversed=0;
 		}
 		if (posDown==0){
@@ -912,8 +922,23 @@ void patternSelect(){
 			break;
     }
 }
+void mirrorSelect(){
+	switch(mirrorNumber){
+		case 0:
+			break;
+		case 1:
+			matrix.QuadrantMirror();
+			break;
+		case 2:
+			matrix.QuadrantRotateMirror();
+			break;
+		case 3:
+			matrix.VerticalMirror();
+			break;
+	}
+}
 void loop(){
-	if (autoMode == 1) { //if auto mode on
+	if (autoMode == 1) { //if auto mode on cycles palettes, patterns and mirror mode.
 		EVERY_N_MILLISECONDS(30) {
 			colorIndex++;//cycle hue number
 			if (colorIndex>=255){
@@ -931,6 +956,10 @@ void loop(){
 			if (paletteNumber>numberOfPalettes){
 				paletteNumber=0;
 			}    
+			mirrorNumber++;//cycles mirror mode
+			if (mirrorNumber>4){
+				mirrorNumber=0;
+			}
 		}
 		EVERY_N_SECONDS(30){   
 			if (patternNumber==0){
@@ -943,7 +972,15 @@ void loop(){
 		}
 	}
 	if (autoMode==2){
-		EVERY_N_SECONDS(5){
+		EVERY_N_SECONDS(30){
+			patternNumber++;//cycle the palette
+			if (patternNumber>10){
+				paletteNumber=2;
+			} 
+		}
+	}
+	if (autoMode==3){
+		EVERY_N_SECONDS(30){
 			paletteNumber++;//cycle the palette
 			if (paletteNumber>numberOfPalettes){
 				paletteNumber=0;
@@ -954,7 +991,9 @@ void loop(){
 	paletteSelect();
 	patternSelect();
 	setLEDs();
+	mirrorSelect();
 	FastLED.show();
+  
 	FastLED.delay(1000 / FRAMES_PER_SECOND);
 	/*if (patternNumber==8){
 		FastLED.delay(1000/80);//shorter delay for strobe affect.
