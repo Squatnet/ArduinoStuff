@@ -1,5 +1,5 @@
 extends Control
-
+var gotAck = false
 var updated = []
 var knownPatterns = []
 var numPatterns = 0
@@ -29,7 +29,7 @@ var commandToRelay = ""
 var commandSuffix = ","
 func _ready():
 	call_deferred("showChkBox")
-	
+	get_node("/root/Main").connect("ack",self,"onAck")
 func showChkBox():
 	var arg = shwChks
 	print("Page: showChkBox: "+str(arg))
@@ -46,7 +46,7 @@ func setup(args):
 	if pageType == 0:
 		$PAGE.set_text("Single Device: "+str(args[1]))
 		var x = str(args[1]).split(":")
-		print(x)
+		print("Page: "+str(x))
 		if x[0] != "Mat":
 			$Messge.hide()
 		if x[0] == "Str":
@@ -84,11 +84,17 @@ func setPall(pall):
 func sendMessage():
 	var commandToSend = commandPrefix+commandDevClassOrID+commandGrpName+commandToRelay
 	if GS.BT:
+		gotAck = false
 		GS.BT.sendData(commandToSend)
+		var msec = 0
+		while !gotAck or msec < 300:
+			print("wait for ack "+str(msec))
+			OS.delay_msec(10)
+			msec += 10
 	if GS.getSetting("debugMode") == true:
-		OS.alert("Sending Message:\n commandToSend : "+commandToSend,"Sending")
+		print("Sending Message:\n commandToSend : "+commandToSend)
 	else:
-		OS.alert("Sent message to "+commandDevClassOrID+commandGrpName,"Sending")
+		pass
 	commandToRelay = ""
 	updated.clear()
 func _on_CloseBtn_pressed():
@@ -262,3 +268,5 @@ func _on_PatNextBtn_pressed():
 	$PatternName.set_text(knownPatterns[patternSel])
 	if !updated.has("pattern"):
 		updated.push_back("pattern")
+func onAck():
+	gotAck = true

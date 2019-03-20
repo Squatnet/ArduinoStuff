@@ -7,6 +7,7 @@ func setup():
 		$FakeData.disabled = false
 	else:
 		$FakeData.disabled = true
+		pass
 	$FakeData.pressed = GS.getSetting("fakeData")
 	$DebugMode.pressed = GS.getSetting("debugMode")
 	$AdminMode.pressed = GS.getSetting("adminMode")
@@ -30,6 +31,7 @@ func _on_SaveButton_pressed():
 	GS.setSetting("fakeData",$FakeData.pressed)
 	GS.setSetting("adminMode",$AdminMode.pressed)
 	GS.setSetting("debugMode",$DebugMode.pressed)
+	print(str(int($FakeData.pressed)))
 	if GS.getSetting("debugMode") == true:
 		OS.alert("Settings Saved: "+str(GS.settings),"Success!")
 	else:

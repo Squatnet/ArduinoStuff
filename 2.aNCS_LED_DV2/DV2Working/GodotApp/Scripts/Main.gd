@@ -1,9 +1,13 @@
 extends Control
+signal ack 
 var menuBtn = load("res://Assets/Objects/Menu_A_Btn.tscn")
 var TheDict = {}
 var TypeNums = []
 func _ready():
 	set_signals()
+	if GS.pallettes.empty():
+		var pallParser = load("res://Scripts/PallParser.gd").new()
+		pallParser.parse()
 	
 func set_signals():
 	GS.connect("connected", self, "_on_connected")
@@ -49,6 +53,8 @@ func addMenuButton(name):
 	$Control/MenuBarA.add_child(btn)
 
 func _on_data_received(data_received):
+	if data_received.begins_with("ack"):
+		emit_signal("ack")
 	var s = "{"+data_received+"}"
 	print("MAIN: Data :"+s)
 	var test = parse_json(s)
@@ -73,7 +79,7 @@ func _on_data_received(data_received):
 			GS.doRegStep()
 		elif test.has("Dev"):
 			var sglDev = test.Dev
-			print(str(sglDev))
+			print("Main: hasDev"+str(sglDev))
 			var type = sglDev.pop_front()
 			GS.addDvc(type,sglDev)
 			print(str(GS.knownDevs))
@@ -89,15 +95,15 @@ func _on_Menu_A_Btn_Pressed(btn):
 	
 func _on_Connect_pressed():
 	if GS.getSetting("fakeData") == false:
-		if !GS.BT:
-			print("Main: Setup BT true")
-			GS.setupBT(true)
-	else:
-		print("Main: Setup BT false")
-		GS.setupBT(false)
-	
-	if GS.BT: #got bluetooth
-		GS.BT.getPairedDevices(true) ## show bluetooth device list
+		if GS.BT: #got bluetooth
+			GS.BT.getPairedDevices(true) ## show bluetooth device list
+		else:
+			if $Connect.text == "Connect":
+				GS.emit_signal("connected")
+				OS.alert("Using FakeData due to Setting","Alert!")
+			else:
+				GS.emit_signal("disconnected")
+				GS._on_disconnected()
 	else: ## no bluetooth module
 		if $Connect.text == "Connect":
 			GS.emit_signal("connected")

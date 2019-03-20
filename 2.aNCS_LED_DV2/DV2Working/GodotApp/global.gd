@@ -5,6 +5,7 @@ signal disconnected
 signal data_received
 signal reg_finished
 var version = 0.1
+var BTMast
 var BT
 var settings = {"fakeData":false,"adminMode":false,"debugMode":true}
 var devNums = [0,0,0,0]
@@ -26,6 +27,7 @@ func saveSettings():
 	f.open("user://settings.xws", File.WRITE)
 	f.store_var(settings)
 	f.close()
+	setupBT(settings.fakeData)
 	print("GS: Saved Settings")
 func LoadSettings(): # Loads settings (volume, etc)
 	var f = File.new() # Open a new file container
@@ -118,11 +120,13 @@ func fakeReg(): # Populates knownDevice with fake data, Fired only when GS.BT is
 	doRegStep()
 	
 func addDvc(typ,dev): # Adds a new device from a bluetooth message, expects a string as typ and an array as dev [String Name, int PjonID]
-	var sPos = dev[0]
-	var sName = dev[1]
-	var sId = dev[2]
-	print("GS: addDvc: "+knownDevs[typ])
-	knownDevs[typ][str(sPos)] = [sName,sId]
+	var sPos = str(dev.pop_front())
+	var sArr = []
+	while !dev.empty():
+		sArr.push_back(dev.pop_front())
+	print("GS: addDvc: "+str(knownDevs[typ]))
+	
+	knownDevs[typ][sPos] = sArr
 func doRegStep():
 	if BT && regStepsArray.size() == 0:
 		print("GS: doRegStep: regStepsArray Empty!!")
@@ -151,20 +155,24 @@ func doRegStep():
 func _ready():
 	LoadSettings()
 	LoadPallettes()
-	if pallettes.empty():
-		var pallParser = load("res://Scripts/PallParser.gd").new()
-		pallParser.parse()
+	if(Engine.has_singleton("GodotBluetooth")):
+		print("GS: Android Detected : Setting BTMast")
+		BTMast = Engine.get_singleton("GodotBluetooth")
+		BTMast.init(get_instance_id(), true)
 	setupBT(settings.fakeData)
 func setupBT(arg):
-	if arg == true:
-		if(Engine.has_singleton("GodotBluetooth")):
-			print("GS: setupBT: Android")
-			BT = Engine.get_singleton("GodotBluetooth")
-			BT.init(get_instance_id(), true)
+	if(Engine.has_singleton("GodotBluetooth")):
+		var x = int(arg)
+		print("X : "+str(x))
+		BT = BTMast
+		if x == 0:
+			print("GS: setupBT: Android: Bluetooth")
+			pass # keep current conf
 		else:
-			print("GS: setupBT: No Module")
+			print("GS: setupBT: Android: FakeData")
+			BT = null # Remove var
 	else:
-		print("GS: setupBT: False")
+		print("GS: setupBT: No Module")
 		BT = null
 #GodotBluetooth Callbacks
 func _on_connected(device_name, device_adress):
