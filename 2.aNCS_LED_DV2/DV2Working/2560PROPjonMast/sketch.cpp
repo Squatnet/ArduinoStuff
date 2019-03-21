@@ -665,7 +665,7 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   }
   else if( reg.startsWith("UDP")){
 	  DPRINT(reg);
-	  reg.remove(0,reg.indexOf(','+1);
+	  reg.remove(0,reg.indexOf(',')+1);
 	  UdpIn.id = id;
 	  UdpIn.namee = reg;
 	  udpId = id;
@@ -675,7 +675,7 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   DFLUSH();
   // send back a little "ack"
   msgSwitch = 1; 
-  if (msgTosend.length() < 1) {
+  if (msgToSend.length() < 1) {
 	  msgToSend = "ack,";
 	  msgSendId = id;
   }
@@ -755,7 +755,13 @@ void parseMsg(int id, String msg) {
  }
  if(msg.startsWith("Lck")){
 	 msg.remove(0,msg.indexOf(',')+1);
-	 
+	 if(udpId != 0){
+    msgSendId = udpId;
+    msgToSend = "Lck,";
+	 }
+   msg = "";
+   msgSwitch = 1;
+ }
 /*
  if(msg.startsWith("Clk")){
   for(int i=0; i< numStrip; i++){
