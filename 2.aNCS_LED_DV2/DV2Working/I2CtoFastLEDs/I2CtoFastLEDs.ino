@@ -590,7 +590,7 @@ void parser() {
 }
 void randPattern() {//choses a random pattern
 	if (individualStripMode==0){
-		patternNumber = random(2, 9);
+		patternNumber = random(2, 10);
 		DPRINT("RANDOM ");
 		DPRINTLN(patternNumber);
     }
@@ -598,7 +598,7 @@ void randPattern() {//choses a random pattern
 		byte lastStripNumber=stripNumber;
 		FL(1,NUM_STRIPS+1){
 			if (i==stripNumber){
-				patternStore[i]=random(2,9);
+				patternStore[i]=random(2,10);
 			}
 		}
 		stripNumber=lastStripNumber;
