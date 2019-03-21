@@ -217,8 +217,20 @@ void setup() {  // SETUP
   delayRunning = true;
   DPRINT(". ");
   Wire.begin();
+  DPRINT(". ");
+  Wire.requestFrom(1, 1); // request 1 byte from Wire(1)
+  DPRINT(". ");
+  delay(100); // To make sure request is handled
   DPRINTLN("Done!!!");
- 
+  DPRINT("Slave has ");
+  String attchSt = ",";
+  while (Wire.available()) { // slave may send less than requested
+    char c = Wire.read(); // receive a byte as character
+    attchSt.concat(c);         // print the character
+  }
+  DPRINT(attchSt);
+  DPRINTLN(" strips attached.");
+  regString.concat(attchSt);
   // SETUP FINISHES
 };
 // Function to register with master.

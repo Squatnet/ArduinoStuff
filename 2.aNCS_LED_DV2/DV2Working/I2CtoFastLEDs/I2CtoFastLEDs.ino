@@ -39,6 +39,11 @@ int autoSecs = 2;
 bool debugLED = false;
 
 void(* resetFunc) (void) = 0; // Software reset hack
+// Function to reply to master when master requests data 
+// In this case master will want to know how many strips are connected
+void requestEvent() {
+  Wire.write(NUM_STRIPS); // respond with NUM_STRIPS
+}
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) {
@@ -134,7 +139,7 @@ void randX() {
 void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
-
+  Wire.onRequest(requestEvent);
   pinMode(DEBUG_LED, OUTPUT);
   DBEGIN(115200);
   DPRINTLN("Ready for i2c");

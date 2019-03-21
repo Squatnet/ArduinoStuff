@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
@@ -18,9 +18,9 @@
 #define I2C_ADDR 10
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xFD }; 
-byte ip[] = { 192, 168, 1, 200 };
+byte ip[] = { 192, 168, 1, 221 };
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet
-unsigned int localPort = 9000; // OSC IN port
+unsigned int localPort = 9050; // OSC IN port
 int numTimes = 0;
 int ledPin =  13;       
 int ledState = LOW;

@@ -27,7 +27,8 @@ uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
 int debugMode = 1; // Set to 1 for debug on
-
+int adminLock = 0;
+int udpId = 0;
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
 // Declare device Struct
@@ -57,6 +58,7 @@ int numRouter = 0;
 // only ever going to be one of each of these so no need for an array
 // AS YET UNIMPLEMENTED
 device wizNetIn;
+device UdpIn;
 device wizNetOut;
 
 bool PjonLedOn = false; // as yet not working
@@ -593,6 +595,8 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       DPRINTLN(reg); // now its just Name
       strips[numStrip].id = id; // store the ID
       strips[numStrip].namee = reg.substring(0,reg.indexOf(",")); // store the name
+      reg.remove(0,reg.indexOf(',')+1);
+      strips[numStrip].attachedStr = reg.toInt();
       DPRINT("Strip : ");
       DPRINT(numStrip);
       DPRINT(" name : ");
@@ -659,11 +663,22 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       DPRINT(" id : ");
       DPRINTLN(wizNetIn.id);
   }
+  else if( reg.startsWith("UDP")){
+	  DPRINT(reg);
+	  reg.remove(0,reg.indexOf(','+1);
+	  UdpIn.id = id;
+	  UdpIn.namee = reg;
+	  udpId = id;
+	  msgSendId = id;
+	  msgToSend = "Lck,";
+  }
   DFLUSH();
   // send back a little "ack"
   msgSwitch = 1; 
-  msgToSend = "ack,";
-  msgSendId = id;
+  if (msgTosend.length() < 1) {
+	  msgToSend = "ack,";
+	  msgSendId = id;
+  }
 }
 void parseMsg(int id, String msg) {
   //DPRINTLN("#msgparser");
@@ -738,6 +753,9 @@ void parseMsg(int id, String msg) {
   msg = "";
   msgSendId = masterTerm;
  }
+ if(msg.startsWith("Lck")){
+	 msg.remove(0,msg.indexOf(',')+1);
+	 
 /*
  if(msg.startsWith("Clk")){
   for(int i=0; i< numStrip; i++){
@@ -925,6 +943,7 @@ void loop() {
       DPRINTLN("sending to parser");
       parseMsg(int(999), str); // send tto parser with id 99 (could cause issues later tbf)
       str = ""; // empty that shit!
+      hc05.println("{\"ack\":1}");
     }
   }
   EVERY_N_SECONDS(10){ // This is why we include FastLEDS... will replace with some millis bullshit
