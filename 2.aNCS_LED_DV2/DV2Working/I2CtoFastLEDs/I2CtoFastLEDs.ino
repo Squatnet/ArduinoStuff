@@ -473,7 +473,7 @@ void doPulse() {//pulses LEDs white then turns them off.
 }
 void parser() {
 	DPRINTLN("PARSER");
-	byte randTrigger=0;//initializes a randX trigger (didn't need to be global);
+	byte randTrigger=0;//initializes a randPattern trigger (didn't need to be global);
 	while (string.length() >= 1) { // While there message left to read.
 		DPRINT("Message is ");
 		DPRINT(string);
@@ -569,7 +569,7 @@ void parser() {
 			DPRINTLN(pno);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 		}
-		if (subs.startsWith("Ran")) { // next value will trigger randX
+		if (subs.startsWith("Ran")) { // next value will trigger randPattern
 			DPRINT("Ran ");
 			String ran= string.substring(0, string.indexOf(",")); // get everything until the comma
 			DPRINT(ran);
@@ -578,7 +578,7 @@ void parser() {
 			DPRINTLN(ran);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 			if (randTrigger!=0){
-				randX();
+				randPattern();
 				randTrigger=0;
 			}
 		} 
@@ -588,7 +588,7 @@ void parser() {
 		string = ""; // empty it
 	}
 }
-void randX() {//choses a random pattern
+void randPattern() {//choses a random pattern
 	if (individualStripMode==0){
 		patternNumber = random(2, 9);
 		DPRINT("RANDOM ");
@@ -603,6 +603,11 @@ void randX() {//choses a random pattern
 		}
 		stripNumber=lastStripNumber;
 	}
+}
+void randPalette(){
+	paletteNumber=random(2,numberOfPalettes);
+	DPRINT("RANDOM PALETTE ");
+	DPRINTLN(paletteNumber);
 }
 void theLights() { //  speckles and strobes
 	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
@@ -1043,56 +1048,30 @@ void loop() {
 			digitalWrite(DEBUG_LED,LOW);
 		}
 	}
-	if (autoMode == 1) { //if auto mode on
-		EVERY_N_MILLISECONDS(30) {
-			colorIndex++;//cycle hue number
-			if (colorIndex>=255){
-				colorIndex=0;
-			}
-		}
+	if (autoMode == 1) { //if auto mode on cycles palettes and patterns.
 		EVERY_N_SECONDS(1) {      
 			timeSinceBt++;//count the time since beat
-			if (timeSinceBt == autoSecs) {
+			if (timeSinceBt >= autoSecs) {
 				timeSinceBt = 0;
+				randPalette();
+				randPattern();
 			}
-		}
-		EVERY_N_SECONDS(10){
-			if (individualStripMode==0){
-				if (patternNumber==0){
-					patternNumber=2;
-				}
-				patternNumber++;//cycle the pattern
-				if(patternNumber>10){
-					patternNumber=2;
-				}
-			}
-			else{
-				int holder=patternStore[stripNumber];
-				if (holder==0){
-					holder=2;
-				}
-				holder++;
-				if (holder>10){
-					holder=2;
-				}
-				patternStore[stripNumber]=holder;
-			}
-		}
-		EVERY_N_SECONDS(5){
-			paletteNumber++;//cycle the palette
-			if (paletteNumber>numberOfPalettes){
-				paletteNumber=0;
-			}    
 		}
 	}
-	if (autoMode==2){
-		EVERY_N_SECONDS(5){
-			paletteNumber++;//cycle the palette
-			if (paletteNumber>numberOfPalettes){
-				paletteNumber=0;
-			}	 
+	if (autoMode==2){ //if automode 2 cycles a random pattern.
+		timeSinceBt++;
+		if (timeSinceBt >= autoSecs) {
+			timeSinceBt=0;
+			randPattern();
 		}
-	}
+	}	
+	if (autoMode==3){//if automode 3, cycles a random palette.
+		timeSinceBt++;
+		if (timeSinceBt >= autoSecs) {
+			timeSinceBt=0;
+			randPalette();
+		}
+	}	
 	paletteSelect();
 	patternSelect();
 	FastLED.show();

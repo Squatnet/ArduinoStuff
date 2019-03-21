@@ -444,7 +444,6 @@ void setup() {
 	delay(500);
 	FastLED.show();
 	DPRINTLN("SETUP");
-	patternNumber=9;
 }
 void(* resetFunc) (void) = 0; // Software reset hack
 
@@ -462,7 +461,7 @@ void receiveEvent(int howMany) { //if a message is coming in over 12c, this conc
 
 void parser() {
 	DPRINTLN("PARSER");
-	byte randTrigger=0;//initializes a randX trigger (didn't need to be global);
+	byte randTrigger=0;//initializes a randPattern trigger (didn't need to be global);
 	while (string.length() >= 1) { // While there message left to read.
 		DPRINT("Message is ");
 		DPRINT(string);
@@ -538,16 +537,16 @@ void parser() {
 			DPRINTLN(mirrorNumber);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 		}
-		if (subs.startsWith("Ran")) { // next value will trigger randX
+		if (subs.startsWith("Ran")) { // next value will trigger randPattern
 			DPRINT("Ran ");
 			String ran= string.substring(0, string.indexOf(",")); // get  everything until the comma
 			DPRINT(ran);
 			DPRINT(" - ");
-			randTrigger = ran.toInt(); // Its going to be an integer. its the   palette number.
+			randTrigger = ran.toInt(); // Its going to be an integer. 1 triggers randPattern
 			DPRINTLN(randTrigger);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 			if (randTrigger!=0){
-				randX();
+				randPattern();
 				randTrigger=0;
 			}
 		}
@@ -582,10 +581,20 @@ void turnOff() {//for each LED turn off.
 		leds[i] = CRGB( 0, 0, 0);
 	}
 }
-void randX(){//choses a random pattern
-	patternNumber = random(2, 8);
-	DPRINT("RANDOM ");
+void randPattern(){//choses a random pattern
+	patternNumber = random(2, 10);
+	DPRINT("RANDOM PATTERN ");
 	DPRINTLN(patternNumber);
+}
+void randPalette(){
+	paletteNumber=random(2,numberOfPalettes);
+	DPRINT("RANDOM PALETTE ");
+	DPRINTLN(paletteNumber);
+}
+void randMirror(){
+	mirrorNumber=random(0,4);
+	DPRINT("RANDOM MIRROR ");
+	DPRINTLN(mirrorNumber);
 }
 void scrollText(){
 	if (ScrollingMsg.UpdateText() == -1) { // if end of text
@@ -939,55 +948,30 @@ void mirrorSelect(){
 }
 void loop(){
 	if (autoMode == 1) { //if auto mode on cycles palettes, patterns and mirror mode.
-		EVERY_N_MILLISECONDS(30) {
-			colorIndex++;//cycle hue number
-			if (colorIndex>=255){
-				colorIndex=0;
-			}
-		}
 		EVERY_N_SECONDS(1) {      
 			timeSinceBt++;//count the time since beat
-			if (timeSinceBt == autoSecs) {
+			if (timeSinceBt >= autoSecs) {
 				timeSinceBt = 0;
-			}
-		}
-		EVERY_N_SECONDS(10){
-			paletteNumber++;//cycle the palette
-			if (paletteNumber>numberOfPalettes){
-				paletteNumber=0;
-			}    
-			mirrorNumber++;//cycles mirror mode
-			if (mirrorNumber>4){
-				mirrorNumber=0;
-			}
-		}
-		EVERY_N_SECONDS(30){   
-			if (patternNumber==0){
-				patternNumber=2;
-			}
-			patternNumber++;//cycle the pattern
-			if(patternNumber>9){
-				patternNumber=2;
+				randPalette();
+				randPattern();
+				randMirror();
 			}
 		}
 	}
-	if (autoMode==2){
-		EVERY_N_SECONDS(30){
-			patternNumber++;//cycle the palette
-			if (patternNumber>10){
-				paletteNumber=2;
-			} 
+	if (autoMode==2){ //if automode 2 cycles a random pattern.
+		timeSinceBt++;
+		if (timeSinceBt >= autoSecs) {
+			timeSinceBt=0;
+			randPattern();
 		}
-	}
-	if (autoMode==3){
-		EVERY_N_SECONDS(30){
-			paletteNumber++;//cycle the palette
-			if (paletteNumber>numberOfPalettes){
-				paletteNumber=0;
-			} 
+	}	
+	if (autoMode==3){//if automode 3, cycles a random palette.
+		timeSinceBt++;
+		if (timeSinceBt >= autoSecs) {
+			timeSinceBt=0;
+			randPalette();
 		}
-	}
-			
+	}		
 	paletteSelect();
 	patternSelect();
 	setLEDs();
