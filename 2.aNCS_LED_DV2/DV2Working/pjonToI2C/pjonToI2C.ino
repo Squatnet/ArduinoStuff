@@ -13,6 +13,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
+
 String regString = "Reg,Strip,TV"; // The command sent to register device with master
 #define I2C_SLAVES_NUM 1
 
@@ -174,7 +175,8 @@ void parser(){
         }
       }
     }
-    else {
+
+    else if (subs.startsWith("Ctl")){
      char c[string.length()+1];
      DPRINT("Control message");
      DPRINTLN(string);
@@ -184,10 +186,13 @@ void parser(){
       DPRINT("Sending to :");
       DPRINT(i);
       DPRINTLN(string);
-      Wire.write(c); 
+      Wire.write(c);
       Wire.endTransmission();
      }
      string = "";
+    }
+    else {
+      string.remove(0,string.indexOf(",")+1);
     }
    }
   DPRINT("STR = "); // prints after length < 1
@@ -214,8 +219,20 @@ void setup() {  // SETUP
   delayRunning = true;
   DPRINT(". ");
   Wire.begin();
+  DPRINT(". ");
+  Wire.requestFrom(1, 1); // request 1 byte from Wire(1)
+  DPRINT(". ");
+  delay(100); // To make sure request is handled
   DPRINTLN("Done!!!");
- 
+  DPRINT("Slave has ");
+  String attchSt = ",";
+  while (Wire.available()) { // slave may send less than requested
+    char c = Wire.read(); // receive a byte as character
+    attchSt.concat(c);         // print the character
+  }
+  DPRINT(attchSt);
+  DPRINTLN(" strips attached.");
+  regString.concat(attchSt);
   // SETUP FINISHES
 };
 // Function to register with master.

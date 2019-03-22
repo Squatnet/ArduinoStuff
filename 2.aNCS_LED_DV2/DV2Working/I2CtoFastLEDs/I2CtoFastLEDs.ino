@@ -420,6 +420,11 @@ DEFINE_GRADIENT_PALETTE( saga_17_gp ) {//group green -> red.
 };
 void(* resetFunc) (void) = 0; // Software reset hack
 
+// Function to reply to master when master requests data 
+// In this case master will want to know how many strips are connected
+void requestEvent() {
+  Wire.write(NUM_STRIPS); // respond with NUM_STRIPS
+}
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) { //if a message is coming in over 12c, this concatinates it into a string and passes the string to the parser.
@@ -1013,6 +1018,7 @@ void patternSelect(){
 void setup() {
 	Wire.begin(I2C_ADDR);
 	Wire.onReceive(receiveEvent);
+  Wire.onRequest(requestEvent);
 	pinMode(DEBUG_LED, OUTPUT);
 	DBEGIN(115200);
 	DPRINTLN("Ready for i2c");
