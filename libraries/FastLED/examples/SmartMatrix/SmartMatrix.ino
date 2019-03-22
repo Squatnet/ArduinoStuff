@@ -2,8 +2,8 @@
 #include <FastLED.h>
 
 #define kMatrixWidth  32
-#define kMatrixHeight 32
-const bool    kMatrixSerpentineLayout = false;
+#define kMatrixHeight 8
+const bool    kMatrixSerpentineLayout = true;
 
 #define NUM_LEDS (kMatrixWidth * kMatrixHeight)
 

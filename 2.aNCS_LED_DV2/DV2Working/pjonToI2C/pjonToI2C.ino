@@ -1,5 +1,5 @@
 // Varidaic Debug Macro //
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -13,8 +13,9 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
-String regString = "Reg,Strip,FuckMonkey"; // The command sent to register device with master
-#define I2C_SLAVES_NUM 4
+
+String regString = "Reg,Strip,TV"; // The command sent to register device with master
+#define I2C_SLAVES_NUM 1
 
 // I2C // 
 #include <Wire.h>
@@ -83,7 +84,7 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 
 // PJON RECEIVER CODE
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
-   const char * arr = payload; // Not a pointer now.... !
+  const  char * arr = payload; // Not a pointer now.... !
   string.concat(arr); // addd it to our string
   if( string.startsWith("ack")){ // master got our registation message!
     ack = true; // nice
@@ -123,18 +124,18 @@ void parser(){
     if(!string.endsWith(","))string.concat(","); // again bro, hackkkyyyyy! i love it
     DPRINTLN(string);
     if (subs.startsWith("Rst")){
-		DPRINT("Reset Command Received... Sending to : ");
-		for(int i = 1; i<=I2C_SLAVES_NUM; i++){
-			DPRINT(i);
-			Wire.beginTransmission(i);
-			Wire.write("Rst,");
-			Wire.endTransmission();
-			DPRINT(", ");
-		}
-		DPRINTLN("Done !");
-		DFLUSH();
-		resetFunc(); // Reboot yourself. messge is destryed at this point
-	}
+    DPRINT("Reset Command Received... Sending to : ");
+    for(int i = 1; i<=I2C_SLAVES_NUM; i++){
+      DPRINT(i);
+      Wire.beginTransmission(i);
+      Wire.write("Rst,");
+      Wire.endTransmission();
+      DPRINT(", ");
+    }
+    DPRINTLN("Done !");
+    DFLUSH();
+    resetFunc(); // Reboot yourself. messge is destryed at this point
+  }
     if (subs.startsWith("Kick")){ // next value is pattern. 
       DPRINTLN("KICK");
       Wire.beginTransmission(1);
@@ -174,6 +175,7 @@ void parser(){
         }
       }
     }
+
     else if (subs.startsWith("Ctl")){
      char c[string.length()+1];
      DPRINT("Control message");
@@ -204,7 +206,7 @@ void setup() {  // SETUP
   DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
   DPRINT(". ");
-  bus.strategy.set_pin(12); // Set PJON pin
+  bus.strategy.set_pin(13); // Set PJON pin
   DPRINT(". ");
   bus.begin(); // 
   DPRINT(". ");

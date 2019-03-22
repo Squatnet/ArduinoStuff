@@ -1,3 +1,12 @@
+#include <FastLED.h>
+#include <Wire.h>
+#include <LEDMatrix.h>
+#include <LEDText.h>
+#include <FontMatrise.h>
+// CHANGE THIS FOR ALTERNATE MATRIX
+#define I2C_ADDR 3
+
+#define FL(aa,bb) for (int i = aa; i < bb; i++)
 // Varidaic Debug Macro
 #define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
@@ -12,42 +21,36 @@
 #define DFLUSH(...)
 #endif // end macro
 
-#define DEBUG_LED 13
-#include "FastLED.h"
-#include <Wire.h>
-#define FRAMES_PER_SECOND  40
-#define ZOOMING_BEATS_PER_MINUTE 200
-#define STROBE_BEATS_PER_MINUTE 300
-#define NUM_STRIPS 1 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
-#define NUM_LEDS_PER_STRIP 42 //defines number of LED's per strip, see above.
-#define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
-#define I2C_ADDR 1
-#define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
+#define LED_PIN        3
+#define COLOR_ORDER    GRB
+#define CHIPSET        WS2812B
+#define MATRIX_WIDTH   32
+#define MATRIX_HEIGHT  8
+#define NUM_LEDS       256
+#define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX
+#define FRAMES_PER_SECOND  120
+#define STROBE_BEATS_PER_MINUTE 97.5
+#define CONNECTED_STRIPS 1
 
-CRGB leds[NUM_LEDS]; //makes an array of CRGB values, this allows us to address each LED individualy or as a group.
-CRGB ourCol = CRGB(255, 255, 255); //used to specify an individual color for use in patterns.
-CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)}; //used in setup to flash 3 colors ??
+cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix;
+cLEDText ScrollingMsg;
+CRGB leds[256];
+CRGB ourCol = CRGB(255, 255, 255);
 CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
-
-String string = ""; //holder for the parser string.
-byte patternNumber = 0; // holder for i2c message which sets pattern when we address the stips as one array.
-byte y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
-int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
-byte autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
-byte autoSecs = 30;//sets the upper bound for timeSinceBt function.
-byte stripNumber = 1;//stores the strip that we wish to set the pattern on. 
-byte individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
+char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
+int iic = 0; // holder for i2c message
+String string = "";
+int timeSinceBt = 0;
+int autoMode = 1;
+int autoSecs = 30;
+byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 byte numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
-int LEDStart = 0;//this holds the number of the first LED in the arry to start printing a pattern to.
-int LEDEnd = 0;//this holds the number of the last LED in the arry to start printing a pattern to.
-int NoLEDs = 0;//this holds how many LED's we need to address. (may be a better way of doin this ToDo)
-int patternStore[NUM_STRIPS+1];//this array holds the pattern number for each strip.
 uint8_t brightness = 255;
-bool debugLED = false;//when true will flash the onboard LED each time the loop compleates.
+int mirrorNumber=0;
 
 DEFINE_GRADIENT_PALETTE( Pastel1_08_gp ) {//group 1
 	0, 244, 118, 98,
@@ -418,15 +421,32 @@ DEFINE_GRADIENT_PALETTE( saga_17_gp ) {//group green -> red.
 	241,  66,  1,  0,
 	255,  41,  0,  0
 };
+         
+void setup() {
+	Wire.begin(I2C_ADDR); //2,3,4 for A,B+C aNCS_2560 boards.
+	Wire.onReceive(receiveEvent);
+	DBEGIN(115200);
+	FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(matrix[0], matrix.Size());
+	FastLED.setBrightness(64); // Limit Power Consumption 
+	currentBlending = LINEARBLEND;
+	FastLED.clear(true);
+	ScrollingMsg.SetFont(MatriseFontData); // or Robotron.
+	ScrollingMsg.Init(&matrix, matrix.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
+	ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
+	ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
+	ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
+	ScrollingMsg.SetFrameRate(2);
+	FastLED.showColor(CRGB::Red);
+	delay(500);
+	FastLED.showColor(CRGB::Green);
+	delay(500);
+	FastLED.showColor(CRGB::Blue);
+	delay(500);
+	FastLED.show();
+	DPRINTLN("SETUP");
+}
 void(* resetFunc) (void) = 0; // Software reset hack
 
-// Function to reply to master when master requests data 
-// In this case master will want to know how many strips are connected
-void requestEvent() {
-  Wire.write(NUM_STRIPS); // respond with NUM_STRIPS
-}
-// function that executes whenever data is received from master
-// this function is registered as an event, see setup()
 void receiveEvent(int howMany) { //if a message is coming in over 12c, this concatinates it into a string and passes the string to the parser.
 	DPRINT("gotMessage  ");
 	while (Wire.available()) { // loop through all but the last
@@ -438,44 +458,7 @@ void receiveEvent(int howMany) { //if a message is coming in over 12c, this conc
 	string.trim();
 	parser();
 }
-void setLEDs() {//this function sets the boundares for LED addressing.
-	if (individualStripMode == 1) {
-		NoLEDs = NUM_LEDS_PER_STRIP;//if we are adressing individual strips  the number of LEDs to change will be equal to the number of LEDs in one strip.
-		FL(1, NUM_STRIPS + 1) { //loops through each strip
-			if ((individualStripMode == 1) && (stripNumber == i)) {//if it is equal to the strip we wish to address, set the start and end number of the strip.
-				LEDEnd = (NUM_LEDS_PER_STRIP * i);
-				LEDStart = ((NUM_LEDS_PER_STRIP * i) - (NUM_LEDS_PER_STRIP));
-			}
-		}
-	}
-	if (individualStripMode == 0) {//if addressing all strips as one.
-		NoLEDs = NUM_LEDS;//number of LEDs is equal to the total number of LEDs
-		stripNumber = 0;
-		LEDStart = 0;//set start and end possition in array
-		LEDEnd = NUM_LEDS;
-	}		
-}
-void turnOn() {// for each LED turn it to ourCol.
-	FL(LEDStart, LEDEnd) {
-		leds[i] = ourCol;
-	}
-}
-void turnOff() {//for each LED turn off.
-	FL(LEDStart, LEDEnd) {
-		leds[i] = CRGB( 0, 0, 0);
-	}
-}
-void doPulse() {//pulses LEDs white then turns them off.
-	turnOff();
-	FastLED.show();
-	FL(LEDStart, LEDEnd) {
-		leds[i] = CRGB::White;
-	}
-	FastLED.show();
-	FastLED.delay(100);
-	turnOff();
-	FastLED.show();
-}
+
 void parser() {
 	DPRINTLN("PARSER");
 	byte randTrigger=0;//initializes a randPattern trigger (didn't need to be global);
@@ -492,32 +475,6 @@ void parser() {
 		DPRINT(" String - ");
 		DPRINTLN(string);
 		if (subs.startsWith("Rst"))resetFunc();
-		if (subs.startsWith("Pul")) {
-			doPulse();
-			string = "";
-		}
-		if (subs.startsWith("SNo")) { // next value is strip No. to address.
-			DPRINT("Strip No. ");
-			String sno = string.substring(0, string.indexOf(",")); // get everything until the comma
-			DPRINT(sno);
-			DPRINT(" - ");
-			stripNumber = sno.toInt(); // Its going to be an integer.
-			DPRINTLN(stripNumber);
-			string.remove(0, string.indexOf(",") + 1); // Remove the value
-			setLEDs();
-		}
-		if (subs.startsWith("ISt")) { // individual Strip Mode. next value if 0, addresses all strips, if 1 addresses strips individually.
-			DPRINT("individual Strip Mode ");
-			String ist = string.substring(0, string.indexOf(",")); // get everything until the comma
-			DPRINT(ist);
-			DPRINT(" - ");
-			individualStripMode = ist.toInt(); // Its going to be an integer.
-			DPRINTLN(individualStripMode);
-			string.remove(0, string.indexOf(",") + 1); // Remove the value
-			if (individualStripMode==0){
-				setLEDs();// if 0 set the LED bounds, (if 1 this is set in Ptn bellow)
-			}
-		}
 		if (subs.startsWith("Ptn")) { // next value is pattern.
 			DPRINT("PTN ");
 			String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
@@ -526,9 +483,6 @@ void parser() {
 			patternNumber = ptn.toInt(); // Its going to be an integer. its the pattern number,
 			DPRINTLN(patternNumber);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
-			if(individualStripMode==1){
-				patternStore[stripNumber]=patternNumber;
-			}
 		}
 		if (subs.startsWith("Atm")) { // next value is boolean for automode
 			DPRINT("ATM ");
@@ -567,25 +521,43 @@ void parser() {
 		} 
 		if (subs.startsWith("PNo")) { // next value is the number of the palette to use.
 			DPRINT("PNo ");
-			String pno= string.substring(0, string.indexOf(",")); // get everything until the comma
+			String pno= string.substring(0, string.indexOf(",")); // get  everything until the comma
 			DPRINT(pno);
 			DPRINT(" - ");
 			paletteNumber = pno.toInt(); // Its going to be an integer. its the palette number.
-			DPRINTLN(pno);
+			DPRINTLN(paletteNumber);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+		}
+		if (subs.startsWith("Mir")) { // next value is the number of the mirror mode to use. 0==off.
+			DPRINT("Mir ");
+			String mir= string.substring(0, string.indexOf(",")); // get  everything until the comma
+			DPRINT(mir);
+			DPRINT(" - ");
+			mirrorNumber = mir.toInt(); // Its going to be an integer. its the mirror number.
+			DPRINTLN(mirrorNumber);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 		}
 		if (subs.startsWith("Ran")) { // next value will trigger randPattern
 			DPRINT("Ran ");
-			String ran= string.substring(0, string.indexOf(",")); // get everything until the comma
+			String ran= string.substring(0, string.indexOf(",")); // get  everything until the comma
 			DPRINT(ran);
 			DPRINT(" - ");
-			randTrigger = ran.toInt(); // Its going to be an integer. its the palette number.
-			DPRINTLN(ran);
+			randTrigger = ran.toInt(); // Its going to be an integer. 1 triggers randPattern
+			DPRINTLN(randTrigger);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 			if (randTrigger!=0){
 				randPattern();
 				randTrigger=0;
 			}
+		}
+		if (subs.startsWith("Msg")) { // next value will be the message to display
+			DPRINT("Msg ");
+			String Msg= string.substring(0, string.indexOf(",")); // get everything until the comma
+			DPRINT(Msg);
+			DPRINT(" - ");
+			string.toCharArray(TxtAncs, string.length());
+			DPRINTLN(TxtAncs);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
 		} 
 		DPRINTLN(string.length()); // prints the length of the command each iteration  
 		DPRINT("STR = "); // prints after length < 1
@@ -593,30 +565,52 @@ void parser() {
 		string = ""; // empty it
 	}
 }
-void randPattern() {//choses a random pattern
-	if (individualStripMode==0){
-		patternNumber = random(2, 10);
-		DPRINT("RANDOM ");
-		DPRINTLN(patternNumber);
-    }
-    if (individualStripMode!=0){
-		byte lastStripNumber=stripNumber;
-		FL(1,NUM_STRIPS+1){
-			if (i==stripNumber){
-				patternStore[i]=random(2,10);
-			}
-		}
-		stripNumber=lastStripNumber;
+void setLEDs(){
+	FL(0,256){
+		matrix(i)=leds[i];
 	}
+}
+////////////////////////start of patterns///////////////////////
+void turnOn() {// for each LED turn it to ourCol.
+	FL(0, NUM_LEDS) {
+		leds[i] = ourCol;
+	}
+}
+void turnOff() {//for each LED turn off.
+	FL(0, NUM_LEDS) {
+		leds[i] = CRGB( 0, 0, 0);
+	}
+}
+void randPattern(){//choses a random pattern
+	patternNumber = random(2, 10);
+	DPRINT("RANDOM PATTERN ");
+	DPRINTLN(patternNumber);
 }
 void randPalette(){
 	paletteNumber=random(2,numberOfPalettes);
 	DPRINT("RANDOM PALETTE ");
 	DPRINTLN(paletteNumber);
 }
+void randMirror(){
+	mirrorNumber=random(0,4);
+	DPRINT("RANDOM MIRROR ");
+	DPRINTLN(mirrorNumber);
+}
+void scrollText(){
+	if (ScrollingMsg.UpdateText() == -1) { // if end of text
+		int Size = 0;
+		while (TxtAncs[Size] != '\0') Size++;
+		ScrollingMsg.SetText((unsigned char *)TxtAncs,Size);
+	}
+	else
+	FastLED.show();
+}
+void solidWhite(){
+	fill_solid( leds, NUM_LEDS, CRGB::White);
+}
 void theLights() { //  speckles and strobes
-	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
-	int pos = random16(LEDStart, LEDEnd);
+	fadeToBlackBy(&(leds[0]), NUM_LEDS, 10);
+	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
 		colorIndex++;
 		if(colorIndex>254){
@@ -631,17 +625,17 @@ void theLights() { //  speckles and strobes
 void rainbow(){
 	// FastLED's built-in rainbow generator
 	if (paletteMode==0){
-		fill_rainbow(&(leds[LEDStart]), NoLEDs, 7);
+		fill_rainbow(&(leds[0]), NUM_LEDS, 7);
 	}
 	else{
-		FL(LEDStart,LEDEnd){
+		FL(0,NUM_LEDS){
 			leds[i]=ColorFromPalette( currentPalette,(i*5), brightness, currentBlending);
 		}
 	}
 }
 void addGlitter( fract8 chanceOfGlitter){
 	if ( random8() < chanceOfGlitter) {
-		leds[ random16(LEDStart, LEDEnd) ] += CRGB::White;
+		leds[ random16(0, NUM_LEDS) ] += CRGB::White;
 	}
 }
 void rainbowWithGlitter(){
@@ -651,8 +645,8 @@ void rainbowWithGlitter(){
 }
 void confetti(){
 	// random colored speckles that blink in and fade smoothly
-	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 10);
-	int pos = random16(LEDStart, LEDEnd);
+	fadeToBlackBy(&(leds[0]), NUM_LEDS, 10);
+	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
 		colorIndex++;
 		if(colorIndex>254){
@@ -667,8 +661,8 @@ void confetti(){
 }
 void sinelon(){
 	// a colored dot sweeping back and forth, with fading trails
-	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 20);
-	int pos = beatsin16( 13, LEDStart, LEDEnd - 1 ) ;
+	fadeToBlackBy(&(leds[0]), NUM_LEDS, 20);
+	int pos = beatsin16( 13, 0, NUM_LEDS - 1 ) ;
 	if (paletteMode==1){
 		colorIndex++;
 		if(colorIndex>254){
@@ -686,7 +680,7 @@ void bpm(){
 	uint8_t BeatsPerMinute = 62;
 	CRGBPalette16 palette = PartyColors_p;
 	uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
-	FL(LEDStart, LEDEnd) { //9948 
+	FL(0, NUM_LEDS) { //9948 
 		if (paletteMode==1){
 			EVERY_N_MILLISECONDS(20){
 				colorIndex++;
@@ -701,110 +695,6 @@ void bpm(){
 			leds[i] = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
 		}
 	}
-}
-void juggle() {//palette not currently supported
-	// eight colored dots, weaving in and out of sync with each other
-	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 20);
-	byte dothue = 0;
-	FL(0, 8) {
-		leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ourCol;
-		leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
-		dothue += 32;
-	}
-}
-void bouncingTrails(){
-	//sets a "spawn" in the middle half of a strip then sends a trail in either direction which bounces of the ends of the strip.
-	static int counter=0;//used to set a start point at 1
-	static int lastCount=0;//i use this to be able to tell when the counter has increased. (had problems with if(counter++))
-	static int paletteRef=0;//the number of the color, in the palette, to set.
-	static int posUp=0;//holds the light that goes up the strip
-	static int posDown=0;//holds the light that goes down the strip
-	static byte upReversed=0;//if up hits the top of the strip, sets this to 1 and and runs back down the strip
-	static byte downReversed=0;//as above, in reverse
-	static int pos=0;//holds the initial position from which the two trails emerge
-	counter++;
-	if (counter==(NUM_LEDS_PER_STRIP*4)){//used a multiple of 2 so that a new point s formed when the two trails are close to each other (looks better in my opinon)
-		counter=0;
-	}
-	if (lastCount!=counter){//if the counter has progressed
-		fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 60);
-		paletteRef=(counter*5);//used a multiple here as we want to adress as broad a rang from 0 - 256 as possible, with more LEDs be worth lowering this value.
-	}	
-	if ((counter==1)&&(lastCount!=counter)){   
-		pos = random16((NUM_LEDS_PER_STRIP/4),((NUM_LEDS_PER_STRIP/4)*3));//if on count 1, set the spawn, and clear the reversed states.
-		downReversed=0;
-		upReversed=0;
-		posUp=pos;
-		posDown=pos;
-		if (individualStripMode==0){
-			FL(0,NUM_STRIPS){
-				if (paletteMode==1){
-					leds[(pos+(i*NUM_LEDS_PER_STRIP))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
-				}
-				else{
-					leds[(pos+(i*NUM_LEDS_PER_STRIP))]=ourCol;
-				} 
-			}
-		} 
-		else {//if indivdual strip mode is on
-			if (paletteMode==1){
-				leds[(pos+LEDStart)]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
-			}
-			else{
-				leds[(pos+LEDStart)]=ourCol;
-			} 
-		}
-	}  
-    if ((counter!=1)&&(lastCount!=counter)){//this set of if statements increment the trailing dots, and tarcks if they are reversed
-		if ((posUp!=NUM_LEDS_PER_STRIP)&&(upReversed==0)){
-			posUp++;
-		}
-		if (posUp==NUM_LEDS_PER_STRIP-1){
-			upReversed=1;
-		}
-		if ((posUp!=0)&&(upReversed==1)){
-			posUp--;
-		}
-		if (posUp==0){
-			upReversed=0;
-		}
-		if ((posDown!=0)&&(downReversed==0)){
-			posDown--;
-		}
-		if (posDown==NUM_LEDS_PER_STRIP-1){
-			downReversed=0;
-		}
-		if (posDown==0){
-			downReversed=1;
-			posDown++;
-		}
-		if ((posDown!=0)&&(downReversed==1)){
-			posDown++;
-		}
-		if (individualStripMode==0){//paint the trails
-			FL(0,NUM_STRIPS){
-				if (paletteMode==1){
-					leds[(posUp+(i*NUM_LEDS_PER_STRIP))]=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
-					leds[(posDown+(i*NUM_LEDS_PER_STRIP))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
-				}
-				else{
-					leds[(posUp+(i*NUM_LEDS_PER_STRIP))]=ourCol;
-					leds[(posDown+(i*NUM_LEDS_PER_STRIP))]=ourCol;
-				}
-			}
-		}
-		else{
-			if (paletteMode==1){
-				leds[(posUp+LEDStart)]=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
-				leds[(posDown+LEDStart)]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
-			}
-			else{
-				leds[(posUp+LEDStart)]=ourCol;
-				leds[(posDown+LEDStart)]=ourCol;
-			}
-		}
-	}
-	lastCount=counter;
 }
 void simpleStrobe () {
 	fill_solid( leds, NUM_LEDS, CRGB::Black);
@@ -842,225 +732,229 @@ void strobeCore(uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, 
 		sStartPosition = sStartPosition + dashmotionspeed;
 		if( sStartPosition >= dashperiod ) {
 			while( sStartPosition >= dashperiod) { sStartPosition -= dashperiod; }
-			sStartHue  -= huedelta;
-		} 
+				sStartHue  -= huedelta;
+		}
 		else if( sStartPosition < 0) {
 			while( sStartPosition < 0) { sStartPosition += dashperiod; }
-			sStartHue  += huedelta;
+				sStartHue  += huedelta;
 		}
 	}
 	const uint8_t kSaturation = 208; // WHITE >> CURRENT COLOUR control (def 208)
 	const uint8_t kValue = 200; // Brightness??
 	strobeDraw( sStartPosition, NUM_LEDS-1, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
 }
-static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width, uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value){
+static void strobeDraw( uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width, uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value){
 	uint8_t hue = huestart;
 	for( uint16_t i = startpos; i <= lastpos; i += period) {
 		CRGB color = CHSV( hue, saturation, value);  
 		//CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
 		uint16_t pos = i;
 		for( uint8_t w = 0; w < width; w++) {
-			leds[ pos ] = ColorFromPalette(currentPalette,colorIndex);
+			leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
 			pos++;
 			if( pos >= NUM_LEDS) {
-			break;
+				break;
 			}
 		}
 		hue += huedelta;
 	}
 }
+void bouncingTrails(){
+	//sets a "spawn" in the middle half of a strip then sends a trail in either direction which bounces of the ends of the strip.
+	static int counter=0;//used to set a start point at 1
+	static int lastCount=0;//i use this to be able to tell when the counter has increased. (had problems with if(counter++))
+	static int paletteRef=0;//the number of the color, in the palette, to set.
+	static int posUp=0;//holds the light that goes up the strip
+	static int posDown=0;//holds the light that goes down the strip
+	static byte upReversed=0;//if up hits the top of the strip, sets this to 1 and and runs back down the strip
+	static byte downReversed=0;//as above, in reverse
+	static int pos=0;//holds the initial position from which the two trails emerge
+  
+	counter++;
+	if (counter==(MATRIX_WIDTH*4)){//used a multiple of 2 so that a new point s formed when the two trails are close to each other (looks better in my opinon)
+		counter=0;
+	}
+	if (lastCount!=counter){//if the counter has progressed
+		fadeToBlackBy(&(leds[0]), NUM_LEDS, 60);
+		paletteRef=(counter*5);//used a multiple here as we want to adress as broad a rang from 0 - 256 as possible, with more LEDs be worth lowering this value.
+	}
+	if ((counter==1)&&(lastCount!=counter)){   
+		pos = random16((MATRIX_WIDTH/4),((MATRIX_WIDTH/4)*3));//if on count 1, set the spawn, and clear the reversed states.
+		downReversed=0;
+		upReversed=0;
+		posUp=pos;
+		posDown=pos;
+		FL(0,MATRIX_HEIGHT){
+			if (paletteMode==1){
+				leds[(pos+(i*MATRIX_WIDTH))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+			}
+			else{
+				leds[(pos+(i*MATRIX_WIDTH))]=ourCol;
+			}	 
+		}
+	}  
+    if ((counter!=1)&&(lastCount!=counter)){//this set of if statements increment the trailing dots, and tarcks if they are reversed
+		if ((posUp!=MATRIX_WIDTH)&&(upReversed==0)){
+			posUp++;
+		}
+		if (posUp==MATRIX_WIDTH){
+			upReversed=1;
+		}
+		if ((posUp!=0)&&(upReversed==1)){
+			posUp--;
+		}
+		if (posUp==0){
+			upReversed=0;
+		}
+		if ((posDown!=0)&&(downReversed==0)){
+			posDown--;
+		}
+		if (posDown==MATRIX_WIDTH){
+			downReversed=0;
+		}
+		if (posDown==0){
+			downReversed=1;
+			posDown++;
+		}
+		if ((posDown!=0)&&(downReversed==1)){
+			posDown++;
+		}
+		FL(0,MATRIX_HEIGHT){
+			if (paletteMode==1){
+				leds[(posUp+(i*MATRIX_WIDTH))]=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
+				leds[(posDown+(i*MATRIX_WIDTH))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+			}
+			else{
+				leds[(posUp+(i*MATRIX_WIDTH))]=ourCol;
+				leds[(posDown+(i*MATRIX_WIDTH))]=ourCol;
+			}
+		}
+	}
+	lastCount=counter;
+}
+///////////////////////////end of patterns///////////////////////
 void paletteSelect(){
 	switch (paletteNumber){
-	case 0:
-		currentPalette = Pastel1_08_gp;
-		break;
-	case 1:
-		currentPalette = Paired_08_gp;
-		break;
-    case 2:
-		currentPalette = Dark2_08_gp;
-		break;
-    case 3:
-		currentPalette = RdYlGn_08_gp;
-		break;
-    case 4:
-		currentPalette = RdYlBu_08_gp;
-		break;
-    case 5:
-		currentPalette = RdBu_08_gp;
-		break;
-    case 6 :
-		currentPalette = PuOr_08_gp;
-		break;
-    case 7:
-		currentPalette = PRGn_08_gp;
-		break;
-    case 8:
-		currentPalette = Fuschia_8_gp;
-		break;
-    case 9:
-		currentPalette = saga_07_gp;
-		break;
-    case 10:
-		currentPalette = saga_08_gp;
-		break;
-    case 11:
-		currentPalette = saga_09_gp;
-		break;
-    case 12:
-		currentPalette = saga_10_gp;
-		break;
-    case 13:
-		currentPalette = saga_11_gp;
-		break;
-    case 14:
-		currentPalette = saga_12_gp;
-		break;
-    case 15:
-		currentPalette = saga_13_gp;
-		break;
-    case 16:
-		currentPalette = saga_14_gp;
-		break;
-    case 17:
-		currentPalette = saga_15_gp;
-		break;
-    case 18:
-		currentPalette = saga_17_gp;
-		break;
+		case 0:
+			currentPalette = Pastel1_08_gp;
+			break;
+		case 1:
+			currentPalette = Paired_08_gp;
+			break;
+		case 2:
+			currentPalette = Dark2_08_gp;
+			break;
+		case 3:
+			currentPalette = RdYlGn_08_gp;
+			break;
+		case 4:
+			currentPalette = RdYlBu_08_gp;
+			break;
+		case 5:
+			currentPalette = RdBu_08_gp;
+			break;
+		case 6 :
+			currentPalette = PuOr_08_gp;
+			break;
+		case 7:
+			currentPalette = PRGn_08_gp;
+			break;
+		case 8:
+			currentPalette = Fuschia_8_gp;
+			break;
+		case 9:
+			currentPalette = saga_07_gp;
+			break;
+		case 10:
+			currentPalette = saga_08_gp;
+			break;
+		case 11:
+			currentPalette = saga_09_gp;
+			break;
+		case 12:
+			currentPalette = saga_10_gp;
+			break;
+		case 13:
+			currentPalette = saga_11_gp;
+			break;
+		case 14:
+			currentPalette = saga_12_gp;
+			break;
+		case 15:
+			currentPalette = saga_13_gp;
+			break;
+		case 16:
+			currentPalette = saga_14_gp;
+			break;
+		case 17:
+			currentPalette = saga_15_gp;
+			break;
+		case 18:
+			currentPalette = saga_17_gp;
+			break;
 	}
 }
-
 void patternSelect(){
-	int lastStripNumber=stripNumber;
-	if (individualStripMode==0){
-		setLEDs();
-		switch (patternNumber) {
-			case 0:
-				turnOff();
-				break;
-			case 1:
-				turnOn();
-				break;
-			case 2:
-				theLights();
-				break;
-			case 3:
-				rainbow();
-				break;
-			case 4:
-				rainbowWithGlitter();
-				break;
-			case 5:
-				confetti();
-				break;
-			case 6:
-				sinelon();
-				break;
-			case 7:
-				bpm();
-				break;
-			case 8:
-				juggle();
-				break;
-			case 9:
-				simpleStrobe();
-				break;
-			case 10:
-				bouncingTrails();
-				break;
-		}
-	}
-	if (individualStripMode!=0){//second switch case used to set patternSelect array.
-		FL(1,NUM_STRIPS+1){
-			stripNumber=i;
-			setLEDs();
-			y=patternStore[i];
-			switch (y) {
-				case 0:
-					turnOff();
-					break;
-				case 1:
-					turnOn();
-					break;
-				case 2:
-					theLights();
-					break;
-				case 3:
-					rainbow();
-					break;
-				case 4:
-					rainbowWithGlitter();
-					break;
-				case 5:
-					confetti();
-					break;
-				case 6:
-					sinelon();
-					break;
-				case 7:
-					bpm();
-					break;
-				case 8:
-					juggle();
-					break;
-				case 9:
-					simpleStrobe();
-					break;
-				case 10:
-					bouncingTrails();
-					break;    
-			}
-			stripNumber=lastStripNumber;
-		}
+	switch (patternNumber) {
+		case 0:
+			turnOff();
+			break;
+		case 1:
+			turnOn();
+			break;
+		case 2:
+			theLights();
+			break;
+		case 3:
+			rainbow();
+			break;
+		case 4:
+			rainbowWithGlitter();
+			break;
+		case 5:
+			confetti();
+			break;
+		case 6:
+			sinelon();
+			break;
+		case 7:
+			bpm();
+			break;
+		case 8:
+			simpleStrobe();
+			break;
+		case 9:
+			bouncingTrails();
+			break;
+		case 10:
+			scrollText();
+			break;
+    }
+}
+void mirrorSelect(){
+	switch(mirrorNumber){
+		case 0:
+			break;
+		case 1:
+			matrix.QuadrantMirror();
+			break;
+		case 2:
+			matrix.QuadrantRotateMirror();
+			break;
+		case 3:
+			matrix.VerticalMirror();
+			break;
 	}
 }
-void setup() {
-	Wire.begin(I2C_ADDR);
-	Wire.onReceive(receiveEvent);
-  Wire.onRequest(requestEvent);
-	pinMode(DEBUG_LED, OUTPUT);
-	DBEGIN(115200);
-	DPRINTLN("Ready for i2c");
-	//sets one long array containing multiple data pins in the following format.
-	//type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
-	FastLED.addLeds<WS2812B, 2, GRB>(leds, 0, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2812B, 3, GRB>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2812B, 4, GRB>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2812B, 5, GRB>(leds, 3* NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
-	FastLED.setBrightness(128);
-	currentBlending = LINEARBLEND;
-	int i = 0;
-	while (i < NUM_STRIPS+1) {
-		ourCol = startup[i];
-		setLEDs();
-		turnOn();
-		FastLED.show();
-		FastLED.delay(300);
-		i++;
-	}		
-	turnOff();
-	FastLED.show();
-}
-
-void loop() {
-	EVERY_N_SECONDS(10){  // this flashes the onboard LED when loop is completed.
-		if(debugLED){
-			debugLED = false;
-			digitalWrite(DEBUG_LED,HIGH);
-		}
-		else{
-			debugLED = true;
-			digitalWrite(DEBUG_LED,LOW);
-		}
-	}
-	if (autoMode == 1) { //if auto mode on cycles palettes and patterns.
+void loop(){
+	if (autoMode == 1) { //if auto mode on cycles palettes, patterns and mirror mode.
 		EVERY_N_SECONDS(1) {      
 			timeSinceBt++;//count the time since beat
 			if (timeSinceBt >= autoSecs) {
 				timeSinceBt = 0;
 				randPalette();
 				randPattern();
+				randMirror();
 			}
 		}
 	}
@@ -1077,14 +971,18 @@ void loop() {
 			timeSinceBt=0;
 			randPalette();
 		}
-	}	
+	}		
 	paletteSelect();
 	patternSelect();
+	setLEDs();
+	mirrorSelect();
 	FastLED.show();
-	if (patternNumber==9){
+  
+	FastLED.delay(1000 / FRAMES_PER_SECOND);
+	/*if (patternNumber==8){
 		FastLED.delay(1000/80);//shorter delay for strobe affect.
 	}
 	else{
 		FastLED.delay(1000 / FRAMES_PER_SECOND); 
-	}
+	}*/
 }

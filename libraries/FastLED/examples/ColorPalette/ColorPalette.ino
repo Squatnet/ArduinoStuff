@@ -1,7 +1,9 @@
 #include <FastLED.h>
 
 #define LED_PIN     5
-#define NUM_LEDS    50
+#define NUM_STRIPS 3 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
+#define NUM_LEDS_PER_STRIP 29 //defines number of LED's per strip, see above.
+#define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define BRIGHTNESS  64
 #define LED_TYPE    WS2811
 #define COLOR_ORDER GRB
@@ -37,7 +39,9 @@ extern const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM;
 
 void setup() {
     delay( 3000 ); // power-up safety delay
-    FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+    FastLED.addLeds<WS2812B, 2, GRB>(leds, 0, NUM_LEDS_PER_STRIP);
+    FastLED.addLeds<WS2812B, 3, GRB>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+    FastLED.addLeds<WS2812B, 4, GRB>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
     FastLED.setBrightness(  BRIGHTNESS );
     
     currentPalette = RainbowColors_p;
