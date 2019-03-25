@@ -13,7 +13,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
-String regString = "Reg,Strip,TV"; // The command sent to register device with master
+String regString = "Reg,Str,TV"; // The command sent to register device with master
 #define I2C_SLAVES_NUM 1
 
 // I2C // 
@@ -201,7 +201,7 @@ void setup() {  // SETUP
   DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
   DPRINT(". ");
-  bus.strategy.set_pin(13); // Set PJON pin
+  bus.strategy.set_pin(12); // Set PJON pin
   DPRINT(". ");
   bus.begin(); // 
   DPRINT(". ");

@@ -4,7 +4,7 @@
 #include <LEDText.h>
 #include <FontMatrise.h>
 // CHANGE THIS FOR ALTERNATE MATRIX
-#define I2C_ADDR 3
+#define I2C_ADDR 1
 
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 // Varidaic Debug Macro
@@ -426,6 +426,7 @@ void setup() {
 	Wire.begin(I2C_ADDR); //2,3,4 for A,B+C aNCS_2560 boards.
 	Wire.onReceive(receiveEvent);
 	DBEGIN(115200);
+	randomSeed(analogRead(0));
 	FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(matrix[0], matrix.Size());
 	FastLED.setBrightness(64); // Limit Power Consumption 
 	currentBlending = LINEARBLEND;
