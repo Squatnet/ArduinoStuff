@@ -128,6 +128,7 @@ func addDvc(typ,dev): # Adds a new device from a bluetooth message, expects a st
 	
 	knownDevs[typ][sPos] = sArr
 func doRegStep():
+	OS.delay_msec(500)
 	if BT && regStepsArray.size() == 0:
 		print("GS: doRegStep: regStepsArray Empty!!")
 		registerStep += 1

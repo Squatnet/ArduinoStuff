@@ -98,7 +98,7 @@ func sendMessage():
 		gotAck = false
 		GS.BT.sendData(commandToSend)
 		var msec = 0
-		while !gotAck or msec < 300:
+		while !gotAck and msec < 300:
 			print("wait for ack "+str(msec))
 			OS.delay_msec(10)
 			msec += 10
@@ -303,7 +303,7 @@ func _on_MirNextBtn_pressed():
 
 
 func _on_Prev_pressed():
-	automode += 1
+	automode -= 1
 	if automode < 0:
 		automode = autoOpts.size()-1
 	$AutoMode/Label.set_text(autoOpts[automode])

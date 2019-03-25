@@ -19,11 +19,11 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS //
-String regString = "Reg,Str,Top "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " /
+String regString = "Reg,UDP,Top "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " /
 
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
-#define PJON_PIN 12
+#define PJON_PIN 7
 #include <PJONSlave.h>  // Coz we are inslave mode .
 uint8_t bus_id[] = {0, 0, 1, 53}; // Ancs unique ID
 PJONSlave<SoftwareBitBang> bus(bus_id, PJON_NOT_ASSIGNED); // Force no id so master can assign us
@@ -35,7 +35,10 @@ int ourID = 255; // Our ID number
 unsigned long DELAY_TIME = 15000; // 1.5 sec
 unsigned long delayStart = 0; // the time the delay started
 bool delayRunning = false; // true if still waiting for delay to finish
-
+bool locked = false; // Admin lock switch
+String msgToSend = ""; // Pjon message holder
+bool msgSwitch = false; // Are we sending? 
+int msgSendId = 0; // Pjon id to send to.
 
 // Shows free ram 
 int freeRam () {
@@ -105,21 +108,49 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   DFLUSH();
   
 };
+void sendMessage(){
+  msgSwitch = 0;
+  if(msgSendId == 0){
+    DPRINT("NO ONE TO SEND TO");
+  }
+  else{
+    DPRINTLN("sendMessage Function called");
+    const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
+    msgToSend.toCharArray(packet,msgToSend.length()); //convert String msgToSend to char array, \0 auto added
+    DPRINT("MESSAGE = "); 
+    DPRINTLN(msgToSend);
+    DPRINT("Pjon status - ");
+    DPRINTLN(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1));
+    bus.update();// adds the messsageto the bus (prints status code to console)
+  }
+  msgSendId = 0; //reset
+  msgToSend = ""; //reset
+  msgSwitch = 0; //reset
+}
+void changeLock(){
+  if (locked){
+    DPRINTLN("Lock turned ON!");
+  }
+  else{
+    DPRINTLN("Lock turned OFF!");
+  }
+}
 // Reads an incoming control message
 void parser(){
   while(string.length() >= 1){ // While there message left to read. 
     String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
     string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
     if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point
-    /* 
-     * Add your if staments here, Strips pattern code added for example
-     * if (subs.startsWith("ptn")){ // next value is pattern. 
-     *   String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
-     *   x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-     *   string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
-     *   }
-     *  
-     */
+    if (subs.startsWith("Lck")){
+      DPRINTLN("Lock message");
+      if(string.toInt() == 0)locked = false; 
+      else locked = true;
+      changeLock();
+      string = "";
+    }
+    if (subs.startsWith("Udp")){
+      
+    }
    
    else {
       string.remove(0,string.indexOf(",")+1);

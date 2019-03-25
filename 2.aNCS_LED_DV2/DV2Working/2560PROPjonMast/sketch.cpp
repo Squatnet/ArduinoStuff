@@ -665,17 +665,18 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   }
   else if( reg.startsWith("UDP")){
 	  DPRINT(reg);
-	  reg.remove(0,reg.indexOf(','+1);
+	  reg.remove(0,reg.indexOf(',')+1);
 	  UdpIn.id = id;
 	  UdpIn.namee = reg;
 	  udpId = id;
 	  msgSendId = id;
-	  msgToSend = "Lck,";
+	  msgToSend = "Lck,0";
+    adminLock = 0;
   }
   DFLUSH();
   // send back a little "ack"
   msgSwitch = 1; 
-  if (msgTosend.length() < 1) {
+  if (msgToSend.length() < 1) {
 	  msgToSend = "ack,";
 	  msgSendId = id;
   }
@@ -700,7 +701,10 @@ void parseMsg(int id, String msg) {
   if(msg.startsWith("Rem")){
     msg.remove(0,msg.indexOf(',')+1); //takes the "Rem," off the front
     DPRINT(msg);
-    removeDevice(id); // removes a device. 
+    if(id == 99){
+    removeDevice(msg.toInt());
+    }
+    else removeDevice(id); // removes a device. 
   }
   if(msg.startsWith("App")){
     msg.remove(0,msg.indexOf(',')+1);
@@ -754,8 +758,15 @@ void parseMsg(int id, String msg) {
   msgSendId = masterTerm;
  }
  if(msg.startsWith("Lck")){
-	 msg.remove(0,msg.indexOf(',')+1);
-	 
+  if (udpId != 0){
+    msgToSend = msg;
+    msgSendId = udpId;
+    msgSwitch = 1;
+  }
+  msg.remove(0,msg.indexOf(',')+1);
+  adminLock = msg.toInt();
+  msg = "";
+ }
 /*
  if(msg.startsWith("Clk")){
   for(int i=0; i< numStrip; i++){

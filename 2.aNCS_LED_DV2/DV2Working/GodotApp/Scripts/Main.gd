@@ -53,6 +53,7 @@ func addMenuButton(name):
 	$Control/MenuBarA.add_child(btn)
 
 func _on_data_received(data_received):
+	$DebugLabel.add_text(data_received+"\n")
 	if data_received.begins_with("ack"):
 		emit_signal("ack")
 	var s = "{"+data_received+"}"
