@@ -3,7 +3,7 @@
 #define LED_PIN  3
 
 #define COLOR_ORDER GRB
-#define CHIPSET     WS2811
+#define CHIPSET     WS2812B
 
 #define BRIGHTNESS 64
 
@@ -25,8 +25,8 @@
 
 
 // Params for width and height
-const uint8_t kMatrixWidth = 16;
-const uint8_t kMatrixHeight = 16;
+const uint8_t kMatrixWidth = 32;
+const uint8_t kMatrixHeight = 8;
 
 // Param for different pixel layouts
 const bool    kMatrixSerpentineLayout = true;
@@ -191,6 +191,6 @@ void DrawOneFrame( byte startHue8, int8_t yHueDelta8, int8_t xHueDelta8)
 
 
 void setup() {
-  FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalSMD5050);
+  FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS)/*.setCorrection(TypicalSMD5050)*/;
   FastLED.setBrightness( BRIGHTNESS );
 }
