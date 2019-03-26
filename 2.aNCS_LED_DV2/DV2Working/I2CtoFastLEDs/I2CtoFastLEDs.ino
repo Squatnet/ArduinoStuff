@@ -469,7 +469,7 @@ void doPulse() {//pulses LEDs white then turns them off.
 	turnOff();
 	FastLED.show();
 	FL(LEDStart, LEDEnd) {
-		leds[i] = CRGB::White;
+		leds[i] = ourCol;
 	}
 	FastLED.show();
 	FastLED.delay(100);
@@ -1077,9 +1077,14 @@ void loop() {
 			timeSinceBt=0;
 			randPalette();
 		}
-	}	
-	paletteSelect();
-	patternSelect();
+	}
+	if (autoMode!=4){
+		paletteSelect();
+		patternSelect();
+	}
+	if (autoMode==4){
+		turnOff();
+	}
 	FastLED.show();
 	if (patternNumber==9){
 		FastLED.delay(1000/80);//shorter delay for strobe affect.
