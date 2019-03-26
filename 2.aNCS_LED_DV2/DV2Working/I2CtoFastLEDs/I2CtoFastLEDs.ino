@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-#define DEBUG   //Comment this line to disable Debug output
+//define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -21,7 +21,7 @@
 #define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
 #define NUM_LEDS_PER_STRIP 27 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
-#define I2C_ADDR 1
+#define I2C_ADDR 4
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
 
 CRGB leds[NUM_LEDS]; //makes an array of CRGB values, this allows us to address each LED individualy or as a group.
@@ -1043,7 +1043,10 @@ void setup() {
 	FastLED.show();
 }
 
-void loop() {
+void loop() {-
+	EVERY_N_SECONDS(1) {      
+		timeSinceBt++;//count the time since beat
+	}
 	EVERY_N_SECONDS(10){  // this flashes the onboard LED when loop is completed.
 		if(debugLED){
 			debugLED = false;
@@ -1055,8 +1058,6 @@ void loop() {
 		}
 	}
 	if (autoMode == 1) { //if auto mode on cycles palettes and patterns.
-		EVERY_N_SECONDS(1) {      
-			timeSinceBt++;//count the time since beat
 			if (timeSinceBt >= autoSecs) {
 				timeSinceBt = 0;
 				randPalette();
@@ -1065,14 +1066,12 @@ void loop() {
 		}
 	}
 	if (autoMode==2){ //if automode 2 cycles a random pattern.
-		timeSinceBt++;
 		if (timeSinceBt >= autoSecs) {
 			timeSinceBt=0;
 			randPattern();
 		}
 	}	
 	if (autoMode==3){//if automode 3, cycles a random palette.
-		timeSinceBt++;
 		if (timeSinceBt >= autoSecs) {
 			timeSinceBt=0;
 			randPalette();
