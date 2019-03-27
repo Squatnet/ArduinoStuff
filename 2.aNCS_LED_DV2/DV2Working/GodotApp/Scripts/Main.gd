@@ -1,4 +1,5 @@
 extends Control
+#warnings-disable
 signal ack 
 var menuBtn = load("res://Assets/Objects/Menu_A_Btn.tscn")
 var TheDict = {}

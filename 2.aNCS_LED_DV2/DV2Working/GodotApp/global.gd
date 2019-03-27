@@ -4,6 +4,7 @@ signal connected
 signal disconnected
 signal data_received
 signal reg_finished
+#warnings-disable
 var version = 0.1
 var BTMast
 var BT
