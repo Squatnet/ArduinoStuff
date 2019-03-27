@@ -19,9 +19,9 @@
 #define ZOOMING_BEATS_PER_MINUTE 200
 #define STROBE_BEATS_PER_MINUTE 300
 #define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
-#define NUM_LEDS_PER_STRIP 27 //defines number of LED's per strip, see above.
+#define NUM_LEDS_PER_STRIP 42 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
-#define I2C_ADDR 4
+#define I2C_ADDR 1
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
 
 CRGB leds[NUM_LEDS]; //makes an array of CRGB values, this allows us to address each LED individualy or as a group.
@@ -420,11 +420,6 @@ DEFINE_GRADIENT_PALETTE( saga_17_gp ) {//group green -> red.
 };
 void(* resetFunc) (void) = 0; // Software reset hack
 
-// Function to reply to master when master requests data 
-// In this case master will want to know how many strips are connected
-void requestEvent() {
-  Wire.write(NUM_STRIPS); // respond with NUM_STRIPS
-}
 // function that executes whenever data is received from master
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany) { //if a message is coming in over 12c, this concatinates it into a string and passes the string to the parser.
@@ -516,6 +511,9 @@ void parser() {
 			String sno = string.substring(0, string.indexOf(",")); // get everything until the comma
 			DPRINT(sno);
 			DPRINT(" - ");
+			if (sno>NUM_STRIPS){//catch for a larger than expected number of strips.
+				sno=NUM_STRIPS;
+			}
 			stripNumber = sno.toInt(); // Its going to be an integer.
 			DPRINTLN(stripNumber);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
@@ -584,8 +582,8 @@ void parser() {
 		DPRINTLN(string.length()); // prints the length of the command each iteration  
 		DPRINT("STR = "); // prints after length < 1
 		DPRINTLN(string);
-		string = ""; // empty it
 	}
+	string = ""; // empty it
 }
 void randPattern() {//choses a random pattern
 	if (individualStripMode==0){
@@ -1021,7 +1019,6 @@ void patternSelect(){
 void setup() {
 	Wire.begin(I2C_ADDR);
 	Wire.onReceive(receiveEvent);
-	Wire.onRequest(requestEvent);
 	pinMode(DEBUG_LED, OUTPUT);
 	DBEGIN(115200);
 	DPRINTLN("Ready for i2c");
@@ -1060,19 +1057,24 @@ void loop() {
 			digitalWrite(DEBUG_LED,LOW);
 		}
 	}
-	if (autoMode == 1) { //if auto mode on cycles palettes and patterns.
-				randPalette();
+	if (timeSinceBt>=autoSecs){
+		if (autoMode == 1) { //if auto mode on cycles palettes and patterns.
+					randPalette();
+					randPattern();
+		}
+		if (autoMode==2){ //if automode 2 cycles a random pattern.
 				randPattern();
-	}
-	if (autoMode==2){ //if automode 2 cycles a random pattern.
-			randPattern();
-	}	
-	if (autoMode==3){//if automode 3, cycles a random palette.
-			randPalette();
+		}	
+		if (autoMode==3){//if automode 3, cycles a random palette.
+				randPalette();
+		}
 	}
 	if (autoMode!=4){
 		paletteSelect();
 		patternSelect();
+	}
+	if (autoMode==4){
+		turnOff();
 	}
 	FastLED.show();
 	if (patternNumber==9){
@@ -1081,10 +1083,8 @@ void loop() {
 	else{
 		FastLED.delay(1000 / FRAMES_PER_SECOND); 
 	}
-	if (autoMode==4){
-		turnOff();
-	}
 	if (timeSinceBt >= autoSecs) {
 		timeSinceBt=0;
 	}
+  
 }
