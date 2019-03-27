@@ -13,7 +13,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
-String regString = "Reg,Strip,TV"; // The command sent to register device with master
+String regString = "Reg,Strip,Side,4"; // The command sent to register device with master
 #define I2C_SLAVES_NUM 1
 
 // I2C // 
@@ -223,15 +223,6 @@ void setup() {  // SETUP
   DPRINT(". ");
   delay(100); // To make sure request is handled
   DPRINTLN("Done!!!");
-  DPRINT("Slave has ");
-  String attchSt = ",";
-  while (Wire.available()) { // slave may send less than requested
-    char c = Wire.read(); // receive a byte as character
-    attchSt.concat(c);         // print the character
-  }
-  DPRINT(attchSt);
-  DPRINTLN(" strips attached.");
-  regString.concat(attchSt);
   // SETUP FINISHES
 };
 // Function to register with master.
