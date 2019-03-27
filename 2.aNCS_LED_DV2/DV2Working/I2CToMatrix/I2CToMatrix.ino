@@ -476,15 +476,6 @@ void parser() {
 		DPRINT(" String - ");
 		DPRINTLN(string);
 		if (subs.startsWith("Rst"))resetFunc();
-		if (subs.startsWith("Ptn")) { // next value is pattern.
-			DPRINT("PTN ");
-			String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
-			DPRINT(ptn);
-			DPRINT(" - ");
-			patternNumber = ptn.toInt(); // Its going to be an integer. its the pattern number,
-			DPRINTLN(patternNumber);
-			string.remove(0, string.indexOf(",") + 1); // Remove the value
-		}
 		if (subs.startsWith("Atm")) { // next value is boolean for automode
 			DPRINT("ATM ");
 			String atm = string.substring(0, string.indexOf(",")); // get until first comma
@@ -500,6 +491,15 @@ void parser() {
 			autoSecs = ats.toInt();
 			string.remove(0, string.indexOf(",") + 1); // remove the value and trailing comma
 		} 
+		if (subs.startsWith("Ptn")) { // next value is pattern.
+			DPRINT("PTN ");
+			String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
+			DPRINT(ptn);
+			DPRINT(" - ");
+			patternNumber = ptn.toInt(); // Its going to be an integer. its the pattern number,
+			DPRINTLN(patternNumber);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+		}
 		if (subs.startsWith("Col")) { // its the color
 			String r = string.substring(0, string.indexOf(",")); // first bit is red,
 			ourCol.r = r.toInt(); // convert to an int
@@ -529,15 +529,6 @@ void parser() {
 			DPRINTLN(paletteNumber);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 		}
-		if (subs.startsWith("Mir")) { // next value is the number of the mirror mode to use. 0==off.
-			DPRINT("Mir ");
-			String mir= string.substring(0, string.indexOf(",")); // get  everything until the comma
-			DPRINT(mir);
-			DPRINT(" - ");
-			mirrorNumber = mir.toInt(); // Its going to be an integer. its the mirror number.
-			DPRINTLN(mirrorNumber);
-			string.remove(0, string.indexOf(",") + 1); // Remove the value
-		}
 		if (subs.startsWith("Ran")) { // next value will trigger randPattern
 			DPRINT("Ran ");
 			String ran= string.substring(0, string.indexOf(",")); // get  everything until the comma
@@ -559,7 +550,16 @@ void parser() {
 			string.toCharArray(TxtAncs, string.length());
 			DPRINTLN(TxtAncs);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
-		} 
+		}
+		if (subs.startsWith("Mir")) { // next value is the number of the mirror mode to use. 0==off.
+			DPRINT("Mir ");
+			String mir= string.substring(0, string.indexOf(",")); // get  everything until the comma
+			DPRINT(mir);
+			DPRINT(" - ");
+			mirrorNumber = mir.toInt(); // Its going to be an integer. its the mirror number.
+			DPRINTLN(mirrorNumber);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+		}		
 		DPRINTLN(string.length()); // prints the length of the command each iteration  
 		DPRINT("STR = "); // prints after length < 1
 		DPRINTLN(string);

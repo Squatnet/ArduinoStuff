@@ -466,15 +466,7 @@ void turnOff() {//for each LED turn off.
 	}
 }
 void doPulse() {//pulses LEDs white then turns them off.
-	turnOff();
-	FastLED.show();
-	FL(LEDStart, LEDEnd) {
-		leds[i] = ourCol;
-	}
-	FastLED.show();
-	FastLED.delay(100);
-	turnOff();
-	FastLED.show();
+	turnOn();
 }
 void parser() {
 	DPRINTLN("PARSER");
@@ -492,45 +484,6 @@ void parser() {
 		DPRINT(" String - ");
 		DPRINTLN(string);
 		if (subs.startsWith("Rst"))resetFunc();
-		if (subs.startsWith("Pul")) {
-			doPulse();
-			string = "";
-		}
-		if (subs.startsWith("SNo")) { // next value is strip No. to address.
-			DPRINT("Strip No. ");
-			String sno = string.substring(0, string.indexOf(",")); // get everything until the comma
-			DPRINT(sno);
-			DPRINT(" - ");
-			stripNumber = sno.toInt(); // Its going to be an integer.
-			DPRINTLN(stripNumber);
-			string.remove(0, string.indexOf(",") + 1); // Remove the value
-			setLEDs();
-		}
-		if (subs.startsWith("ISt")) { // individual Strip Mode. next value if 0, addresses all strips, if 1 addresses strips individually.
-			DPRINT("individual Strip Mode ");
-			String ist = string.substring(0, string.indexOf(",")); // get everything until the comma
-			DPRINT(ist);
-			DPRINT(" - ");
-			individualStripMode = ist.toInt(); // Its going to be an integer.
-			DPRINTLN(individualStripMode);
-			string.remove(0, string.indexOf(",") + 1); // Remove the value
-			if (individualStripMode==0){
-				setLEDs();// if 0 set the LED bounds, (if 1 this is set in Ptn bellow)
-			}
-		}
-		if (subs.startsWith("Ptn")) { // next value is pattern.
-			DPRINT("PTN ");
-			String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
-			DPRINT(ptn);
-			DPRINT(" - ");
-			patternNumber = ptn.toInt(); // Its going to be an integer. its the pattern number,
-			DPRINTLN(patternNumber);
-			string.remove(0, string.indexOf(",") + 1); // Remove the value
-			if(individualStripMode==1){
-				patternStore[stripNumber]=patternNumber;
-				setLEDs();
-			}
-		}
 		if (subs.startsWith("Atm")) { // next value is boolean for automode
 			DPRINT("ATM ");
 			String atm = string.substring(0, string.indexOf(",")); // get until first comma
@@ -546,6 +499,41 @@ void parser() {
 			autoSecs = ats.toInt();
 			string.remove(0, string.indexOf(",") + 1); // remove the value and trailing comma
 		} 
+		if (subs.startsWith("ISt")) { // individual Strip Mode. next value if 0, addresses all strips, if 1 addresses strips individually.
+			DPRINT("individual Strip Mode ");
+			String ist = string.substring(0, string.indexOf(",")); // get everything until the comma
+			DPRINT(ist);
+			DPRINT(" - ");
+			individualStripMode = ist.toInt(); // Its going to be an integer.
+			DPRINTLN(individualStripMode);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+			if (individualStripMode==0){
+				setLEDs();// if 0 set the LED bounds, (if 1 this is set in Ptn bellow)
+			}
+		}
+		if (subs.startsWith("SNo")) { // next value is strip No. to address.
+			DPRINT("Strip No. ");
+			String sno = string.substring(0, string.indexOf(",")); // get everything until the comma
+			DPRINT(sno);
+			DPRINT(" - ");
+			stripNumber = sno.toInt(); // Its going to be an integer.
+			DPRINTLN(stripNumber);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+			setLEDs();
+		}
+		if (subs.startsWith("Ptn")) { // next value is pattern.
+			DPRINT("PTN ");
+			String ptn = string.substring(0, string.indexOf(",")); // get everything until the comma
+			DPRINT(ptn);
+			DPRINT(" - ");
+			patternNumber = ptn.toInt(); // Its going to be an integer. its the pattern number,
+			DPRINTLN(patternNumber);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+			if(individualStripMode==1){
+				setLEDs();
+				patternStore[stripNumber]=patternNumber;
+			}
+		}
 		if (subs.startsWith("Col")) { // its the color
 			String r = string.substring(0, string.indexOf(",")); // first bit is red,
 			ourCol.r = r.toInt(); // convert to an int
@@ -588,6 +576,11 @@ void parser() {
 				randTrigger=0;
 			}
 		} 
+		if (subs.startsWith("Pul")) {
+			DPRINT("Pulse ")
+			doPulse();
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+		}
 		DPRINTLN(string.length()); // prints the length of the command each iteration  
 		DPRINT("STR = "); // prints after length < 1
 		DPRINTLN(string);
@@ -1044,7 +1037,7 @@ void setup() {
 	FastLED.show();
 }
 
-void loop() {-
+void loop() {
 	EVERY_N_SECONDS(1) {      
 		timeSinceBt++;//count the time since beat
 	}
@@ -1059,31 +1052,18 @@ void loop() {-
 		}
 	}
 	if (autoMode == 1) { //if auto mode on cycles palettes and patterns.
-			if (timeSinceBt >= autoSecs) {
-				timeSinceBt = 0;
 				randPalette();
 				randPattern();
-			}
-		}
 	}
 	if (autoMode==2){ //if automode 2 cycles a random pattern.
-		if (timeSinceBt >= autoSecs) {
-			timeSinceBt=0;
 			randPattern();
-		}
 	}	
 	if (autoMode==3){//if automode 3, cycles a random palette.
-		if (timeSinceBt >= autoSecs) {
-			timeSinceBt=0;
 			randPalette();
-		}
 	}
 	if (autoMode!=4){
 		paletteSelect();
 		patternSelect();
-	}
-	if (autoMode==4){
-		turnOff();
 	}
 	FastLED.show();
 	if (patternNumber==9){
@@ -1091,5 +1071,11 @@ void loop() {-
 	}
 	else{
 		FastLED.delay(1000 / FRAMES_PER_SECOND); 
+	}
+	if (autoMode==4){
+		turnOff();
+	}
+	if (timeSinceBt >= autoSecs) {
+		timeSinceBt=0;
 	}
 }
