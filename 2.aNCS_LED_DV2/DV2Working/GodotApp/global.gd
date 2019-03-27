@@ -8,6 +8,8 @@ signal reg_finished
 var version = 0.1
 var BTMast
 var BT
+var gotAck = true
+var lastCommand = ""
 var settings = {"fakeData":false,"adminMode":false,"debugMode":true,"lockout":true}
 var devNums = [0,0,0,0]
 var knownDevs = {"Str":{},
@@ -128,16 +130,23 @@ func addDvc(typ,dev): # Adds a new device from a bluetooth message, expects a st
 	print("GS: addDvc: "+str(knownDevs[typ]))
 	
 	knownDevs[typ][sPos] = sArr
+func reDolastStep():
+	print("GS: Redo last Step")
+	BT.sendData(lastCommand+",")
 func doRegStep():
-	OS.delay_msec(500)
+	if gotAck == false:
+		reDolastStep()
 	if BT && regStepsArray.size() == 0:
 		print("GS: doRegStep: regStepsArray Empty!!")
 		registerStep += 1
 	if registerStep == 1:
+		gotAck = false
 		var t = regStepsArray.pop_front()
 		print("GS: doRegStep: Sending "+str(t))
-		BT.sendData(str(t))
+		lastCommand = str(t)
+		BT.sendData(str(t)+",")
 	if registerStep == 2:
+		gotAck=true
 		print("GS: doRegStep: Register Queue Finished")
 		print("GS: knownDevices: "+str(knownDevs.size()))
 		for key in knownDevs:
@@ -154,6 +163,16 @@ func doRegStep():
 		registerStep += 1
 	if registerStep == 3:
 		emit_signal("reg_finished")
+	if !BT:
+		gotAck = true
+	var wait = 0
+	while gotAck == false or wait < 300:
+		if wait < 300:
+			wait += 1
+		else:
+			print("GS: Resending Data for reg: "+lastCommand)
+			BT.sendData(lastCommand)
+			wait = 0
 func _ready():
 	LoadSettings()
 	LoadPallettes()
@@ -194,6 +213,7 @@ func _on_disconnected():
 
 func _on_data_received(data_received):
 	print("GS - Got data "+str(data_received))
+	gotAck = true
 	emit_signal("data_received", data_received)
 	pass
 

@@ -106,9 +106,9 @@ func sendMessage():
 			print("wait for ack "+str(msec))
 			OS.delay_msec(10)
 			msec += 10
-		if !gotAck:
 			if msec >= 300:
-				print("Didn't get ack")
+				print("Didn't get ack in time Trying again")
+				GS.BT.sendData(commandToSend)
 	if GS.getSetting("debugMode") == true:
 		OS.alert("Page: commendToSend: "+commandToSend,"Cmd")
 	else:
