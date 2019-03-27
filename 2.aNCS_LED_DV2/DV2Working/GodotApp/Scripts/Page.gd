@@ -1,7 +1,9 @@
 extends Control
+#warnings-disable
 var gotAck = false
 var updated = []
 var knownPatterns = []
+var parserOrder = ["automode","autoSecs","inSt","strNo","pattern","color","palMode","pall","mirror"]
 var numPatterns = 0
 var numMirror = 0
 var automode = 0
@@ -71,6 +73,8 @@ func setup(args):
 			$MirrorModeName.hide()
 		if args[1] == "Str":
 			attchStr = GS.mostKnownStrips
+		if args[1] != "Str":
+			$InStrMode.hide()
 		commandDevClassOrID += str(args[1])+",All,"
 	elif pageType == 2:
 		$PAGE.set_text("Group :"+str(args[1]))
@@ -93,7 +97,7 @@ func setPall(pall):
 #	pass
 
 func sendMessage():
-	var commandToSend = commandPrefix+commandDevClassOrID+commandGrpName+commandToRelay
+	var commandToSend = commandPrefix+commandDevClassOrID+commandGrpName+commandPrefix+commandToRelay
 	if GS.BT:
 		gotAck = false
 		GS.BT.sendData(commandToSend)
@@ -102,8 +106,11 @@ func sendMessage():
 			print("wait for ack "+str(msec))
 			OS.delay_msec(10)
 			msec += 10
+		if !gotAck:
+			if msec >= 300:
+				print("Didn't get ack")
 	if GS.getSetting("debugMode") == true:
-		print("Sending Message:\n commandToSend : "+commandToSend)
+		OS.alert("Page: commendToSend: "+commandToSend,"Cmd")
 	else:
 		pass
 	commandToRelay = ""
@@ -150,8 +157,12 @@ func _on_PalleteMode_toggled(button_pressed):
 
 func _on_SendButton_pressed():
 	if updated.size() > 0:
-		print("Page: updated: "+str(updated))
-		for i in updated:
+		var newArr = []
+		for i in parserOrder:
+			if updated.has(i):
+				newArr.push_back(i)
+		print("Page: updated: "+str(newArr))
+		for i in newArr:
 			if i == "automode":
 				commandToRelay += "Atm,"+str(automode)+","
 			elif i == "autoSecs":
@@ -174,7 +185,6 @@ func _on_SendButton_pressed():
 			elif i == "strNo":
 				commandToRelay += "SNo,"+str(AddrStrNo)+","
 				
-		OS.alert("Page: commandToRelay: "+commandToRelay,"Cmd")
 		if pageType == 2:
 			if chkStr == true && chkMat == true && chkRtr == true && chkTerm == true:
 				commandDevClassOrID = "All,"

@@ -1,5 +1,5 @@
 extends Panel
-
+#warnings-disable
 var isOpen = false
 var pallet = 0
 func setup():
