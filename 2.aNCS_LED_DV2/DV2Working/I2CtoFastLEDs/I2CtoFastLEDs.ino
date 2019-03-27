@@ -700,10 +700,19 @@ void juggle() {//palette not currently supported
 	// eight colored dots, weaving in and out of sync with each other
 	fadeToBlackBy(&(leds[LEDStart]), NoLEDs, 20);
 	byte dothue = 0;
-	FL(0, 8) {
-		leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ourCol;
-		leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
-		dothue += 32;
+	if (paletteMode==1){
+		FL(0, 8) {
+			leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+			leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
+			dothue += 32;
+		}
+	}
+	else{
+		FL(0, 8) {
+			leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ourCol;
+			leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
+			dothue += 32;
+		}
 	}
 }
 void bouncingTrails(){
