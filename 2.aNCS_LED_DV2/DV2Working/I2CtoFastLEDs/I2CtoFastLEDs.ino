@@ -528,6 +528,7 @@ void parser() {
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 			if(individualStripMode==1){
 				patternStore[stripNumber]=patternNumber;
+				setLEDs();
 			}
 		}
 		if (subs.startsWith("Atm")) { // next value is boolean for automode
@@ -1018,7 +1019,7 @@ void patternSelect(){
 void setup() {
 	Wire.begin(I2C_ADDR);
 	Wire.onReceive(receiveEvent);
-  Wire.onRequest(requestEvent);
+	Wire.onRequest(requestEvent);
 	pinMode(DEBUG_LED, OUTPUT);
 	DBEGIN(115200);
 	DPRINTLN("Ready for i2c");
