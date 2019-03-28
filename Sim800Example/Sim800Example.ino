@@ -1,7 +1,7 @@
 #include <SoftwareSerial.h>
 
 //Create software serial object to communicate with SIM800L
-SoftwareSerial sim(D3, D2); //SIM800L Tx & Rx is connected to Arduino #3 & #2
+SoftwareSerial sim(D2, D3); //SIM800L Tx & Rx is connected to Arduino #3 & #2
 String simInBuff = "";
 void setup()
 {
@@ -14,9 +14,15 @@ void setup()
   Serial.println("Initializing...");
   delay(100);
   Serial.flush();
-  delay(500);
+  delay(5000);
   sim.begin(115200);
-  Serial.println("Sim800 initialised");
+  simSetup();
+  pinMode(16, OUTPUT);
+  digitalWrite(16,HIGH);
+  //sendSMS("+447428981160","ACTUALLY DICKCHEESE");
+}
+void simSetup(){
+  Serial.println("Sim800 initialising");
   delay(100);
   sim.println("AT");
   delay(100);
@@ -36,13 +42,29 @@ void setup()
   sim.println("AT+CMGF=1");
   delay(100);
   updateSerial();
-  Serial.print("SMS Settings (1,2,0,0,0) :");
+  Serial.print("SMS Settings (2,2,0,0,0) :");
   sim.println("AT+CNMI=1,2,0,0,0");
   delay(100);
   updateSerial();
-  pinMode(16, OUTPUT);
-  digitalWrite(16,HIGH);
-  //sendSMS("+447428981160","ACTUALLY DICKCHEESE");
+  Serial.print("SMS Settings (2,2,0,0,0) :");
+  sim.println("AT+CPMS=\"SM\"");
+  delay(100);
+  updateSerial();
+  Serial.print("List all SMS messages");
+  sim.println("AT+CMGL=\"ALL\"");
+  delay(100);
+  updateSerial();
+  Serial.print("waiting for SMS list");
+  delay(1000);
+  updateSerial();
+  Serial.print("Delete all SMS messages");
+  sim.println("AT+CMGD=1,4");
+  delay(1000);
+  updateSerial();
+  Serial.print("List all SMS messages");
+  sim.println("AT+CMGL=\"ALL\"");
+  delay(100);
+  updateSerial();
 }
 void sendSMS(String num, String mess){
   Serial.print("Sending : ");
@@ -77,6 +99,14 @@ void updateSerial()
       simInBuff.concat(c);
     }
     Serial.println(simInBuff);
+    if (simInBuff.indexOf("ERROR") != -1){
+      pinMode(D4,OUTPUT);
+      delay(300);
+      pinMode(D4,INPUT);
+      delay(300);
+      Serial.flush();
+      simSetup();
+    }
     if (simInBuff.indexOf("+CMT") != -1){
       Serial.println("GOT SMS");
     }
