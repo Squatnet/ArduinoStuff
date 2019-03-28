@@ -1022,7 +1022,7 @@ void setup() {
 	Wire.begin(I2C_ADDR);
 	Wire.onReceive(receiveEvent);
 	pinMode(DEBUG_LED, OUTPUT);
-	DBEGIN(115200);
+	DBEGIN(9600);
 	DPRINTLN("Ready for i2c");
 	//sets one long array containing multiple data pins in the following format.
 	//type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
