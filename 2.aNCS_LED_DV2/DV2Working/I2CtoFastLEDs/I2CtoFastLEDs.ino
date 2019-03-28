@@ -1094,10 +1094,10 @@ void loop() {
     while (Serial.available()) {
       char c = Serial.read();
       string.concat(c);
-      delay(30);
+      
     }
     if (string != "") {
-      parser(string);
+      parser();
       string = "";
     }
   }
