@@ -1,15 +1,17 @@
 // Varidaic Debug Macro
-//define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
 #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
 #define DFLUSH(...)    Serial.flush()
+
 #else // Debug is off
 #define DBEGIN(...)
 #define DPRINT(...)     //Nothing Happens
 #define DPRINTLN(...)   //Nothing Happens
 #define DFLUSH(...)
+
 #endif // end macro
 
 #define DEBUG_LED 13
@@ -19,7 +21,7 @@
 #define ZOOMING_BEATS_PER_MINUTE 200
 #define STROBE_BEATS_PER_MINUTE 300
 #define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
-#define NUM_LEDS_PER_STRIP 42 //defines number of LED's per strip, see above.
+#define NUM_LEDS_PER_STRIP 28 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 1
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
@@ -575,7 +577,7 @@ void parser() {
 			}
 		} 
 		if (subs.startsWith("Pul")) {
-			DPRINT("Pulse ")
+			DPRINT("Pulse ");
 			doPulse();
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
 		}
@@ -1086,5 +1088,18 @@ void loop() {
 	if (timeSinceBt >= autoSecs) {
 		timeSinceBt=0;
 	}
-  
+ #ifdef DEBUG
+  if (Serial.available()){
+    string = "";
+    while (Serial.available()) {
+      char c = Serial.read();
+      string.concat(c);
+      
+    }
+    if (string != "") {
+      parser();
+      string = "";
+    }
+  }
+ #endif
 }
