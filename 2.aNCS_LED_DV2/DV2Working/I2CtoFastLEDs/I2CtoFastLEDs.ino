@@ -1097,7 +1097,7 @@ void loop() {
       delay(30);
     }
     if (string != "") {
-      parser(string);
+      parser();
       string = "";
     }
   }
