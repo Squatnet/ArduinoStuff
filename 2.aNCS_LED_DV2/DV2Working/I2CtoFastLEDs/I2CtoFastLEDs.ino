@@ -5,11 +5,15 @@
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
 #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //Sends our arguments to DPRINTLN()
 #define DFLUSH(...)    Serial.flush()
+#define DAVAIL(...)    Serial.available()
+#define DREAD(...)     Serial.read()
 #else // Debug is off
 #define DBEGIN(...)
 #define DPRINT(...)     //Nothing Happens
 #define DPRINTLN(...)   //Nothing Happens
 #define DFLUSH(...)
+#define DAVAIL(...)
+#define DREAD(...)
 #endif // end macro
 
 #define DEBUG_LED 13
@@ -1086,5 +1090,18 @@ void loop() {
 	if (timeSinceBt >= autoSecs) {
 		timeSinceBt=0;
 	}
-  
+ #ifdef DEBUG
+  if (Serial.available()){
+    String str = "";
+    while (Serial.available()) {
+      char c = Serial.read();
+      str.concat(c);
+      delay(30);
+    }
+    if (str != "") {
+      parser(str);
+      str = "";
+    }
+  }
+ #endif
 }
