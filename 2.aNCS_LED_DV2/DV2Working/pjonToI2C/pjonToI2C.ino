@@ -13,7 +13,7 @@
 #endif // end macro
 // REGISTATION // 
 // EDIT THIS PER DEVICE//
-String regString = "Reg,Strip,Side,4"; // The command sent to register device with master
+String regString = "Reg,Strip,TV,4"; // The command sent to register device with master
 #define I2C_SLAVES_NUM 1
 
 // I2C // 
