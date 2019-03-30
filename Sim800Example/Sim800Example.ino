@@ -1,7 +1,7 @@
 #include <SoftwareSerial.h>
 
 //Create software serial object to communicate with SIM800L
-SoftwareSerial sim(D2, D3); //SIM800L Tx & Rx is connected to Arduino #3 & #2
+SoftwareSerial sim(D2, D3, false, 256); //SIM800L Tx & Rx is connected to Arduino #3 & #2
 String simInBuff = "";
 void setup()
 {
@@ -19,11 +19,28 @@ void setup()
   simSetup();
   pinMode(16, OUTPUT);
   digitalWrite(16,HIGH);
-  //sendSMS("+447428981160","ACTUALLY DICKCHEESE");
+  sendSMS("+447428981160","Completed Setup");
 }
 void simSetup(){
   Serial.println("Sim800 initialising");
   delay(100);
+  pinMode(D4,OUTPUT);
+  delay(300);
+  pinMode(D4,INPUT);
+  for(int i=0;i<30;i++){
+    Serial.print(" .");
+    delay(200 );
+  }
+  sim.println();
+  sim.println("AT");
+  delay(100);
+  updateSerial();
+  sim.println("AT");
+  delay(100);
+  updateSerial();
+  sim.println("AT");
+  delay(100);
+  updateSerial();
   sim.println("AT");
   delay(100);
   updateSerial();
@@ -42,12 +59,12 @@ void simSetup(){
   sim.println("AT+CMGF=1");
   delay(100);
   updateSerial();
-  Serial.print("SMS Settings (2,2,0,0,0) :");
-  sim.println("AT+CNMI=1,2,0,0,0");
+  Serial.print("SMS Settings (0,2,0,0,0) :");
+  sim.println("AT+CNMI=2,1,0,0,0");
   delay(100);
   updateSerial();
-  Serial.print("SMS Settings (2,2,0,0,0) :");
-  sim.println("AT+CPMS=\"SM\"");
+  Serial.print("SMS Settings (1,2,0,0,0) :");
+  sim.println("AT+CPMS=\"ME\",\"ME\",\"ME\"");
   delay(100);
   updateSerial();
   Serial.print("List all SMS messages");
@@ -58,7 +75,7 @@ void simSetup(){
   delay(1000);
   updateSerial();
   Serial.print("Delete all SMS messages");
-  sim.println("AT+CMGD=1,4");
+  sim.println("AT+CMGD=?");
   delay(1000);
   updateSerial();
   Serial.print("List all SMS messages");
@@ -105,7 +122,7 @@ void updateSerial()
       pinMode(D4,INPUT);
       delay(300);
       Serial.flush();
-      simSetup();
+      delay(2000);
     }
     if (simInBuff.indexOf("+CMT") != -1){
       Serial.println("GOT SMS");
