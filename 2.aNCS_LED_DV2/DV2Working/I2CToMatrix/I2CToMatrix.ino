@@ -1167,7 +1167,7 @@ void loop(){
 		if (timeSinceBt >= autoSecs) {
 			timeSinceBt=0;
 			randPattern();
-      randPalette();
+			randPalette();
 		}
 	}	
 	if (autoMode==3){//if automode 3, cycles a random palette.
@@ -1176,13 +1176,12 @@ void loop(){
 			randPattern();
 		}
 	}	
-  if (autoMode==4){//if automode 3, cycles a random palette.
-    if (timeSinceBt >= autoSecs) {
-      timeSinceBt=0;
-      randPalette();
-    }
-  }
-	patternNumber=13;
+	if (autoMode==4){//if automode 3, cycles a random palette.
+		if (timeSinceBt >= autoSecs) {
+			timeSinceBt=0;
+			randPalette();
+		}
+	}
 	paletteSelect();
 	patternSelect();
 	mirrorSelect();
