@@ -34,7 +34,6 @@
 
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix;
 cLEDText ScrollingMsg;
-CRGB leds[256];
 CRGB ourCol = CRGB(255, 255, 255);
 CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
@@ -42,15 +41,15 @@ char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
 int iic = 0; // holder for i2c message
 String string = "";
 int timeSinceBt = 0;
-int autoMode = 3;
-int autoSecs = 30;
+int autoMode = 2;
+int autoSecs = 5;
 byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 byte numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 uint8_t brightness = 255;
-int mirrorNumber=0;
+int mirrorNumber=2;
 
 DEFINE_GRADIENT_PALETTE( Pastel1_08_gp ) {//group 1
 	0, 244, 118, 98,
@@ -566,24 +565,19 @@ void parser() {
 		string = ""; // empty it
 	}
 }
-void setLEDs(){
-	FL(0,256){
-		matrix(i)=leds[i];
-	}
-}
 ////////////////////////start of patterns///////////////////////
 void turnOn() {// for each LED turn it to ourCol.
 	FL(0, NUM_LEDS) {
-		leds[i] = ourCol;
+		matrix(i) = ourCol;
 	}
 }
 void turnOff() {//for each LED turn off.
 	FL(0, NUM_LEDS) {
-		leds[i] = CRGB( 0, 0, 0);
+		matrix(i) = CRGB( 0, 0, 0);
 	}
 }
 void randPattern(){//choses a random pattern
-	patternNumber = random(2, 10);
+	patternNumber = random(2, 13);
 	DPRINT("RANDOM PATTERN ");
 	DPRINTLN(patternNumber);
 }
@@ -607,20 +601,20 @@ void scrollText(){
 	FastLED.show();
 }
 void solidWhite(){
-	fill_solid( leds, NUM_LEDS, CRGB::White);
+	fill_solid(&(matrix(0)),NUM_LEDS,CRGB::White);//possible error
 }
 void theLights() { //  speckles and strobes
-	fadeToBlackBy(&(leds[0]), NUM_LEDS, 10);
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 10);
 	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
 		colorIndex++;
 		if(colorIndex>254){
 			colorIndex=0;
 		}
-		leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+		matrix(pos) = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
 	}
 	else{
-		leds[pos] = ourCol;
+		matrix(pos) = ourCol;
 	}
 }
 void rainbow(){
@@ -633,7 +627,7 @@ void rainbow(){
 		gHue=0;
 	}
 	if (paletteMode==0){
-		fill_rainbow(&(leds[0]),NUM_LEDS,gHue,7);
+		fill_rainbow(&(matrix(0)),NUM_LEDS,gHue,7);
 	}
 	else{
 		FL(0,NUM_LEDS){
@@ -642,13 +636,13 @@ void rainbow(){
 				hueStore=pHue-256;
 				pHue=hueStore;
 			}
-			leds[i]=ColorFromPalette(currentPalette,pHue,brightness,currentBlending);
+			matrix(i)=ColorFromPalette(currentPalette,pHue,brightness,currentBlending);
 		}
 	}
 }
 void addGlitter( fract8 chanceOfGlitter){
-	if ( random8() < chanceOfGlitter) {
-		leds[ random16(0, NUM_LEDS) ] += CRGB::White;
+	if (random8()<chanceOfGlitter) {
+		matrix(random16(0,NUM_LEDS))+=CRGB::White;//possible error
 	}
 }
 void rainbowWithGlitter(){
@@ -658,34 +652,34 @@ void rainbowWithGlitter(){
 }
 void confetti(){
 	// random colored speckles that blink in and fade smoothly
-	fadeToBlackBy(&(leds[0]), NUM_LEDS, 10);
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 10);
 	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
 		colorIndex++;
 		if(colorIndex>254){
 			colorIndex=0;
 		}
-		leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+		matrix(pos) = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
 	}
 	else {
-		leds[pos] = ourCol;
-		leds[pos] += CHSV( colorIndex + random8(64), 200, 255);
+		matrix(pos) = ourCol;
+		matrix(pos) += CHSV( colorIndex + random8(64), 200, 255);
 	}
 }
 void sinelon(){
 	// a colored dot sweeping back and forth, with fading trails
-	fadeToBlackBy(&(leds[0]), NUM_LEDS, 20);
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 20);
 	int pos = beatsin16( 13, 0, NUM_LEDS - 1 ) ;
 	if (paletteMode==1){
 		colorIndex++;
 		if(colorIndex>254){
 			colorIndex=0;
 		}
-		leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+		matrix(pos) = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
 	}
 	else{
-		leds[pos] = ourCol;
-		leds[pos] += CHSV( colorIndex, 255, 192);
+		matrix(pos) = ourCol;
+		matrix(pos) += CHSV( colorIndex, 255, 192);
 	}
 }
 void bpm(){
@@ -701,16 +695,16 @@ void bpm(){
 					colorIndex=0;
 				}
 			}
-			leds[i] = ColorFromPalette(currentPalette, colorIndex + (i * 2), beat - 0 + (i * 10));
+			matrix(i) = ColorFromPalette(currentPalette, colorIndex + (i * 2), beat - 0 + (i * 10));
 		}
 		else{
-			leds[i] = ourCol;
-			leds[i] = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
+			matrix(i) = ourCol;
+			matrix(i) = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
 		}
 	}
 }
 void simpleStrobe () {
-	fill_solid( leds, NUM_LEDS, CRGB::Black);
+	fill_solid(&(matrix(0)), NUM_LEDS, CRGB::Black);
 	const uint8_t kStrobeCycleLength = 6; // light every Nth frame
 	static uint8_t sStrobePhase = 0;
 	sStrobePhase = sStrobePhase + 1;
@@ -763,7 +757,7 @@ static void strobeDraw( uint8_t startpos, uint16_t lastpos, uint8_t period, uint
 		//CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
 		uint16_t pos = i;
 		for( uint8_t w = 0; w < width; w++) {
-			leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+			matrix(pos) = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
 			pos++;
 			if( pos >= NUM_LEDS) {
 				break;
@@ -788,7 +782,7 @@ void bouncingTrails(){
 		counter=0;
 	}
 	if (lastCount!=counter){//if the counter has progressed
-		fadeToBlackBy(&(leds[0]), NUM_LEDS, 60);
+		fadeToBlackBy(&(matrix(0)), NUM_LEDS, 60);
 		paletteRef=(counter*5);//used a multiple here as we want to adress as broad a rang from 0 - 256 as possible, with more LEDs be worth lowering this value.
 	}
 	if ((counter==1)&&(lastCount!=counter)){   
@@ -799,10 +793,10 @@ void bouncingTrails(){
 		posDown=pos;
 		FL(0,MATRIX_HEIGHT){
 			if (paletteMode==1){
-				leds[(pos+(i*MATRIX_WIDTH))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+				matrix((pos+(i*MATRIX_WIDTH)))=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
 			}
 			else{
-				leds[(pos+(i*MATRIX_WIDTH))]=ourCol;
+				matrix((pos+(i*MATRIX_WIDTH)))=ourCol;
 			}	 
 		}
 	}  
@@ -834,16 +828,205 @@ void bouncingTrails(){
 		}
 		FL(0,MATRIX_HEIGHT){
 			if (paletteMode==1){
-				leds[(posUp+(i*MATRIX_WIDTH))]=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
-				leds[(posDown+(i*MATRIX_WIDTH))]=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+				matrix((posUp+(i*MATRIX_WIDTH)))=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
+				matrix((posDown+(i*MATRIX_WIDTH)))=ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
 			}
 			else{
-				leds[(posUp+(i*MATRIX_WIDTH))]=ourCol;
-				leds[(posDown+(i*MATRIX_WIDTH))]=ourCol;
+				matrix((posUp+(i*MATRIX_WIDTH)))=ourCol;
+				matrix((posDown+(i*MATRIX_WIDTH)))=ourCol;
 			}
 		}
 	}
 	lastCount=counter;
+}
+void randShapes(){
+	int pos1,pos2,pos3,pos4,posR;
+	static int shapeNumber;
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS,40);
+	shapeNumber=random8(1,3);//square or circle +1 cus ? but works.
+	colorIndex=random8(1,255);//color of shape
+	pos1=random8(0,MATRIX_WIDTH);//starting x coord
+	pos2=random8(0,MATRIX_HEIGHT);//starting y coord
+	pos3=random8(0,MATRIX_WIDTH);//ending x coord
+	pos4=random8(0,MATRIX_HEIGHT);//ending y coord
+	posR=random8(1,(MATRIX_HEIGHT/2));//radius for circle
+	if (shapeNumber==1){//purpose i want there to be at least 1 line of blank pixles in each rectangle
+	//draw, so i check if the dfference in coordinates allows this, and if not edit to do so.
+		if (pos1>=pos3){
+			if((pos1-pos3)<2){
+				if ((pos1-pos3)==1){
+					pos1=pos1+1;
+				}
+				else{
+					pos1=pos1+2;
+				}	
+			}
+		}
+		if (pos3>=pos1){
+			if((pos3-pos1)<2){
+				if ((pos3-pos1)==1){
+					pos3=pos3+1;
+				}
+				else{
+					pos3=pos3+2;
+				}	
+			}
+		}
+		if (pos2>=pos4){
+			if((pos2-pos4)<2){
+				if ((pos2-pos4)==1){
+					pos2=pos2+1;
+				}
+				else{
+					pos2=pos2+2;
+				}	
+			}
+		}
+		if (pos4>=pos2){
+			if((pos4-pos2)<2){
+				if ((pos4-pos2)==1){
+					pos4=pos4+1;
+				}
+				else{
+					pos4=pos4+2;
+				}	
+			}
+		}
+	}		
+	switch (shapeNumber){//draw the shape.
+		case 1:
+			if (paletteMode==1){
+				matrix.DrawRectangle(pos1,pos2,pos3,pos4,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+				break;
+			}
+			else{
+				matrix.DrawRectangle(pos1,pos2,pos3,pos4,ourCol);
+				break;
+			}
+		case 2:
+			if (paletteMode==1){
+				matrix.DrawCircle(pos1,pos2,posR,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));  
+				break;
+			}
+			else{
+				matrix.DrawCircle(pos1,pos2,posR,ourCol); 
+				break;
+			}
+	} 
+}
+void expandingShape(){
+	static int step,lastStep,R;
+	static int shapeNumber=0;
+	static int X1=(MATRIX_WIDTH/2);
+	static int Y1=(MATRIX_HEIGHT/2);
+	static int X2=(MATRIX_WIDTH/2);
+	static int Y2=(MATRIX_HEIGHT/2);
+	int xStart=(MATRIX_WIDTH/2);
+	int	yStart=(MATRIX_HEIGHT/2);
+		
+	step++;
+	//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
+	colorIndex=colorIndex+50;
+	if (colorIndex>255){
+		colorIndex=1;
+	}
+	if (step!=lastStep){
+		if (X1<1){
+			X1=(MATRIX_WIDTH/2);
+			Y1=(MATRIX_HEIGHT/2);
+			X2=(MATRIX_WIDTH/2);
+			Y2=(MATRIX_HEIGHT/2);
+			shapeNumber=random8(0,2);
+		}
+		else{
+			X1=X1-1;
+			Y1=Y1-1;
+			X2=X2+1;
+			Y2=Y2+1;
+		}
+		if (R<(MATRIX_WIDTH/2)){
+			R=R+1;
+		}
+		else{
+			R=1;
+			shapeNumber=random8(0,2);
+		}
+		if (paletteMode==1){
+			if(shapeNumber==0){
+				matrix.DrawRectangle(X1,Y1,X2,Y2,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+			}
+			else{
+				matrix.DrawCircle(xStart,yStart,R,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+			}
+		}
+		else{
+			fadeToBlackBy(&(matrix(0)), NUM_LEDS,40);
+			if(shapeNumber==0){
+				matrix.DrawRectangle(X1,Y1,X2,Y2,ourCol);
+			}
+			else{
+				matrix.DrawCircle(xStart,yStart,R,ourCol);
+			}
+		}
+		step=lastStep;
+	}		
+}
+void retractingShape(){
+	static int step,lastStep,R;
+	static int shapeNumber=0;
+	static int X1=1;
+	static int Y1=1;
+	static int X2=MATRIX_WIDTH;
+	static int Y2=MATRIX_HEIGHT;
+	int xStart=(MATRIX_WIDTH/2);
+	int	yStart=(MATRIX_HEIGHT/2);
+	
+	step++;
+	//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
+	colorIndex=colorIndex+40;
+	if (colorIndex>255){
+		colorIndex=1;
+	}	
+	if (step!=lastStep){
+		if (X1>(MATRIX_WIDTH/2)){
+			X1=0;
+			Y1=0;
+			X2=MATRIX_WIDTH;
+			Y2=MATRIX_HEIGHT;
+			//shapeNumber=random8(0,2);
+		}
+		else{
+			X1++;
+			Y1++;
+			X2--;
+			Y2--;
+		}
+		if (R<(MATRIX_WIDTH/2)){
+			R=R+1;
+		}
+		else{
+			R=1;
+			//shapeNumber=random8(0,2);
+		}
+		if (paletteMode==1){
+			if(shapeNumber==0){
+				matrix.DrawRectangle(X1,Y1,X2,Y2,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+			}
+			else{
+				matrix.DrawCircle(xStart,yStart,R,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+			}
+		}
+		else{
+			fadeToBlackBy(&(matrix(0)), NUM_LEDS,80);
+			if(shapeNumber==0){
+				matrix.DrawRectangle(X1,Y1,X2,Y2,ourCol);
+			}
+			else{
+				matrix.DrawCircle(xStart,yStart,R,ourCol);
+			}
+		}
+		step=lastStep;
+	}	
 }
 ///////////////////////////end of patterns///////////////////////
 void paletteSelect(){
@@ -942,6 +1125,15 @@ void patternSelect(){
 		case 10:
 			scrollText();
 			break;
+		case 11:
+			randShapes();
+			break;
+		case 12:
+			expandingShape();
+			break;
+		case 13:
+			retractingShape();
+			break;
     }
 }
 void mirrorSelect(){
@@ -975,25 +1167,24 @@ void loop(){
 		if (timeSinceBt >= autoSecs) {
 			timeSinceBt=0;
 			randPattern();
+      randPalette();
 		}
 	}	
 	if (autoMode==3){//if automode 3, cycles a random palette.
 		if (timeSinceBt >= autoSecs) {
 			timeSinceBt=0;
-			randPalette();
+			randPattern();
 		}
-	}		
-	patternNumber=3;
+	}	
+  if (autoMode==4){//if automode 3, cycles a random palette.
+    if (timeSinceBt >= autoSecs) {
+      timeSinceBt=0;
+      randPalette();
+    }
+  }
+	patternNumber=13;
 	paletteSelect();
 	patternSelect();
-	setLEDs();
 	mirrorSelect();
-	FastLED.show();
-	FastLED.delay(1000 / FRAMES_PER_SECOND);
-	/*if (patternNumber==8){
-		FastLED.delay(1000/80);//shorter delay for strobe affect.
-	}
-	else{
-		FastLED.delay(1000 / FRAMES_PER_SECOND); 
-	}*/
+	FastLED.delay(20);
 }

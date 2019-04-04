@@ -104,6 +104,7 @@ void turnOff() {//for each LED turn off.
 void randShapes(){
 	int pos1,pos2,pos3,pos4,posR;
 	static int shapeNumber;
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS,10);
 	shapeNumber=random8(1,3);//square or circle +1 cus ? but works.
 	colorIndex=random8(1,255);//color of shape
 	pos1=random8(0,MATRIX_WIDTH);//starting x coord
@@ -164,10 +165,6 @@ void randShapes(){
 			matrix.DrawCircle(pos1,pos2,posR,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));  
 			break;
 	} 
-	EVERY_N_SECONDS(14){//wipe the screen
-		turnOff();
-		setLEDs();
-	}
 }
 void expandingShape(){
 	static int step,lastStep,R;
@@ -261,10 +258,27 @@ void retractingShape(){
 		step=lastStep;
 	}	
 }
+void confetti(){
+	// random colored speckles that blink in and fade smoothly
+	fadeToBlackBy(&(leds[0]), NUM_LEDS, 10);
+	int pos = random16(0, NUM_LEDS);
+	if (paletteMode==1){
+		colorIndex++;
+		if(colorIndex>254){
+			colorIndex=0;
+		}
+		leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+	}
+	else {
+		leds[pos] = ourCol;
+		leds[pos] += CHSV( colorIndex + random8(64), 200, 255);
+	}
+}
 void loop(){
-  retractingShape();
+  //retractingShape();
   //expandingShape();
   //randShapes();
+  confetti();
   FastLED.show();   
-  FastLED.delay(10);
+  FastLED.delay(100);
 }
