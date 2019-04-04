@@ -45,7 +45,7 @@ int timeSinceBt = 0;
 int autoMode = 3;
 int autoSecs = 30;
 byte patternNumber = 0;
-byte paletteMode = 0;//holds if we sending indivdual colors to the patterns or a palette array.
+byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 byte numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
@@ -625,17 +625,24 @@ void theLights() { //  speckles and strobes
 }
 void rainbow(){
 	// FastLED's built-in rainbow generator
-	static int gHue;
+	static int gHue;//rotates through the palette.
+	static int pHue=0;
+	static int hueStore;
 	gHue++;
-	if (gHue>255){
-		gHue=1;
+	if (gHue>256){
+		gHue=0;
 	}
 	if (paletteMode==0){
-		fill_rainbow(&(leds[0]), NUM_LEDS, gHue,7);
+		fill_rainbow(&(leds[0]),NUM_LEDS,gHue,7);
 	}
 	else{
 		FL(0,NUM_LEDS){
-			leds[i]=ColorFromPalette( currentPalette,(i*5), brightness, currentBlending);
+			pHue=i+gHue;
+			if (pHue>256){
+				hueStore=pHue-256;
+				pHue=hueStore;
+			}
+			leds[i]=ColorFromPalette(currentPalette,pHue,brightness,currentBlending);
 		}
 	}
 }
@@ -953,9 +960,10 @@ void mirrorSelect(){
 	}
 }
 void loop(){
-	if (autoMode == 1) { //if auto mode on cycles palettes, patterns and mirror mode.
-		EVERY_N_SECONDS(1) {      
+	EVERY_N_SECONDS(1) {      
 			timeSinceBt++;//count the time since beat
+	}
+	if (autoMode == 1) { //if auto mode on cycles palettes, patterns and mirror mode.
 			if (timeSinceBt >= autoSecs) {
 				timeSinceBt = 0;
 				randPalette();
@@ -963,28 +971,24 @@ void loop(){
 				randMirror();
 			}
 		}
-	}
 	if (autoMode==2){ //if automode 2 cycles a random pattern.
-		timeSinceBt++;
 		if (timeSinceBt >= autoSecs) {
 			timeSinceBt=0;
 			randPattern();
 		}
 	}	
 	if (autoMode==3){//if automode 3, cycles a random palette.
-		timeSinceBt++;
 		if (timeSinceBt >= autoSecs) {
 			timeSinceBt=0;
 			randPalette();
 		}
 	}		
-	patternNumber=4;
+	patternNumber=3;
 	paletteSelect();
 	patternSelect();
 	setLEDs();
 	mirrorSelect();
 	FastLED.show();
-  
 	FastLED.delay(1000 / FRAMES_PER_SECOND);
 	/*if (patternNumber==8){
 		FastLED.delay(1000/80);//shorter delay for strobe affect.
