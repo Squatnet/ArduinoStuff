@@ -9,7 +9,7 @@
 
 #define FL(aa,bb) for (int i = aa; i < bb; i++)
 // Varidaic Debug Macro
-//#define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -102,15 +102,16 @@ void turnOff() {//for each LED turn off.
 }
 
 void randShapes(){
-	int pos1,pos2,pos3,pos4,posR,shapeNumber;
-	shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
+	int pos1,pos2,pos3,pos4,posR;
+	static int shapeNumber;
+	shapeNumber=random8(1,3);//square or circle +1 cus ? but works.
 	colorIndex=random8(1,255);//color of shape
-	pos1=random8(1,MATRIX_WIDTH);//starting x coord
-	pos2=random8(2,MATRIX_HEIGHT);//starting y coord
-	pos3=random8(1,MATRIX_WIDTH);//ending x coord
-	pos4=random8(2,MATRIX_HEIGHT);//ending y coord
-	posR=random8(1,(MATRIX_HEIGHT));//radius for circle
-	if (shapeNumber==0){//purpose i want there to be at least 1 line of blank pixles in each rectangle
+	pos1=random8(0,MATRIX_WIDTH);//starting x coord
+	pos2=random8(0,MATRIX_HEIGHT);//starting y coord
+	pos3=random8(0,MATRIX_WIDTH);//ending x coord
+	pos4=random8(0,MATRIX_HEIGHT);//ending y coord
+	posR=random8(1,(MATRIX_HEIGHT/2));//radius for circle
+	if (shapeNumber==1){//purpose i want there to be at least 1 line of blank pixles in each rectangle
 //draw, so i check if the dfference in coordinates allows this, and if not edit to do so.
 		if (pos1>=pos3){
 			if((pos1-pos3)<2){
@@ -120,9 +121,7 @@ void randShapes(){
 				else{
 					pos1=pos1+2;
 				}	
-				
 			}
-			
 		}
 		if (pos3>=pos1){
 			if((pos3-pos1)<2){
@@ -132,9 +131,7 @@ void randShapes(){
 				else{
 					pos3=pos3+2;
 				}	
-				
 			}
-			
 		}
 		if (pos2>=pos4){
 			if((pos2-pos4)<2){
@@ -144,9 +141,7 @@ void randShapes(){
 				else{
 					pos2=pos2+2;
 				}	
-				
 			}
-			
 		}
 		if (pos4>=pos2){
 			if((pos4-pos2)<2){
@@ -156,20 +151,19 @@ void randShapes(){
 				else{
 					pos4=pos4+2;
 				}	
-				
 			}
-			
 		}
-	
-		switch (shapeNumber){//draw the shape.
-			case 0:
-				matrix.DrawRectangle(pos1,pos2,pos3,pos4,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
-				break;
-			case 1:
-				matrix.DrawCircle(pos1,pos2,posR,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));  
-				break;
-		}
-	}
+	}		
+	switch (shapeNumber){//draw the shape.
+		case 1:
+			DPRINTLN("Case 0 hit");
+			matrix.DrawRectangle(pos1,pos2,pos3,pos4,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+			break;
+		case 2:
+			DPRINTLN("Case 1 hit");
+			matrix.DrawCircle(pos1,pos2,posR,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));  
+			break;
+	} 
 	EVERY_N_SECONDS(14){//wipe the screen
 		turnOff();
 		setLEDs();
@@ -231,13 +225,12 @@ void retractingShape(){
 	int xStart=(MATRIX_WIDTH/2);
 	int	yStart=(MATRIX_HEIGHT/2);
 	
-		step++;
-		//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
-		colorIndex=colorIndex+40;
-		if (colorIndex>255){
-			colorIndex=1;
-		}
-	
+	step++;
+	//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
+	colorIndex=colorIndex+40;
+	if (colorIndex>255){
+		colorIndex=1;
+	}	
 	if (step!=lastStep){
 		if (X1>(MATRIX_WIDTH/2)){
 			X1=0;
@@ -269,9 +262,9 @@ void retractingShape(){
 	}	
 }
 void loop(){
-  //retractingShape();
+  retractingShape();
   //expandingShape();
-  randShapes();
+  //randShapes();
   FastLED.show();   
-  FastLED.delay(200);
+  FastLED.delay(10);
 }

@@ -42,10 +42,10 @@ char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
 int iic = 0; // holder for i2c message
 String string = "";
 int timeSinceBt = 0;
-int autoMode = 1;
+int autoMode = 3;
 int autoSecs = 30;
 byte patternNumber = 0;
-byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
+byte paletteMode = 0;//holds if we sending indivdual colors to the patterns or a palette array.
 byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 byte numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
@@ -625,8 +625,13 @@ void theLights() { //  speckles and strobes
 }
 void rainbow(){
 	// FastLED's built-in rainbow generator
+	static int gHue;
+	gHue++;
+	if (gHue>255){
+		gHue=1;
+	}
 	if (paletteMode==0){
-		fill_rainbow(&(leds[0]), NUM_LEDS, 7);
+		fill_rainbow(&(leds[0]), NUM_LEDS, gHue,7);
 	}
 	else{
 		FL(0,NUM_LEDS){
@@ -973,6 +978,7 @@ void loop(){
 			randPalette();
 		}
 	}		
+	patternNumber=4;
 	paletteSelect();
 	patternSelect();
 	setLEDs();
