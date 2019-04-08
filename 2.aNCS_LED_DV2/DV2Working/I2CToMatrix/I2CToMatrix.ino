@@ -41,12 +41,12 @@ char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
 String string = "";
 int iic = 0; // holder for i2c message
 int timeSinceBt = 0;
-int autoMode = 0;
+int autoMode = 2;
 int autoSecs = 5;//time between autoMode changes.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 int mirrorNumber = 0;//mirror mode number.
 int standardDelay = 20;//initial delay that the maths of the variable below relates to.
-int variableDelay = 0;//0..256 visible to parser and used to set FastLED.delay values.
+int variableDelay = 128;//0..256 visible to parser and used to set FastLED.delay values.
 uint8_t brightness = 255;
 byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
@@ -438,13 +438,7 @@ void setup() {
 	ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
 	ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
 	ScrollingMsg.SetFrameRate(2);
-	FastLED.showColor(CRGB::Red);
 	delay(500);
-	FastLED.showColor(CRGB::Green);
-	delay(500);
-	FastLED.showColor(CRGB::Blue);
-	delay(500);
-	FastLED.show();
 	DPRINTLN("SETUP");
 }
 void(* resetFunc) (void) = 0; // Software reset hack
@@ -577,17 +571,17 @@ void parser() {
 	}
 }
 ////////////////////////start of patterns///////////////////////
-void turnOn() {// for each LED turn it to ourCol.
-	FL(0, NUM_LEDS) {
-		matrix(i) = ourCol;
-	}
-	FastLED.delay(standardDelay);
-}
 void turnOff() {//for each LED turn off.
 	FL(0, NUM_LEDS) {
 		matrix(i) = CRGB( 0, 0, 0);
-		FastLED.delay(standardDelay);
+		//FastLED.delay(standardDelay);
 	}
+}
+void turnOn() {// for each LED turn it to ourCol.
+  FL(0, NUM_LEDS) {
+    matrix(i) = ourCol;
+  }
+ // FastLED.delay(standardDelay);
 }
 void randPattern(){//choses a random pattern
 	patternNumber = random(2, 13);
@@ -600,7 +594,7 @@ void randPalette(){
 	DPRINTLN(paletteNumber);
 }
 void randMirror(){
-	mirrorNumber=random(0,4);
+	mirrorNumber=random(0,3);
 	DPRINT("RANDOM MIRROR ");
 	DPRINTLN(mirrorNumber);
 }
@@ -622,6 +616,7 @@ void theLights() { //  speckles and strobes
 	else{
 		matrix(pos) = ourCol;
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void rainbow(){
@@ -647,6 +642,7 @@ void rainbow(){
 			matrix(i)=ColorFromPalette(currentPalette,pHue,brightness,currentBlending);
 		}
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void addGlitter( fract8 chanceOfGlitter){
@@ -655,12 +651,14 @@ void addGlitter( fract8 chanceOfGlitter){
 		matrix(random16(0,NUM_LEDS))+=CRGB::White;//possible error
 	}
 	FastLED.delay(myDelay);
+	mirrorSelect();
 }
 void rainbowWithGlitter(){
 	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
 	// built-in FastLED rainbow, plus some random sparkly glitter
 	rainbow();
 	addGlitter(80);
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void confetti(){
@@ -679,6 +677,7 @@ void confetti(){
 		matrix(pos) = ourCol;
 		matrix(pos) += CHSV( colorIndex + random8(64), 200, 255);
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void sinelon(){
@@ -697,6 +696,7 @@ void sinelon(){
 		matrix(pos) = ourCol;
 		matrix(pos) += CHSV( colorIndex, 255, 192);
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void bpm(){
@@ -723,6 +723,7 @@ void bpm(){
 			matrix(i) = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
 		}
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void simpleStrobe () {
@@ -754,6 +755,7 @@ void simpleStrobe () {
 		uint8_t strobesPerPosition = 2; // try 1..4
 		strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void strobeCore(uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats, uint8_t huedelta) {
@@ -885,6 +887,7 @@ void bouncingTrails(){
 		}
 	}
 	lastCount=counter;
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void scrollText(){
@@ -940,6 +943,7 @@ void randShapes(){
 				break;
 			}
 	} 
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 int findPos(int a, int b){
@@ -1012,6 +1016,7 @@ void expandingShape(){
 		}
 		step=lastStep;
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 void retractingShape(){
@@ -1074,6 +1079,7 @@ void retractingShape(){
 		}
 		lastStep=myStep;
 	}
+	mirrorSelect();
 	FastLED.delay(myDelay);
 }
 ///////////////////////////end of patterns///////////////////////
@@ -1192,10 +1198,10 @@ void mirrorSelect(){
 			matrix.QuadrantMirror();
 			break;
 		case 2:
-			matrix.QuadrantRotateMirror();
+			matrix.VerticalMirror();
 			break;
 		case 3:
-			matrix.VerticalMirror();
+			matrix.HorizontalMirror();
 			break;
 	}
 }
@@ -1230,8 +1236,6 @@ void loop(){
 			randPalette();
 		}
 	}
-	patternNumber=11;
 	paletteSelect();
 	patternSelect();
-	mirrorSelect();
 }
