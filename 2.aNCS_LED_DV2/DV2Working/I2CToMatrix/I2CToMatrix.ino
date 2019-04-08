@@ -41,7 +41,7 @@ char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
 int iic = 0; // holder for i2c message
 String string = "";
 int timeSinceBt = 0;
-int autoMode = 2;
+int autoMode = 0;
 int autoSecs = 10;
 byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
@@ -51,6 +51,7 @@ int colorIndex = 0;//holds the position in the palette array for the color to sh
 uint8_t brightness = 255;
 int mirrorNumber = 0;
 int standardDelay = 20;
+int variableDelay = 128;
 
 DEFINE_GRADIENT_PALETTE( Pastel1_08_gp ) {//group 1
 	0, 244, 118, 98,
@@ -559,7 +560,16 @@ void parser() {
 			mirrorNumber = mir.toInt(); // Its going to be an integer. its the mirror number.
 			DPRINTLN(mirrorNumber);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
-		}		
+		}
+		if (subs.startsWith("Del")) { // next value is the length of the variableDelay
+			DPRINT("Del ");
+			String del= string.substring(0, string.indexOf(",")); // get  everything until the comma
+			DPRINT(del);
+			DPRINT(" - ");
+			variableDelay = constrain(del.toInt(),0,256); // Its going to be an integer. its the mirror number.
+			DPRINTLN(variableDelay);
+			string.remove(0, string.indexOf(",") + 1); // Remove the value
+		}			
 		DPRINTLN(string.length()); // prints the length of the command each iteration  
 		DPRINT("STR = "); // prints after length < 1
 		DPRINTLN(string);
@@ -594,19 +604,12 @@ void randMirror(){
 	DPRINT("RANDOM MIRROR ");
 	DPRINTLN(mirrorNumber);
 }
-void scrollText(){
-	if (ScrollingMsg.UpdateText() == -1) { // if end of text
-		int Size = 0;
-		while (TxtAncs[Size] != '\0') Size++;
-		ScrollingMsg.SetText((unsigned char *)TxtAncs,Size);
-	}
-	else
-	FastLED.show();
-}
+
 void solidWhite(){
 	fill_solid(&(matrix(0)),NUM_LEDS,CRGB::White);//possible error
 }
 void theLights() { //  speckles and strobes
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
 	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 10);
 	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
@@ -619,13 +622,14 @@ void theLights() { //  speckles and strobes
 	else{
 		matrix(pos) = ourCol;
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void rainbow(){
 	// FastLED's built-in rainbow generator
 	static int gHue;//rotates through the palette.
 	static int pHue=0;
 	static int hueStore;
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
 	gHue++;
 	if (gHue>256){
 		gHue=0;
@@ -643,22 +647,25 @@ void rainbow(){
 			matrix(i)=ColorFromPalette(currentPalette,pHue,brightness,currentBlending);
 		}
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void addGlitter( fract8 chanceOfGlitter){
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
 	if (random8()<chanceOfGlitter) {
 		matrix(random16(0,NUM_LEDS))+=CRGB::White;//possible error
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void rainbowWithGlitter(){
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
 	// built-in FastLED rainbow, plus some random sparkly glitter
 	rainbow();
 	addGlitter(80);
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void confetti(){
 	// random colored speckles that blink in and fade smoothly
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
 	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 10);
 	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
@@ -672,10 +679,11 @@ void confetti(){
 		matrix(pos) = ourCol;
 		matrix(pos) += CHSV( colorIndex + random8(64), 200, 255);
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void sinelon(){
 	// a colored dot sweeping back and forth, with fading trails
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
 	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 20);
 	int pos = beatsin16( 13, 0, NUM_LEDS - 1 ) ;
 	if (paletteMode==1){
@@ -689,11 +697,15 @@ void sinelon(){
 		matrix(pos) = ourCol;
 		matrix(pos) += CHSV( colorIndex, 255, 192);
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void bpm(){
 	// colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-	uint8_t BeatsPerMinute = 62;
+	int myDelayLow = standardDelay/6;
+	int myDelayHigh = standardDelay*6;
+	int myDelay = map(variableDelay,0,256,myDelayLow,myDelayHigh);
+	int beatDelay = map(myDelay,myDelayLow,myDelayHigh,myDelayHigh,myDelayLow);
+	uint8_t BeatsPerMinute = beatDelay;
 	CRGBPalette16 palette = PartyColors_p;
 	uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
 	FL(0, NUM_LEDS) { //9948 
@@ -711,9 +723,10 @@ void bpm(){
 			matrix(i) = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
 		}
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void simpleStrobe () {
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*1.5));
 	fill_solid(&(matrix(0)), NUM_LEDS, CRGB::Black);
 	const uint8_t kStrobeCycleLength = 6; // light every Nth frame
 	static uint8_t sStrobePhase = 0;
@@ -737,7 +750,7 @@ void simpleStrobe () {
 		uint8_t strobesPerPosition = 2; // try 1..4
 		strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
 	}
-	FastLED.delay(standardDelay*0.75);
+	FastLED.delay(myDelay);
 }
 void strobeCore(uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats, uint8_t huedelta) {
 	static uint8_t sRepeatCounter = 0;
@@ -787,7 +800,7 @@ void bouncingTrails(){
 	static byte upReversed=0;//if up hits the top of the strip, sets this to 1 and and runs back down the strip
 	static byte downReversed=0;//as above, in reverse
 	static int pos=0;//holds the initial position from which the two trails emerge
-  
+	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*6));
 	counter++;
 	if (counter==(MATRIX_WIDTH*4)){//used a multiple of 2 so that a new point s formed when the two trails are close to each other (looks better in my opinon)
 		counter=0;
@@ -849,9 +862,19 @@ void bouncingTrails(){
 		}
 	}
 	lastCount=counter;
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
+}
+void scrollText(){
+	if (ScrollingMsg.UpdateText() == -1) { // if end of text
+		int Size = 0;
+		while (TxtAncs[Size] != '\0') Size++;
+		ScrollingMsg.SetText((unsigned char *)TxtAncs,Size);
+	}
+	else
+	FastLED.show();
 }
 void randShapes(){
+	int myDelay = map(variableDelay,0,256,(standardDelay*6),(standardDelay*40));
 	int pos1,pos2,pos3,pos4,posR;
 	static int shapeNumber;
 	fadeToBlackBy(&(matrix(0)), NUM_LEDS,40);
@@ -925,7 +948,7 @@ void randShapes(){
 				break;
 			}
 	} 
-	FastLED.delay(standardDelay*6);
+	FastLED.delay(myDelay);
 }
 void expandingShape(){
 	static int step,lastStep,R;
@@ -936,7 +959,7 @@ void expandingShape(){
 	static int Y2=(MATRIX_HEIGHT/2);
 	int xStart=(MATRIX_WIDTH/2);
 	int	yStart=(MATRIX_HEIGHT/2);
-		
+	int myDelay = map(variableDelay,0,256,(standardDelay/20),(standardDelay*8));	
 	step++;
 	//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
 	colorIndex=colorIndex+50;
@@ -983,7 +1006,7 @@ void expandingShape(){
 		}
 		step=lastStep;
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 void retractingShape(){
 	static int step,lastStep,R;
@@ -994,7 +1017,7 @@ void retractingShape(){
 	static int Y2=MATRIX_HEIGHT;
 	int xStart=(MATRIX_WIDTH/2);
 	int	yStart=(MATRIX_HEIGHT/2);
-	
+	int myDelay = map(variableDelay,0,256,(standardDelay),(standardDelay*8));	
 	step++;
 	//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
 	colorIndex=colorIndex+40;
@@ -1041,7 +1064,7 @@ void retractingShape(){
 		}
 		step=lastStep;
 	}
-	FastLED.delay(standardDelay);
+	FastLED.delay(myDelay);
 }
 ///////////////////////////end of patterns///////////////////////
 void paletteSelect(){
@@ -1197,6 +1220,7 @@ void loop(){
 			randPalette();
 		}
 	}
+	patternNumber=13;
 	paletteSelect();
 	patternSelect();
 	mirrorSelect();

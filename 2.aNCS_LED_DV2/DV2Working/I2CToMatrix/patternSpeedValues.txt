@@ -1,0 +1,12 @@
+pattern 2 initial = 20 slowest = *8 fastest = /8
+pattern 3 initial =20 slowest = *8 fastest = /8
+pattern 4 initial =20 slowest = *8 fastest = /8
+pattern 5 initial =20 slowest = *8 fastest = /8
+pattern 6 initial =20 slowest = *8 fastest = /8
+pattern 7 initial =20 slowest = *6 fastest = /6
+pattern 8(strobe)initial = 20 slowest = *1.5 fastest = /8
+pattern 9 =initial 20 slowest = *8 fastest = /6
+pattern 10 (text)= not affected //////////////////////////////////
+pattern 11 (drawShape)initial = 20*6 slowest = *40 fastest = *6
+pattern 12 initial  = 20  slowest = *8 fastest = /20
+pattern 13 initial = 20 slowest = *8 fastest = *1
