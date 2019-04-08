@@ -1013,7 +1013,8 @@ void expandingShape(){
 	FastLED.delay(myDelay);
 }
 void retractingShape(){
-	static int step,lastStep,R;
+	static int myStep,lastStep;
+	static int R=(MATRIX_WIDTH/2);
 	static int shapeNumber=0;
 	static int X1=1;
 	static int Y1=1;
@@ -1021,20 +1022,23 @@ void retractingShape(){
 	static int Y2=MATRIX_HEIGHT;
 	int xStart=(MATRIX_WIDTH/2);
 	int	yStart=(MATRIX_HEIGHT/2);
-	int myDelay = map(variableDelay,0,256,(standardDelay),(standardDelay*8));	
-	step++;
+	int myDelay=map(variableDelay,0,256,(standardDelay),(standardDelay*8));	
+	myStep++;
+	if(lastStep>16){
+		myStep=1;
+		shapeNumber=random8(0,2);
+	}
 	//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
 	colorIndex=colorIndex+40;
 	if (colorIndex>255){
 		colorIndex=1;
 	}	
-	if (step!=lastStep){
-		if (X1>(MATRIX_WIDTH/2)){
+	if (myStep!=lastStep){
+		if (Y1>=(MATRIX_HEIGHT/2)){
 			X1=0;
 			Y1=0;
 			X2=MATRIX_WIDTH;
 			Y2=MATRIX_HEIGHT;
-			//shapeNumber=random8(0,2);
 		}
 		else{
 			X1++;
@@ -1042,12 +1046,12 @@ void retractingShape(){
 			X2--;
 			Y2--;
 		}
-		if (R<(MATRIX_WIDTH/2)){
-			R=R+1;
+		if (R<=(MATRIX_WIDTH/2)){
+			R--;
 		}
-		else{
-			R=1;
-			//shapeNumber=random8(0,2);
+		if (R==1){
+			R=(MATRIX_WIDTH/2);
+			shapeNumber=random8(0,2);
 		}
 		if (paletteMode==1){
 			if(shapeNumber==0){
@@ -1066,7 +1070,7 @@ void retractingShape(){
 				matrix.DrawCircle(xStart,yStart,R,ourCol);
 			}
 		}
-		step=lastStep;
+		lastStep=myStep;
 	}
 	FastLED.delay(myDelay);
 }
