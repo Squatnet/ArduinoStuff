@@ -38,20 +38,20 @@ CRGB ourCol = CRGB(255, 255, 255);
 CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
 char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
-int iic = 0; // holder for i2c message
 String string = "";
+int iic = 0; // holder for i2c message
 int timeSinceBt = 0;
 int autoMode = 0;
-int autoSecs = 10;
+int autoSecs = 5;//time between autoMode changes.
+int colorIndex = 0;//holds the position in the palette array for the color to show.
+int mirrorNumber = 0;//mirror mode number.
+int standardDelay = 20;//initial delay that the maths of the variable below relates to.
+int variableDelay = 128;//0..256 visible to parser and used to set FastLED.delay values.
+uint8_t brightness = 255;
 byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 byte numberOfPalettes =18;//total number of palettes available -1.
-int colorIndex = 0;//holds the position in the palette array for the color to show.
-uint8_t brightness = 255;
-int mirrorNumber = 0;
-int standardDelay = 20;
-int variableDelay = 128;
 
 DEFINE_GRADIENT_PALETTE( Pastel1_08_gp ) {//group 1
 	0, 244, 118, 98,
@@ -731,6 +731,10 @@ void simpleStrobe () {
 	const uint8_t kStrobeCycleLength = 6; // light every Nth frame
 	static uint8_t sStrobePhase = 0;
 	sStrobePhase = sStrobePhase + 1;
+	colorIndex++;
+	if(colorIndex>256){
+		colorIndex=1;
+	}
 	if( sStrobePhase >= kStrobeCycleLength ) { 
 		sStrobePhase = 0; 
 	}
@@ -1220,7 +1224,6 @@ void loop(){
 			randPalette();
 		}
 	}
-	patternNumber=13;
 	paletteSelect();
 	patternSelect();
 	mirrorSelect();
