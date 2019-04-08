@@ -829,31 +829,50 @@ void bouncingTrails(){
 		}
 	}  
     if ((counter!=1)&&(lastCount!=counter)){//this set of if statements increment the trailing dots, and tarcks if they are reversed
-		if ((posUp!=MATRIX_WIDTH)&&(upReversed==0)){
-			posUp++;
-		}
-		if (posUp==MATRIX_WIDTH){
-			upReversed=1;
-		}
-		if ((posUp!=0)&&(upReversed==1)){
-			posUp--;
-		}
-		if (posUp==0){
-			upReversed=0;
-		}
-		if ((posDown!=0)&&(downReversed==0)){
-			posDown--;
-		}
-		if (posDown==MATRIX_WIDTH){
-			downReversed=0;
-		}
-		if (posDown==0){
-			downReversed=1;
-			posDown++;
-		}
-		if ((posDown!=0)&&(downReversed==1)){
-			posDown++;
-		}
+		    switch (upReversed){
+      case  0:
+        if(posUp!=MATRIX_WIDTH-1){
+          posUp++;
+          break;
+        }
+        else{
+          upReversed=1;
+          posUp--;
+          break;
+        }
+      case 1:
+        if(posUp!=0){
+          posUp--;
+          break;
+        }
+        else{
+          upReversed=0;
+          posUp++;
+          break;
+        }
+    }
+    switch (downReversed){
+      case 0:
+        if (posDown!=0){
+          posDown--;
+          break;
+        }
+        else{
+          downReversed=1;
+          posDown++;
+          break;
+        }
+      case 1:
+        if (posDown!=MATRIX_WIDTH-1){
+          posDown++;
+          break;
+        }
+        else{
+          downReversed=0;
+          posDown--;
+          break;
+        }
+    }
 		FL(0,MATRIX_HEIGHT){
 			if (paletteMode==1){
 				matrix((posUp+(i*MATRIX_WIDTH)))=ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
@@ -1228,6 +1247,7 @@ void loop(){
 			randPalette();
 		}
 	}
+	patternNumber=9;
 	paletteSelect();
 	patternSelect();
 	mirrorSelect();
