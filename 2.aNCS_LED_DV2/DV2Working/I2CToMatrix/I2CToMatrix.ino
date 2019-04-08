@@ -46,7 +46,7 @@ int autoSecs = 5;//time between autoMode changes.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 int mirrorNumber = 0;//mirror mode number.
 int standardDelay = 20;//initial delay that the maths of the variable below relates to.
-int variableDelay = 128;//0..256 visible to parser and used to set FastLED.delay values.
+int variableDelay = 0;//0..256 visible to parser and used to set FastLED.delay values.
 uint8_t brightness = 255;
 byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
@@ -898,80 +898,63 @@ void scrollText(){
 }
 void randShapes(){
 	int myDelay = map(variableDelay,0,256,(standardDelay*6),(standardDelay*40));
-	int pos1,pos2,pos3,pos4,posR;
+	int pos[5];
 	static int shapeNumber;
 	fadeToBlackBy(&(matrix(0)), NUM_LEDS,40);
-	shapeNumber=random8(1,3);//square or circle +1 cus ? but works.
-	colorIndex=random8(1,255);//color of shape
-	pos1=random8(0,MATRIX_WIDTH);//starting x coord
-	pos2=random8(0,MATRIX_HEIGHT);//starting y coord
-	pos3=random8(0,MATRIX_WIDTH);//ending x coord
-	pos4=random8(0,MATRIX_HEIGHT);//ending y coord
-	posR=random8(1,(MATRIX_HEIGHT/2));//radius for circle
-	if (shapeNumber==1){//purpose i want there to be at least 1 line of blank pixles in each rectangle
-	//draw, so i check if the dfference in coordinates allows this, and if not edit to do so.
-		if (pos1>=pos3){
-			if((pos1-pos3)<2){
-				if ((pos1-pos3)==1){
-					pos1=pos1+1;
-				}
-				else{
-					pos1=pos1+2;
-				}	
-			}
+	shapeNumber=random8(0,2);
+	colorIndex=random8(1,256);
+	FL(0,5){
+		if (i==4){
+			pos[i]=random8(1,(MATRIX_HEIGHT/2));
 		}
-		if (pos3>=pos1){
-			if((pos3-pos1)<2){
-				if ((pos3-pos1)==1){
-					pos3=pos3+1;
-				}
-				else{
-					pos3=pos3+2;
-				}	
-			}
+		if ((i%2)&&(i!=4)){
+			pos[i-1]=random8(0,MATRIX_WIDTH);
 		}
-		if (pos2>=pos4){
-			if((pos2-pos4)<2){
-				if ((pos2-pos4)==1){
-					pos2=pos2+1;
-				}
-				else{
-					pos2=pos2+2;
-				}	
-			}
+		else{
+			pos[i-1]=random8(0,MATRIX_HEIGHT);
 		}
-		if (pos4>=pos2){
-			if((pos4-pos2)<2){
-				if ((pos4-pos2)==1){
-					pos4=pos4+1;
-				}
-				else{
-					pos4=pos4+2;
-				}	
-			}
-		}
-	}		
+	}
+	if(shapeNumber==0){
+    pos[0]=(findPos(pos[0],pos[2]));
+    pos[1]=(findPos(pos[1],pos[3]));
+    pos[2]=(findPos(pos[2],pos[0]));
+    pos[3]=(findPos(pos[3],pos[1]));
+	}
 	switch (shapeNumber){//draw the shape.
+		case 0:
+			if (paletteMode==1){
+				matrix.DrawRectangle(pos[0],pos[1],pos[2],pos[3],ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+				break;
+			}
+			else{
+				matrix.DrawRectangle(pos[0],pos[1],pos[2],pos[3],ourCol);
+				break;
+			}
 		case 1:
 			if (paletteMode==1){
-				matrix.DrawRectangle(pos1,pos2,pos3,pos4,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));
+				matrix.DrawCircle(pos[0],pos[1],pos[4],ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));  
 				break;
 			}
 			else{
-				matrix.DrawRectangle(pos1,pos2,pos3,pos4,ourCol);
-				break;
-			}
-		case 2:
-			if (paletteMode==1){
-				matrix.DrawCircle(pos1,pos2,posR,ColorFromPalette(currentPalette,colorIndex,brightness,currentBlending));  
-				break;
-			}
-			else{
-				matrix.DrawCircle(pos1,pos2,posR,ourCol); 
+				matrix.DrawCircle(pos[0],pos[2],pos[4],ourCol); 
 				break;
 			}
 	} 
 	FastLED.delay(myDelay);
+}
+int findPos(int a, int b){
+  if (a >= b){
+    if((a-b)<2){
+      if((a+b)==1){
+        a=a+1;
+        return(a);
+      }
+      else{
+        a=a+2;
+        return(a); 
+      }
+    }
+  }
 }
 void expandingShape(){
 	static int step,lastStep,R;
@@ -1247,7 +1230,7 @@ void loop(){
 			randPalette();
 		}
 	}
-	patternNumber=9;
+	patternNumber=11;
 	paletteSelect();
 	patternSelect();
 	mirrorSelect();
