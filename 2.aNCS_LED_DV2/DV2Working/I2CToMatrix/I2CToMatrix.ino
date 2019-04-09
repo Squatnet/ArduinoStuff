@@ -37,7 +37,7 @@ cLEDText ScrollingMsg;
 CRGB ourCol = CRGB(255, 255, 255);
 CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
-char TxtAncs[160] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.ANCS.GQ    "};
+char TxtAncs[] = {" ANCS - CUSTOM BUILT AUDIO / VISUAL - WWW.AUTOAV.GQ "};
 String string = "";
 int iic = 0; // holder for i2c message
 int timeSinceBt = 0;
@@ -46,7 +46,7 @@ int autoSecs = 5;//time between autoMode changes.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 int mirrorNumber = 0;//mirror mode number.
 int standardDelay = 20;//initial delay that the maths of the variable below relates to.
-int variableDelay =128;//0..256 visible to parser and used to set FastLED.delay values.
+int variableDelay =0;//0..256 visible to parser and used to set FastLED.delay values.
 uint8_t brightness = 255;
 byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
@@ -895,13 +895,16 @@ void bouncingTrails(){
 	FastLED.delay(myDelay);
 }
 void scrollText(){
+	int myDelay=map(variableDelay,0,256,1,10);
+  ScrollingMsg.SetFrameRate(myDelay);
 	if (ScrollingMsg.UpdateText() == -1) { // if end of text
 		int Size = 0;
 		while (TxtAncs[Size] != '\0') Size++;
 		ScrollingMsg.SetText((unsigned char *)TxtAncs,Size);
 	}
-	else
+	else{
 	FastLED.show();
+  }
 }
 void randShapes(){
 	int myDelay = map(variableDelay,0,256,(standardDelay*6),(standardDelay*40));
