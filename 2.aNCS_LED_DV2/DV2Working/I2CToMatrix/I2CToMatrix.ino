@@ -542,6 +542,10 @@ void parser() {
 			String Msg= string.substring(0, string.indexOf(",")); // get everything until the comma
 			DPRINT(Msg);
 			DPRINT(" - ");
+			/*FL(0,(sizeof(TxtAncs))){
+				TxtAncs[i]='\0';
+			}*/
+			memset(TxtAncs,0,sizeof TxtAncs);
 			string.toCharArray(TxtAncs, string.length());
 			DPRINTLN(TxtAncs);
 			string.remove(0, string.indexOf(",") + 1); // Remove the value
