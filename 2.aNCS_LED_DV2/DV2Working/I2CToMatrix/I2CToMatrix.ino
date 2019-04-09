@@ -46,7 +46,7 @@ int autoSecs = 5;//time between autoMode changes.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
 int mirrorNumber = 0;//mirror mode number.
 int standardDelay = 20;//initial delay that the maths of the variable below relates to.
-int variableDelay = 128;//0..256 visible to parser and used to set FastLED.delay values.
+int variableDelay =128;//0..256 visible to parser and used to set FastLED.delay values.
 uint8_t brightness = 255;
 byte patternNumber = 0;
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
@@ -604,7 +604,8 @@ void solidWhite(){
 }
 void theLights() { //  speckles and strobes
 	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
-	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 10);
+	int myFadeOut = map(variableDelay,0,256,(standardDelay*8),(standardDelay/8));
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS, myFadeOut);
 	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
 		colorIndex++;
@@ -664,7 +665,8 @@ void rainbowWithGlitter(){
 void confetti(){
 	// random colored speckles that blink in and fade smoothly
 	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
-	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 10);
+	int myFadeOut = map(variableDelay,0,256,(standardDelay*8),(standardDelay/8));
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS, myFadeOut);
 	int pos = random16(0, NUM_LEDS);
 	if (paletteMode==1){
 		colorIndex++;
@@ -683,7 +685,8 @@ void confetti(){
 void sinelon(){
 	// a colored dot sweeping back and forth, with fading trails
 	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*8));
-	fadeToBlackBy(&(matrix(0)), NUM_LEDS, 20);
+	int myFadeOut = map(variableDelay,0,256,(standardDelay*8),(standardDelay/8));
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS, myFadeOut);
 	int pos = beatsin16( 13, 0, NUM_LEDS - 1 ) ;
 	if (paletteMode==1){
 		colorIndex++;
@@ -807,12 +810,13 @@ void bouncingTrails(){
 	static byte downReversed=0;//as above, in reverse
 	static int pos=0;//holds the initial position from which the two trails emerge
 	int myDelay = map(variableDelay,0,256,(standardDelay/8),(standardDelay*6));
+	int myFadeOut = map(variableDelay,0,256,(standardDelay*6),(standardDelay/8));
 	counter++;
 	if (counter==(MATRIX_WIDTH*4)){//used a multiple of 2 so that a new point s formed when the two trails are close to each other (looks better in my opinon)
 		counter=0;
 	}
 	if (lastCount!=counter){//if the counter has progressed
-		fadeToBlackBy(&(matrix(0)), NUM_LEDS, 60);
+		fadeToBlackBy(&(matrix(0)), NUM_LEDS, myFadeOut);
 		paletteRef=(counter*5);//used a multiple here as we want to adress as broad a rang from 0 - 256 as possible, with more LEDs be worth lowering this value.
 	}
 	if ((counter==1)&&(lastCount!=counter)){   
@@ -901,9 +905,10 @@ void scrollText(){
 }
 void randShapes(){
 	int myDelay = map(variableDelay,0,256,(standardDelay*6),(standardDelay*40));
+	int myFadeOut = map(variableDelay,0,256,(standardDelay*40),(standardDelay*6));
 	int pos[5];
 	static int shapeNumber;
-	fadeToBlackBy(&(matrix(0)), NUM_LEDS,40);
+	fadeToBlackBy(&(matrix(0)), NUM_LEDS,myFadeOut);
 	shapeNumber=random8(0,2);
 	colorIndex=random8(1,256);
 	FL(0,5){
@@ -969,7 +974,8 @@ void expandingShape(){
 	static int Y2=(MATRIX_HEIGHT/2);
 	int xStart=(MATRIX_WIDTH/2);
 	int	yStart=(MATRIX_HEIGHT/2);
-	int myDelay = map(variableDelay,0,256,(standardDelay/20),(standardDelay*8));	
+	int myDelay = map(variableDelay,0,256,(standardDelay/20),(standardDelay*8));
+	int myFadeOut = map(variableDelay,0,256,(standardDelay*8),(standardDelay/20));
 	step++;
 	//shapeNumber=random8(0,2);//square or circle +1 cus ? but works.
 	colorIndex=colorIndex+50;
@@ -1006,7 +1012,7 @@ void expandingShape(){
 			}
 		}
 		else{
-			fadeToBlackBy(&(matrix(0)), NUM_LEDS,40);
+			fadeToBlackBy(&(matrix(0)), NUM_LEDS,myFadeOut);
 			if(shapeNumber==0){
 				matrix.DrawRectangle(X1,Y1,X2,Y2,ourCol);
 			}
@@ -1030,6 +1036,7 @@ void retractingShape(){
 	int xStart=(MATRIX_WIDTH/2);
 	int	yStart=(MATRIX_HEIGHT/2);
 	int myDelay=map(variableDelay,0,256,(standardDelay),(standardDelay*8));	
+	int myFadeOut = map(variableDelay,0,256,(standardDelay*8),(standardDelay));
 	myStep++;
 	if(lastStep>16){
 		myStep=1;
