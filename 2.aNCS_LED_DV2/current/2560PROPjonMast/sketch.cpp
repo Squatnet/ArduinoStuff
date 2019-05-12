@@ -26,8 +26,9 @@
 uint32_t t_millis; // tick tock
 uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
-int debugMode = 1 ; // Set to 1 for debug on
-
+int debugMode = 1; // Set to 1 for debug on
+int adminLock = 0;
+int udpId = 0;
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
 // Declare device Struct
@@ -35,9 +36,15 @@ struct device { // struct for a device
   int id = NULL;// device id num
   String namee = NULL; // device name
 };
+struct deviceStr {
+  int id = NULL;
+  String namee = NULL;
+  int attachedStr = NULL;
+};
+
 // declare an array of our devices and a tracking number.
 // Strips
-device strips[100];
+deviceStr strips[100];
 int numStrip = 0;
 // TFTs
 device term[30];
@@ -51,6 +58,7 @@ int numRouter = 0;
 // only ever going to be one of each of these so no need for an array
 // AS YET UNIMPLEMENTED
 device wizNetIn;
+device UdpIn;
 device wizNetOut;
 
 bool PjonLedOn = false; // as yet not working
@@ -72,6 +80,7 @@ void compressStruct(String type){
     DPRINTLN(i);
     strips[i].id = strips[i+1].id; // Copy the next record downs id
     strips[i].namee = strips[i+1].namee; // Copy its name
+    strips[i].attachedStr = strips[i+1].attachedStr;
     strips[i+1].id = NULL; // Make the next record null
     DPRINT("got name ");
     DPRINTLN(strips[i].namee);
@@ -149,6 +158,7 @@ void removeDevice(int id){
           DPRINTLN(" is a Strip");
           strips[i].id = NULL;
           strips[i].namee = ""; // Assign a NULL value... Bye!
+          strips[i].attachedStr = NULL;
           compressStruct("Str"); // Run the function to remove gaps in the array. sending the type.
         } // end if id=id ;
       } // we checked every strip...
@@ -299,12 +309,15 @@ int * findDeviceByName(String type, String nme){
   if(type.startsWith("Al")){
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
       DPRINT("Stepped into string");
-      device dev = strips[i]; // get a device to compare
+      deviceStr dev = strips[i]; // get a device to compare
       DPRINT("Strip ");
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
       DFLUSH();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
         DPRINT("found strip with name ");
         DPRINTLN(nme);
@@ -318,6 +331,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if(nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Matrix with name ");
         DPRINTLN(nme);
@@ -332,6 +348,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(" - ");
       DPRINT(dev.namee);
       DPRINTLN();
+      if( nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
@@ -345,6 +364,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
@@ -354,11 +376,14 @@ int * findDeviceByName(String type, String nme){
   else if (type.startsWith("St")){ // look at the right array
     for(int i=0;i<numStrip;i++){ // iterate all known devices in array
       DPRINT("Stepped into string");
-      device dev = strips[i]; // get a device to compare
+      deviceStr dev = strips[i]; // get a device to compare
       DPRINT("Strip ");
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if( nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee.compareTo(String(nme))== 0){ // an exact match gets you a 0
         DPRINT("found strip with name ");
         DPRINTLN(nme);
@@ -374,6 +399,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Matrix with name ");
         DPRINTLN(nme);
@@ -390,6 +418,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(" - ");
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
@@ -405,6 +436,9 @@ int * findDeviceByName(String type, String nme){
       DPRINT(dev.id);
       DPRINT(dev.namee);
       DPRINTLN();
+      if (nme.startsWith("All")){
+        queue.push(dev.id);
+      }
       if (dev.namee == String(nme)){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
@@ -478,16 +512,78 @@ void sendMessage(){
   msgSwitch = 0; //reset
 }
 // Function to register with the bluetooth app
-void regWithApp(){
-	String BtMessge = "{Nums,";
-	BtMessge.concat(numStrip);
-  BtMessge.concat(",");
-  BtMessge.concat(numMatrix);
-  BtMessge.concat(",");
-  BtMessge.concat(numTerm);
-  BtMessge.concat(",");
-  BtMessge.concat(numRouter);
-	BtMessge.concat("}} ");
+void regWithApp(String arg){
+  String BtMessge = "";
+  if(arg.startsWith("Ini")){
+    BtMessge = "{\"Nums\":[";
+  	BtMessge.concat(numStrip);
+    BtMessge.concat(",");
+    BtMessge.concat(numMatrix);
+    BtMessge.concat(",");
+    BtMessge.concat(numTerm);
+    BtMessge.concat(",");
+    BtMessge.concat(numRouter);
+	  BtMessge.concat("]} ");
+  }
+  else if (arg.startsWith("Dev")){
+    DPRINTLN(arg);
+    arg.remove(0,arg.indexOf(",")+1);
+    DPRINTLN(arg);
+    BtMessge = "{\"Dev\":[";
+    String typ = arg.substring(0,arg.indexOf(","));
+    arg.remove(0,arg.indexOf(",")+1);
+    DPRINTLN(arg);
+    if(!arg.endsWith(","))arg.concat(",");
+    if(typ.startsWith("Str")){
+      BtMessge.concat("\"Str\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(strips[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(strips[i].id);
+      BtMessge.concat(",");
+      BtMessge.concat(strips[i].attachedStr);
+      BtMessge.concat("]}");
+    }
+    if(typ.startsWith("Mat")){
+      BtMessge.concat("\"Mat\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(matrix[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(matrix[i].id);
+      BtMessge.concat("]}");
+    }
+    if(typ.startsWith("Ter")){
+      BtMessge.concat("\"Ter\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(term[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(term[i].id);
+      BtMessge.concat("]}");
+    }
+    if(typ.startsWith("Rtr")){
+      BtMessge.concat("\"Rtr\",");
+      String SS = arg.substring(0,arg.indexOf(","));
+      int i = SS.toInt();
+      BtMessge.concat(i);
+      BtMessge.concat(",\"");
+      BtMessge.concat(router[i].namee);
+      BtMessge.concat("\",");
+      BtMessge.concat(router[i].id);
+      BtMessge.concat("]}");
+    }
+    else{
+      DPRINTLN(typ);
+    }
+  }
   DPRINTLN(BtMessge);
 	hc05.println(BtMessge);
 }
@@ -498,13 +594,17 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       reg.remove(0,reg.indexOf(',')+1); // removes the type and the trailing comma
       DPRINTLN(reg); // now its just Name
       strips[numStrip].id = id; // store the ID
-      strips[numStrip].namee = reg; // store the name
+      strips[numStrip].namee = reg.substring(0,reg.indexOf(",")); // store the name
+      reg.remove(0,reg.indexOf(',')+1);
+      strips[numStrip].attachedStr = reg.toInt();
       DPRINT("Strip : ");
       DPRINT(numStrip);
       DPRINT(" name : ");
       DPRINT(strips[numStrip].namee);
       DPRINT(" id : ");
       DPRINTLN(strips[numStrip].id);
+      DPRINT(" attachedStr : ");
+      DPRINTLN(strips[numStrip].attachedStr);
       numStrip++; // We have 1 more strip
   }
   else if( reg.startsWith("Mat")){
@@ -563,11 +663,23 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       DPRINT(" id : ");
       DPRINTLN(wizNetIn.id);
   }
+  else if( reg.startsWith("UDP")){
+	  DPRINT(reg);
+	  reg.remove(0,reg.indexOf(',')+1);
+	  UdpIn.id = id;
+	  UdpIn.namee = reg;
+	  udpId = id;
+	  msgSendId = id;
+	  msgToSend = "Lck,0";
+    adminLock = 0;
+  }
   DFLUSH();
   // send back a little "ack"
   msgSwitch = 1; 
-  msgToSend = "ack,";
-  msgSendId = id;
+  if (msgToSend.length() < 1) {
+	  msgToSend = "ack,";
+	  msgSendId = id;
+  }
 }
 void parseMsg(int id, String msg) {
   //DPRINTLN("#msgparser");
@@ -589,11 +701,14 @@ void parseMsg(int id, String msg) {
   if(msg.startsWith("Rem")){
     msg.remove(0,msg.indexOf(',')+1); //takes the "Rem," off the front
     DPRINT(msg);
-    removeDevice(id); // removes a device. 
+    if(id == 99){
+    removeDevice(msg.toInt());
+    }
+    else removeDevice(id); // removes a device. 
   }
   if(msg.startsWith("App")){
     msg.remove(0,msg.indexOf(',')+1);
-    regWithApp();
+    regWithApp(msg);
   }
   // Check if you are registered
   if(msg.startsWith("Chk")){
@@ -641,6 +756,16 @@ void parseMsg(int id, String msg) {
   msgToSend = msg;
   msg = "";
   msgSendId = masterTerm;
+ }
+ if(msg.startsWith("Lck")){
+  if (udpId != 0){
+    msgToSend = msg;
+    msgSendId = udpId;
+    msgSwitch = 1;
+  }
+  msg.remove(0,msg.indexOf(',')+1);
+  adminLock = msg.toInt();
+  msg = "";
  }
 /*
  if(msg.startsWith("Clk")){
@@ -778,9 +903,7 @@ void setup() { // Setup
   DPRINT(". ");
   // RESET EVERY DEVICE ON THE BUS
   for (uint8_t i = 0; i < PJON_MAX_DEVICES; i++) {
-      if (bus.ids[i].state) {
-        bus.send(i,"Rst,",5);
-      }
+        bus.send(i,"Rst",4);
   }
   DPRINT(". ");
   bus.update(); // force a Pjon update ASSERT YOUR DOMINANCE HERE!
@@ -831,6 +954,7 @@ void loop() {
       DPRINTLN("sending to parser");
       parseMsg(int(999), str); // send tto parser with id 99 (could cause issues later tbf)
       str = ""; // empty that shit!
+      hc05.println("{\"ack\":1}");
     }
   }
   EVERY_N_SECONDS(10){ // This is why we include FastLEDS... will replace with some millis bullshit

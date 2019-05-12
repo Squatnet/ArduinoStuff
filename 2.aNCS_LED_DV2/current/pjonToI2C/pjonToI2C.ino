@@ -1,3 +1,14 @@
+/*
+ *  12.05.19 Change request Log
+ *  
+ *  Remove all OSC based reveive functions - A new dedicated devBox will be made especially for ANCS OSC receive, and for FFT reveive. 
+ *  the "MODE" choice must also be changed, as we don't have the memory available to expand further with patterns on OSC receive on I2C to FASTLED code. 
+ *  From now on, the only OSC messages the CoreDV2 receives is the BPM clock counter.
+ *  See notes in I2C-FastLED.
+ *  
+ *  
+ */
+
 // Varidaic Debug Macro //
 //#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
@@ -11,8 +22,9 @@
   #define DPRINTLN(...)
   #define DFLUSH(...)//Nothing Happens
 #endif // end macro
+
 // REGISTATION // 
-// EDIT THIS PER DEVICE//
+// EDIT THIS PER DEVICE //
 String regString = "Reg,Strip,Debug"; // The command sent to register device with master
 #define I2C_SLAVES_NUM 4
 
@@ -226,6 +238,7 @@ void tellMasterAboutSelf(){
   regString.toCharArray(pkt,regString.length()+1); // Convert string to Char[]
   bus.send(254,pkt,regString.length()+1); // Send the packet to master. 
 };
+
 void loop() {
     if (delayRunning && ((millis() - delayStart) >= DELAY_TIME)) {
       if(bus.device_id() == PJON_NOT_ASSIGNED){

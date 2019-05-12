@@ -1,3 +1,7 @@
+/*
+ *  12.05.18 - Little should have to change here.
+ */
+
 // Varidaic Debug Macro //
 #define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
@@ -11,9 +15,11 @@
   #define DPRINTLN(...)
   #define DFLUSH(...)//Nothing Happens
 #endif // end macro
+
 // REGISTATION // 
 // EDIT THIS //
 String regString = "Reg,WNI,Name "; // note the trailing space "Reg,Str,Left " , "Reg,Mat,Top ", "Reg,Strip,Right " //
+
 // i2c stuff //
 #include <Wire.h>
 #define I2CADDR  8
