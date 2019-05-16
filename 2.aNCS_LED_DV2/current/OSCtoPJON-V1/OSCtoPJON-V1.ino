@@ -103,6 +103,10 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
     ack = true; // nice
     string = ""; // thats all it says!
     DPRINT("Heard from server : "); 
+    DPRINTLN(remPort);
+    Udp.beginPacket(remote, remPort);
+    Udp.write("ack");
+    Udp.endPacket();
   }
   else parser(); // whats it say then ?? 
   // prints it to the console letter by letter

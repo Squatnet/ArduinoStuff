@@ -705,7 +705,11 @@ void parseMsg(int id, String msg) {
    *  Ctl,Str,Tree1,X1 / CONTROL,TYPE,NAME,COMMAND
    *  Ctl,56,S30 / CONTROL,ID#,COMMAND
    */ 
-  //DPRINTLN(msg);
+  //DPRINTLN(msg
+  if(id == udpId){
+    bus.send(uint8_t(id),"ack",4);
+    bus.update();
+  }
   int i = msg.indexOf(','); // A well structured message will have at least 1 comma
   if(i==-1)DPRINTLN("WHAT?"); // no comma? dont wanna parse your shit
   // Device Registration - msg = Reg,Type,Name

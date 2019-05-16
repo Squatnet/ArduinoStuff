@@ -37,7 +37,7 @@ func _ready():
 	call_deferred("showChkBox")
 	print(rect_scale)
 	rect_scale = Vector2(0.3,0.3)
-	#get_node("/root/Main").connect("ack",self,"onAck")
+	get_node("/root/InitialLoader/Main").connect("ack",self,"onAck")
 func showChkBox():
 	var arg = shwChks
 	print("Page: showChkBox: "+str(arg))
@@ -102,15 +102,20 @@ func sendMessage():
 	var commandToSend = commandPrefix+commandDevClassOrID+commandGrpName+commandPrefix+commandToRelay
 	if GS.BT:
 		gotAck = false
+		var st = OS.get_unix_time()
 		GS.BT.sendData(commandToSend)
 		var msec = 0
-		while !gotAck and msec < 300:
-			print("wait for ack "+str(msec))
-			OS.delay_msec(10)
-			msec += 10
-		if !gotAck:
-			if msec >= 300:
+		while !gotAck:
+			if msec < 600:
+				print("wait for ack "+str(msec))
+				yield(get_tree(),"idle_frame")
+				msec += 10
+			if msec >= 600:
 				print("Didn't get ack")
+				GS.BT.sendData(commandToSend)
+				msec = 0
+		var et = OS.get_unix_time()
+		print("elapsed time = "+str(et-st))
 	if GS.getSetting("debugMode") == true:
 		OS.alert("Page: commendToSend: "+commandToSend,"Cmd")
 	else:
