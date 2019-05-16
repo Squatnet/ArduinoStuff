@@ -1,0 +1,349 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://new_theme.tres" type="Theme" id=1]
+[ext_resource path="res://Assets/Styles/StandardPanel.tres" type="StyleBox" id=2]
+[ext_resource path="res://Scripts/Page.gd" type="Script" id=3]
+[ext_resource path="res://Scenes/PallettePicker.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Scenes/ColorPicker.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Assets/Styles/CloseBtn.tres" type="StyleBox" id=6]
+
+[node name="Page" type="Panel"]
+margin_right = 1861.0
+margin_bottom = 840.0
+theme = ExtResource( 1 )
+custom_styles/panelf = ExtResource( 2 )
+custom_styles/panel = ExtResource( 2 )
+custom_styles/panelnc = ExtResource( 2 )
+script = ExtResource( 3 )
+__meta__ = {
+"_edit_horizontal_guides_": [ 101.941, 900.0, 157.0 ],
+"_edit_vertical_guides_": [ 1860.0, 930.0 ]
+}
+
+[node name="PAGE" type="Label" parent="."]
+margin_left = 421.0
+margin_right = 766.0
+margin_bottom = 26.0
+rect_scale = Vector2( 3, 3 )
+text = "PAge Name Here"
+align = 1
+valign = 1
+
+[node name="PallettePicker" parent="." instance=ExtResource( 4 )]
+visible = false
+margin_left = 1051.0
+margin_top = 244.0
+margin_right = 1741.0
+margin_bottom = 964.0
+
+[node name="ColorPicker" parent="." instance=ExtResource( 5 )]
+margin_left = 1113.0
+margin_top = 107.0
+margin_right = 1831.0
+margin_bottom = 826.0
+rect_scale = Vector2( 0.95, 0.95 )
+
+[node name="CloseBtn" type="Button" parent="."]
+margin_left = 1801.0
+margin_right = 1829.0
+margin_bottom = 24.0
+rect_scale = Vector2( 2.4, 2.4 )
+custom_styles/hover = ExtResource( 6 )
+custom_styles/pressed = ExtResource( 6 )
+custom_styles/focus = ExtResource( 6 )
+custom_styles/disabled = ExtResource( 6 )
+custom_styles/normal = ExtResource( 6 )
+text = "X"
+
+[node name="AutoMode" type="Label" parent="."]
+margin_left = 31.0
+margin_top = 390.0
+margin_right = 106.0
+margin_bottom = 412.0
+rect_scale = Vector2( 2, 2 )
+text = "AutoMode"
+align = 2
+
+[node name="Prev" type="Button" parent="AutoMode"]
+margin_left = 118.82
+margin_top = -5.00697
+margin_right = 154.82
+margin_bottom = 24.993
+text = "<"
+
+[node name="Next" type="Button" parent="AutoMode"]
+margin_left = 218.785
+margin_top = -5.00697
+margin_right = 254.785
+margin_bottom = 24.993
+text = ">"
+
+[node name="Label" type="Label" parent="AutoMode"]
+margin_left = 148.24
+margin_top = -2.02785
+margin_right = 223.24
+margin_bottom = 19.9721
+align = 1
+valign = 1
+
+[node name="PalleteMode" type="CheckButton" parent="."]
+margin_left = 603.0
+margin_top = 414.8
+margin_right = 772.0
+margin_bottom = 454.8
+rect_scale = Vector2( 2, 2 )
+theme = ExtResource( 1 )
+text = "PalleteMode"
+align = 2
+
+[node name="AutoS" type="LineEdit" parent="."]
+margin_left = 271.0
+margin_top = 314.0
+margin_right = 329.0
+margin_bottom = 338.0
+rect_scale = Vector2( 2, 2 )
+max_length = 4
+placeholder_text = "10"
+
+[node name="Label" type="Label" parent="."]
+margin_left = 31.0
+margin_top = 300.0
+margin_right = 126.0
+margin_bottom = 330.0
+rect_scale = Vector2( 2, 2 )
+text = "Auto Timeout"
+align = 1
+valign = 1
+
+[node name="PatternName" type="Label" parent="."]
+margin_left = 211.0
+margin_top = 584.8
+margin_right = 549.0
+margin_bottom = 613.8
+rect_scale = Vector2( 2, 2 )
+text = "Pattern Name"
+align = 1
+valign = 1
+
+[node name="PatPrevBtn" type="Button" parent="PatternName"]
+margin_left = 19.0
+margin_right = 57.0
+margin_bottom = 20.0
+text = "<<"
+
+[node name="PatNextBtn" type="Button" parent="PatternName"]
+margin_left = 281.0
+margin_right = 319.0
+margin_bottom = 20.0
+text = ">>"
+
+[node name="MirrorModeName" type="Label" parent="."]
+margin_left = 211.0
+margin_top = 507.8
+margin_right = 549.0
+margin_bottom = 537.8
+rect_scale = Vector2( 2, 2 )
+text = "Mirror Mode"
+align = 1
+valign = 1
+
+[node name="MirPrevBtn" type="Button" parent="MirrorModeName"]
+margin_left = 19.0
+margin_right = 57.0
+margin_bottom = 20.0
+text = "<<"
+
+[node name="MirNextBtn" type="Button" parent="MirrorModeName"]
+margin_left = 281.0
+margin_right = 319.0
+margin_bottom = 20.0
+text = ">>"
+
+[node name="PatternNameLbl" type="Label" parent="."]
+margin_left = 31.0
+margin_top = 568.8
+margin_right = 121.0
+margin_bottom = 605.8
+rect_scale = Vector2( 2, 2 )
+text = "Pattern:"
+valign = 1
+
+[node name="MirrorModeLbl" type="Label" parent="."]
+margin_left = 31.0
+margin_top = 494.8
+margin_right = 137.0
+margin_bottom = 531.8
+rect_scale = Vector2( 2, 2 )
+text = "Mirror Mode:"
+valign = 1
+
+[node name="SendButton" type="Button" parent="."]
+margin_left = 811.0
+margin_top = 750.0
+margin_right = 930.0
+margin_bottom = 780.0
+rect_scale = Vector2( 2, 2 )
+theme = ExtResource( 1 )
+text = "Send Message"
+
+[node name="Messge" type="LineEdit" parent="."]
+margin_left = 239.0
+margin_top = 670.8
+margin_right = 558.0
+margin_bottom = 694.8
+rect_scale = Vector2( 2, 2 )
+
+[node name="MessageLbl" type="Label" parent="Messge"]
+margin_left = -104.0
+margin_right = -29.0
+margin_bottom = 28.0
+text = "Message:"
+
+[node name="StrChk" type="CheckBox" parent="." groups=[
+"chkBox",
+]]
+margin_left = 241.0
+margin_top = 151.0
+margin_right = 274.0
+margin_bottom = 184.0
+rect_scale = Vector2( 1.8, 1.8 )
+align = 1
+
+[node name="MatChk" type="CheckBox" parent="." groups=[
+"chkBox",
+]]
+margin_left = 241.0
+margin_top = 210.0
+margin_right = 274.0
+margin_bottom = 241.0
+rect_scale = Vector2( 1.8, 1.8 )
+align = 1
+
+[node name="RtrChk" type="CheckBox" parent="." groups=[
+"chkBox",
+]]
+margin_left = 600.0
+margin_top = 150.0
+margin_right = 634.0
+margin_bottom = 186.0
+rect_scale = Vector2( 1.8, 1.8 )
+align = 1
+
+[node name="TerChk" type="CheckBox" parent="." groups=[
+"chkBox",
+]]
+margin_left = 601.0
+margin_top = 214.0
+margin_right = 634.0
+margin_bottom = 247.0
+rect_scale = Vector2( 1.8, 1.8 )
+align = 1
+
+[node name="StrChkLbl" type="Label" parent="." groups=[
+"chkBox",
+]]
+margin_left = 91.0
+margin_top = 150.0
+margin_right = 174.0
+margin_bottom = 172.0
+rect_scale = Vector2( 1.8, 1.8 )
+text = "Strips"
+align = 2
+valign = 1
+
+[node name="MatChkLbl" type="Label" parent="." groups=[
+"chkBox",
+]]
+margin_left = 121.0
+margin_top = 210.0
+margin_right = 187.0
+margin_bottom = 232.0
+rect_scale = Vector2( 1.8, 1.8 )
+text = "Matrix"
+align = 2
+valign = 1
+
+[node name="RtrChkLbl" type="Label" parent="." groups=[
+"chkBox",
+]]
+margin_left = 481.0
+margin_top = 156.0
+margin_right = 547.0
+margin_bottom = 178.0
+rect_scale = Vector2( 1.8, 1.8 )
+text = "Router"
+align = 2
+valign = 1
+
+[node name="TerChkLbl" type="Label" parent="." groups=[
+"chkBox",
+]]
+margin_left = 481.0
+margin_top = 215.0
+margin_right = 548.0
+margin_bottom = 237.0
+rect_scale = Vector2( 1.8, 1.8 )
+text = "Term"
+align = 2
+valign = 1
+
+[node name="InStrMode" type="CheckButton" parent="."]
+margin_left = 511.0
+margin_top = 314.0
+margin_right = 774.0
+margin_bottom = 354.0
+rect_scale = Vector2( 1.6, 1.6 )
+theme = ExtResource( 1 )
+text = "Individual Strip Addressing"
+align = 2
+
+[node name="AddStrNum" type="Label" parent="InStrMode"]
+margin_left = 206.25
+margin_top = 33.0
+margin_right = 227.25
+margin_bottom = 55.0
+text = "1"
+align = 1
+valign = 2
+
+[node name="AddStrLbl" type="Label" parent="InStrMode"]
+margin_left = 18.4811
+margin_top = 35.0
+margin_right = 131.481
+margin_bottom = 57.0
+text = "Strip To Address"
+align = 2
+valign = 1
+
+[node name="PrevBtn" type="Button" parent="InStrMode"]
+margin_left = 150.0
+margin_top = 33.0
+margin_right = 186.0
+margin_bottom = 63.0
+text = "<"
+
+[node name="NextBtn" type="Button" parent="InStrMode"]
+margin_left = 244.0
+margin_top = 33.0
+margin_right = 280.0
+margin_bottom = 63.0
+text = ">"
+
+[connection signal="pressed" from="CloseBtn" to="." method="_on_CloseBtn_pressed"]
+[connection signal="pressed" from="AutoMode/Prev" to="." method="_on_Prev_pressed"]
+[connection signal="pressed" from="AutoMode/Next" to="." method="_on_Next_pressed"]
+[connection signal="toggled" from="PalleteMode" to="." method="_on_PalleteMode_toggled"]
+[connection signal="text_changed" from="AutoS" to="." method="_on_LineEdit_text_changed"]
+[connection signal="pressed" from="PatternName/PatPrevBtn" to="." method="_on_PatPrevBtn_pressed"]
+[connection signal="pressed" from="PatternName/PatNextBtn" to="." method="_on_PatNextBtn_pressed"]
+[connection signal="pressed" from="MirrorModeName/MirPrevBtn" to="." method="_on_MirPrevBtn_pressed"]
+[connection signal="pressed" from="MirrorModeName/MirNextBtn" to="." method="_on_MirNextBtn_pressed"]
+[connection signal="pressed" from="SendButton" to="." method="_on_SendButton_pressed"]
+[connection signal="text_changed" from="Messge" to="." method="_on_Messge_text_changed"]
+[connection signal="toggled" from="StrChk" to="." method="_on_StrChk_toggled"]
+[connection signal="toggled" from="MatChk" to="." method="_on_MatChk_toggled"]
+[connection signal="toggled" from="RtrChk" to="." method="_on_RtrChk_toggled"]
+[connection signal="toggled" from="TerChk" to="." method="_on_TerChk_toggled"]
+[connection signal="toggled" from="InStrMode" to="." method="_on_InStrMode_toggled"]
+[connection signal="pressed" from="InStrMode/PrevBtn" to="." method="_on_PrevBtn_pressed"]
+[connection signal="pressed" from="InStrMode/NextBtn" to="." method="_on_NextBtn_pressed"]
