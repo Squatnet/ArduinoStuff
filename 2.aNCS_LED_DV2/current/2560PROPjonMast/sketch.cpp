@@ -16,7 +16,7 @@
 #ifdef DEBUG    //Macros are usually in all capital letters.
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //DPRINTLN is a macro, debug print with new line
-  #define DFLUSH(...)	Serial.flush(__VA_ARGS__)
+  #define DFLUSH(...)  Serial.flush(__VA_ARGS__)
 #else
   #define DPRINT(...)     //now defines a blank line
   #define DPRINTLN(...)   //now defines a blank line
@@ -215,15 +215,16 @@ int findDeviceByID(int id){
   bool chkMatr = false; // have we checked matrix array?
   bool chkRtrs = false; // what about router array?
   bool chkTerm = false; // and finally terminals? 
+  bool chkUdp = false; // check its UDP
   bool found = false; // Did we find the device??
   DPRINT("Removing device with ID ");
   DPRINTLN(id);
   while(!found){ // Run until found is true
-    if(chkStrps && chkMatr && chkRtrs && chkTerm){ // We have looked in every array and found nothing?
+    if(chkStrps && chkMatr && chkRtrs && chkTerm && chkUdp){ // We have looked in every array and found nothing?
       DPRINTLN("Checked all arrays, Found nothing. Assuming device failed to register.");
       found = true; // device isnt in an array and we need not worry
       return 0;
-      bus.send(uint8_t(id),"Rst,",5);
+      //bus.send(uint8_t(id),"Rst,",5);
     }
     DPRINTLN("Not Found!!!");
     if(!chkStrps){
@@ -278,6 +279,17 @@ int findDeviceByID(int id){
       }
       chkRtrs = true;
     }
+    if(!chkUdp){
+      DPRINTLN("CHECK UDP");
+      if (UdpIn.id == id){
+        found = true;
+        DPRINT("Device ");
+        DPRINT(id);
+        DPRINTLN(" is UDPIN");
+        return 1;
+      }
+    }
+    chkUdp = true;
   }
 }
 // PJON ERROR HANDLER CODE
@@ -512,18 +524,18 @@ void sendMessage(){
   msgSwitch = 0; //reset
 }
 // Function to register with the bluetooth app
-void regWithApp(String arg){
+void regWithApp(String arg,int typId){
   String BtMessge = "";
   if(arg.startsWith("Ini")){
     BtMessge = "{\"Nums\":[";
-  	BtMessge.concat(numStrip);
+    BtMessge.concat(numStrip);
     BtMessge.concat(",");
     BtMessge.concat(numMatrix);
     BtMessge.concat(",");
     BtMessge.concat(numTerm);
     BtMessge.concat(",");
     BtMessge.concat(numRouter);
-	  BtMessge.concat("]} ");
+    BtMessge.concat("]} ");
   }
   else if (arg.startsWith("Dev")){
     DPRINTLN(arg);
@@ -585,7 +597,12 @@ void regWithApp(String arg){
     }
   }
   DPRINTLN(BtMessge);
-	hc05.println(BtMessge);
+  if (typId == 0)hc05.println(BtMessge);
+  else {
+    msgSwitch = 1;
+    msgToSend = BtMessge;
+    msgSendId = udpId;
+  }
 }
 // function to register a device type and name
 void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
@@ -664,21 +681,21 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       DPRINTLN(wizNetIn.id);
   }
   else if( reg.startsWith("UDP")){
-	  DPRINT(reg);
-	  reg.remove(0,reg.indexOf(',')+1);
-	  UdpIn.id = id;
-	  UdpIn.namee = reg;
-	  udpId = id;
-	  msgSendId = id;
-	  msgToSend = "Lck,0";
+    DPRINTLN(reg);
+    reg.remove(0,reg.indexOf(',')+1);
+    UdpIn.id = id;
+    UdpIn.namee = reg;
+    udpId = id;
+    msgSendId = id;
+    msgToSend = "Lck,0 ";
     adminLock = 0;
   }
   DFLUSH();
   // send back a little "ack"
   msgSwitch = 1; 
   if (msgToSend.length() < 1) {
-	  msgToSend = "ack,";
-	  msgSendId = id;
+    msgToSend = "ack,";
+    msgSendId = id;
   }
 }
 void parseMsg(int id, String msg) {
@@ -708,7 +725,11 @@ void parseMsg(int id, String msg) {
   }
   if(msg.startsWith("App")){
     msg.remove(0,msg.indexOf(',')+1);
-    regWithApp(msg);
+    regWithApp(msg,0);
+  }
+  if(msg.startsWith("Udp")){
+    msg.remove(0,msg.indexOf(',')+1);
+    regWithApp(msg,1);
   }
   // Check if you are registered
   if(msg.startsWith("Chk")){
@@ -729,15 +750,15 @@ void parseMsg(int id, String msg) {
       String idName = msg.substring(0,msg.indexOf(',')); // Theres going to be name following. 
       
       msg.remove(0,msg.indexOf(',')+1); // strip off the name (and ",") leaving just the message to send
-	    idList = findDeviceByName(idStr,idName);
-	    msgSendId = 9999; // Run findDeviceByName with our 2 variables. Set the id to be the number returned
+      idList = findDeviceByName(idStr,idName);
+      msgSendId = 9999; // Run findDeviceByName with our 2 variables. Set the id to be the number returned
       msgSendList = idList;
       msgSendListSize = sizeof(idList);
       }
      else {
       msgSendId = id;
      }
-	  msgToSend = "";
+    msgToSend = "";
     msgSwitch = 1; // set ourselves up to send a message to someone
     msgToSend.concat(msg); // copy the remaining message to our sending variable
     msg = ""; // delete the remaining message input
