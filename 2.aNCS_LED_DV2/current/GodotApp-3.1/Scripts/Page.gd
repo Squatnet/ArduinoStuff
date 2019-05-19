@@ -1,5 +1,7 @@
 extends Control
 #warnings-disable
+var screen_size = OS.get_screen_size()
+var window_size = OS.get_window_size()
 var gotAck = false
 var updated = []
 var knownPatterns = []
@@ -35,6 +37,8 @@ var commandToRelay = ""
 var commandSuffix = ","
 func _ready():
 	call_deferred("showChkBox")
+	GS.connect("locked",self,"onLockSig")
+	onLockSig()
 	print(rect_scale)
 	rect_scale = Vector2(0.3,0.3)
 	get_node("/root/InitialLoader/Main").connect("ack",self,"onAck")
@@ -335,3 +339,27 @@ func _on_Next_pressed():
 	$AutoMode/Label.set_text(autoOpts[automode])
 	if !updated.has("automode"):
 		updated.push_back("automode")
+func onLockSig():
+	var s = GS.getSetting("lockout")
+	if s:
+		lockSelf()
+	else:
+		unlockSelf()
+func lockSelf():
+	$CloseBtn.hide()
+	print(rect_global_position)
+	print(rect_scale)
+	rect_global_position = Vector2(0,0)
+	rect_scale = Vector2(0.4,0.4)
+	print("LOCKED : Set Fullscreen")
+	OS.set_window_fullscreen(true)
+	
+func unlockSelf():
+	rect_global_position = Vector2(177,270)
+	rect_scale = Vector2(0.3,0.3)
+	$CloseBtn.show()
+	print("Unlocked : Exit Fullscren")
+	OS.set_window_fullscreen(false)
+	OS.set_window_maximized(true)
+	OS.set_window_position(screen_size*0.5 - window_size*0.5)
+	

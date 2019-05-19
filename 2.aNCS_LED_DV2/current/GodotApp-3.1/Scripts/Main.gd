@@ -162,7 +162,13 @@ func updateLock():
 	else:
 		LoadIcon = load("res://Assets/Unlocked.png")
 	$LockIcon.set_texture(LoadIcon)
-	if GS.BT:
-		GS.BT.sendData("Lck,"+str(int(lock)))
+func _on_LockButton_pressed():
+	print("pressed")
+	var switch = GS.getSetting("lockout")
+	if switch:
+		$LockIcon/PinPad.show()
 	else:
-		OS.alert("LOCKOUT: "+str(lock),str(int(lock)))
+		GS.setSetting("lockout",true)
+		GS.emit_signal("locked")
+	updateLock()
+	pass # Replace with function body.
