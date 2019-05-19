@@ -1,0 +1,388 @@
+[gd_scene load_steps=15 format=2]
+
+[ext_resource path="res://Scripts/Settings.gd" type="Script" id=1]
+[ext_resource path="res://Assets/Styles/CloseBtn.tres" type="StyleBox" id=2]
+[ext_resource path="res://Assets/Styles/ListBtnFocus.tres" type="StyleBox" id=3]
+[ext_resource path="res://Assets/Styles/ListBtnDisabled.tres" type="StyleBox" id=4]
+[ext_resource path="res://Assets/Styles/ListBtn.tres" type="StyleBox" id=5]
+[ext_resource path="res://Assets/Styles/LineEditDis.tres" type="StyleBox" id=6]
+[ext_resource path="res://Assets/Styles/LineEditFocus.tres" type="StyleBox" id=7]
+[ext_resource path="res://Assets/Styles/LineEditNormal.tres" type="StyleBox" id=8]
+[ext_resource path="res://Assets/Roboto-Regular.ttf" type="DynamicFontData" id=9]
+[ext_resource path="res://Assets/term.png" type="Texture" id=10]
+[ext_resource path="res://Assets/network_icon_png_923675.png" type="Texture" id=11]
+[ext_resource path="res://Assets/bluetooth.png" type="Texture" id=12]
+
+[sub_resource type="StyleBoxFlat" id=1]
+bg_color = Color( 0, 0, 0, 1 )
+border_width_left = 10
+border_width_top = 10
+border_width_right = 10
+border_width_bottom = 10
+border_color = Color( 0.0499529, 0.00196838, 0.167969, 1 )
+border_blend = true
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="DynamicFont" id=2]
+size = 40
+font_data = ExtResource( 9 )
+
+[node name="Settings" type="Panel"]
+margin_left = 60.0
+margin_top = 150.0
+margin_right = 1860.0
+margin_bottom = 990.0
+custom_styles/panel = SubResource( 1 )
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_horizontal_guides_": [ 540.0 ],
+"_edit_vertical_guides_": [ 960.0 ]
+}
+
+[node name="Close" type="Button" parent="."]
+margin_left = 1740.0
+margin_right = 1770.0
+margin_bottom = 30.0
+rect_scale = Vector2( 2, 2 )
+custom_styles/hover = ExtResource( 2 )
+custom_styles/pressed = ExtResource( 2 )
+custom_styles/focus = ExtResource( 2 )
+custom_styles/disabled = ExtResource( 2 )
+custom_styles/normal = ExtResource( 2 )
+custom_colors/font_color_disabled = Color( 0.0146484, 0.46875, 0, 1 )
+text = "x"
+
+[node name="Label" type="Label" parent="."]
+margin_left = 780.0
+margin_right = 848.0
+margin_bottom = 25.0
+rect_scale = Vector2( 3.6, 3.6 )
+text = "Settings"
+align = 1
+valign = 1
+
+[node name="FakeData" type="CheckBox" parent="."]
+margin_left = 240.0
+margin_top = 178.0
+margin_right = 450.0
+margin_bottom = 208.0
+rect_scale = Vector2( 2, 2 )
+text = "Use FakeData On Android?"
+align = 1
+
+[node name="DebugMode" type="CheckBox" parent="."]
+margin_left = 240.0
+margin_top = 388.0
+margin_right = 450.0
+margin_bottom = 418.0
+rect_scale = Vector2( 2, 2 )
+text = "Debug Mode?"
+align = 1
+
+[node name="AdminMode" type="CheckBox" parent="."]
+margin_left = 240.0
+margin_top = 298.0
+margin_right = 450.0
+margin_bottom = 328.0
+rect_scale = Vector2( 2, 2 )
+disabled = true
+text = "Admin Mode?"
+align = 1
+
+[node name="SaveButton" type="Button" parent="."]
+margin_left = 840.0
+margin_top = 720.0
+margin_right = 899.0
+margin_bottom = 750.0
+rect_scale = Vector2( 2, 2 )
+custom_styles/hover = ExtResource( 3 )
+custom_styles/pressed = ExtResource( 3 )
+custom_styles/focus = ExtResource( 3 )
+custom_styles/disabled = ExtResource( 4 )
+custom_styles/normal = ExtResource( 5 )
+text = "SAVE"
+
+[node name="Label2" type="Label" parent="."]
+margin_left = 330.0
+margin_top = 328.0
+margin_right = 480.0
+margin_bottom = 380.0
+rect_scale = Vector2( 1.6, 1.6 )
+text = "Doesnt exist yet :("
+align = 1
+valign = 1
+
+[node name="Label3" type="Label" parent="."]
+margin_left = 210.0
+margin_top = 208.0
+margin_right = 510.0
+margin_bottom = 283.0
+rect_scale = Vector2( 1.6, 1.6 )
+text = "Allow using fake data for simulating
+master and some devices. "
+align = 1
+valign = 1
+
+[node name="Label4" type="Label" parent="."]
+margin_left = 180.0
+margin_top = 418.0
+margin_right = 518.0
+margin_bottom = 474.0
+rect_scale = Vector2( 1.6, 1.6 )
+text = "Makes Alerts more Verbose and adds
+some debugging info to some windows. "
+align = 1
+valign = 1
+
+[node name="PallettesAvail" type="Label" parent="."]
+margin_left = 270.0
+margin_top = 508.0
+margin_right = 328.0
+margin_bottom = 523.0
+rect_scale = Vector2( 2, 2 )
+text = "0"
+align = 1
+valign = 1
+
+[node name="Label5" type="Label" parent="."]
+margin_left = 360.0
+margin_top = 508.0
+margin_right = 478.0
+margin_bottom = 522.0
+rect_scale = Vector2( 2, 2 )
+text = "Pallettes Available"
+align = 1
+valign = 1
+
+[node name="ParsePallettes" type="Button" parent="."]
+margin_left = 180.0
+margin_top = 568.0
+margin_right = 337.0
+margin_bottom = 606.0
+rect_scale = Vector2( 1.6, 1.6 )
+custom_styles/hover = ExtResource( 3 )
+custom_styles/pressed = ExtResource( 3 )
+custom_styles/focus = ExtResource( 3 )
+custom_styles/disabled = ExtResource( 4 )
+custom_styles/normal = ExtResource( 5 )
+text = "Parse User Pallettes"
+
+[node name="DeletePallettes" type="Button" parent="."]
+margin_left = 480.0
+margin_top = 568.0
+margin_right = 630.0
+margin_bottom = 606.0
+rect_scale = Vector2( 1.6, 1.6 )
+custom_styles/hover = ExtResource( 3 )
+custom_styles/pressed = ExtResource( 3 )
+custom_styles/focus = ExtResource( 3 )
+custom_styles/disabled = ExtResource( 4 )
+custom_styles/normal = ExtResource( 5 )
+text = "Delete All Palletes"
+
+[node name="LockoutButton" type="Button" parent="."]
+margin_left = 330.0
+margin_top = 658.0
+margin_right = 480.0
+margin_bottom = 696.0
+rect_scale = Vector2( 1.6, 1.6 )
+custom_styles/hover = ExtResource( 3 )
+custom_styles/pressed = ExtResource( 3 )
+custom_styles/focus = ExtResource( 3 )
+custom_styles/disabled = ExtResource( 4 )
+custom_styles/normal = ExtResource( 5 )
+toggle_mode = true
+text = "Admin Lock"
+
+[node name="Label6" type="Label" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 90.0
+margin_right = -1500.0
+margin_bottom = -736.0
+rect_scale = Vector2( 3, 3 )
+text = "General Settings"
+align = 1
+valign = 1
+
+[node name="UDPSettings" type="Control" parent="."]
+margin_left = 930.0
+margin_top = 90.0
+margin_right = 1770.0
+margin_bottom = 690.0
+
+[node name="Label" type="Label" parent="UDPSettings"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 300.0
+margin_right = -457.0
+margin_bottom = -581.0
+rect_scale = Vector2( 3, 3 )
+text = "UDP Settings"
+align = 1
+valign = 1
+
+[node name="RemIp" type="LineEdit" parent="UDPSettings"]
+margin_left = 450.0
+margin_top = 118.0
+margin_right = 585.0
+margin_bottom = 142.0
+rect_scale = Vector2( 2, 2 )
+custom_styles/read_only = ExtResource( 6 )
+custom_styles/focus = ExtResource( 7 )
+custom_styles/normal = ExtResource( 8 )
+align = 1
+max_length = 16
+placeholder_text = "###.###.###.###"
+
+[node name="RemPort" type="LineEdit" parent="UDPSettings"]
+margin_left = 450.0
+margin_top = 178.0
+margin_right = 510.0
+margin_bottom = 202.0
+rect_scale = Vector2( 2, 2 )
+custom_styles/read_only = ExtResource( 6 )
+custom_styles/focus = ExtResource( 7 )
+custom_styles/normal = ExtResource( 8 )
+align = 1
+max_length = 6
+placeholder_text = "###"
+
+[node name="LocPort" type="LineEdit" parent="UDPSettings"]
+margin_left = 450.0
+margin_top = 236.0
+margin_right = 510.0
+margin_bottom = 260.0
+rect_scale = Vector2( 2, 2 )
+custom_styles/read_only = ExtResource( 6 )
+custom_styles/focus = ExtResource( 7 )
+custom_styles/normal = ExtResource( 8 )
+align = 1
+max_length = 16
+placeholder_text = "###"
+
+[node name="Label2" type="Label" parent="UDPSettings"]
+margin_left = 240.0
+margin_top = 118.0
+margin_right = 330.0
+margin_bottom = 142.0
+rect_scale = Vector2( 2, 2 )
+text = "Remote IP:"
+align = 2
+valign = 1
+
+[node name="Label3" type="Label" parent="UDPSettings"]
+margin_left = 210.0
+margin_top = 178.0
+margin_right = 315.0
+margin_bottom = 202.0
+rect_scale = Vector2( 2, 2 )
+text = "Remote Port:"
+align = 2
+valign = 1
+
+[node name="Label4" type="Label" parent="UDPSettings"]
+margin_left = 240.0
+margin_top = 238.0
+margin_right = 326.0
+margin_bottom = 262.0
+rect_scale = Vector2( 2, 2 )
+text = "Local Port:"
+align = 2
+valign = 1
+
+[node name="SetUdpBtn" type="Button" parent="UDPSettings"]
+margin_left = 330.0
+margin_top = 330.0
+margin_right = 430.0
+margin_bottom = 360.0
+rect_scale = Vector2( 1.8, 1.8 )
+custom_styles/hover = ExtResource( 3 )
+custom_styles/pressed = ExtResource( 3 )
+custom_styles/focus = ExtResource( 3 )
+custom_styles/disabled = ExtResource( 5 )
+custom_styles/normal = ExtResource( 5 )
+text = "Setup UDP"
+
+[node name="Label5" type="Label" parent="UDPSettings"]
+margin_left = 30.0
+margin_top = 420.0
+margin_right = 420.0
+margin_bottom = 451.0
+rect_scale = Vector2( 2, 2 )
+text = "Enter Values
+"
+align = 1
+valign = 1
+autowrap = true
+
+[node name="Terminal" type="Control" parent="."]
+visible = false
+margin_left = 930.0
+margin_top = 90.0
+margin_right = 1770.0
+margin_bottom = 690.0
+
+[node name="Label" type="Label" parent="Terminal"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 300.0
+margin_right = -457.0
+margin_bottom = -586.0
+rect_scale = Vector2( 3, 3 )
+text = "Terminal"
+align = 1
+valign = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Terminal"]
+margin_left = 60.0
+margin_top = 90.0
+margin_right = 780.0
+margin_bottom = 510.0
+
+[node name="TermBtn" type="ToolButton" parent="."]
+visible = false
+margin_left = 779.0
+margin_top = 298.0
+margin_right = 1017.0
+margin_bottom = 370.0
+custom_fonts/font = SubResource( 2 )
+text = "Terminal"
+icon = ExtResource( 10 )
+
+[node name="UdpBtn" type="ToolButton" parent="."]
+visible = false
+margin_left = 720.0
+margin_top = 386.0
+margin_right = 1079.0
+margin_bottom = 458.0
+custom_fonts/font = SubResource( 2 )
+text = "UDP setting"
+icon = ExtResource( 11 )
+
+[node name="BtUdpSw" type="CheckButton" parent="."]
+visible = false
+margin_left = 750.0
+margin_top = 147.0
+margin_right = 900.0
+margin_bottom = 187.0
+rect_scale = Vector2( 2, 2 )
+custom_icons/off = ExtResource( 12 )
+custom_icons/on = ExtResource( 11 )
+text = "BT/UDP"
+
+[connection signal="pressed" from="Close" to="." method="_on_Close_pressed"]
+[connection signal="pressed" from="SaveButton" to="." method="_on_SaveButton_pressed"]
+[connection signal="pressed" from="ParsePallettes" to="." method="_on_ParsePallettes_pressed"]
+[connection signal="pressed" from="DeletePallettes" to="." method="_on_DeletePallettes_pressed"]
+[connection signal="toggled" from="LockoutButton" to="." method="_on_LockoutButton_toggled"]
+[connection signal="text_changed" from="UDPSettings/RemIp" to="." method="_on_RemIp_text_changed"]
+[connection signal="text_changed" from="UDPSettings/RemPort" to="." method="_on_RemPort_text_changed"]
+[connection signal="text_changed" from="UDPSettings/LocPort" to="." method="_on_LocPort_text_changed"]
+[connection signal="pressed" from="UDPSettings/SetUdpBtn" to="." method="_on_SetUdpBtn_pressed"]
+[connection signal="pressed" from="TermBtn" to="." method="_on_TermBtn_pressed"]
+[connection signal="pressed" from="UdpBtn" to="." method="_on_UdpBtn_pressed"]
+[connection signal="toggled" from="BtUdpSw" to="." method="_on_BtUdpSw_toggled"]
