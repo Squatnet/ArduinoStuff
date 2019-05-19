@@ -14,7 +14,7 @@
  */
 
 // Varidaic Debug Macro
-//define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -54,8 +54,8 @@ byte y = 0;//holder for i2c message which sets pattern when we adressing strips 
 int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
 byte autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
 byte autoSecs = 30;//sets the upper bound for timeSinceBt function.
-byte stripNumber = 1;//stores the strip that we wish to set the pattern on. 
-byte individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
+byte stripNumber = 2;//stores the strip that we wish to set the pattern on. 
+byte individualStripMode = 1;//holds wether we are addressing all the stips(0)or individual strips (1)
 byte paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 byte paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 byte numberOfPalettes=18;//total number of palettes available -1.
@@ -457,7 +457,9 @@ void setLEDs() {//this function sets the boundares for LED addressing.
     FL(1, NUM_STRIPS + 1) { //loops through each strip
       if ((individualStripMode == 1) && (stripNumber == i)) {//if it is equal to the strip we wish to address, set the start and end number of the strip.
         LEDEnd = (NUM_LEDS_PER_STRIP * i);
+        DPRINTLN(LEDEnd);
         LEDStart = ((NUM_LEDS_PER_STRIP * i) - (NUM_LEDS_PER_STRIP));
+        DPRINTLN(LEDStart);
       }
     }
   }
@@ -1050,7 +1052,7 @@ void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
   pinMode(DEBUG_LED, OUTPUT);
-  DBEGIN(9600);
+  DBEGIN(115200);
   DPRINTLN("Ready for i2c");
   //sets one long array containing multiple data pins in the following format.
   //type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
