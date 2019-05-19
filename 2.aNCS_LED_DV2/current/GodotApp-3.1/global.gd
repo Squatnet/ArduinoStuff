@@ -4,8 +4,9 @@ signal connected
 signal disconnected
 signal data_received
 signal reg_finished
+signal locked
 #warnings-disable
-var version = 0.2
+var version = 0.3
 var appDebug = true
 var appAdminMode = false
 var BTMast
@@ -15,7 +16,7 @@ var udp = false
 var udpRemoteIp = "192.168.1.1"
 var udpLocalPort = 1
 var udpSendPort = 1
-var settings = {"fakeData":false,"adminMode":false,"debugMode":true,"lockout":true,"udp":{"ip":"127.0.0.1","locPort":9000,"remPort":9001}}
+var settings = {"fakeData":false,"adminMode":false,"debugMode":false,"lockout":true,"udp":{"ip":"127.0.0.1","locPort":9000,"remPort":9001}}
 var devNums = [0,0,0,0]
 var knownDevs = {"Str":{},
 				"Mat":{},
