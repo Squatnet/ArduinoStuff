@@ -649,7 +649,7 @@ void rainbow(){
   }
   else{
     FL(LEDStart,LEDEnd){
-      fill_palette(&(leds[LEDStart]), NoLEDs, gHue, 2, currentPalette, brightness, currentBlending);
+      fill_palette(&(leds[LEDStart]), NoLEDs, gHue, 7, currentPalette, brightness, currentBlending);
     }
   }
 }
