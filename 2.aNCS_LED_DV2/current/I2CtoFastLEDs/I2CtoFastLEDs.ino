@@ -47,7 +47,7 @@ CRGB ourCol = CRGB(255, 255, 255); //used to specify an individual color for use
 CRGB startup[] = {CRGB(255, 123, 0), CRGB(0, 255, 45), CRGB(0, 123, 255), CRGB(0, 255, 255)}; //used in setup to flash 3 colors ??
 CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
-
+uint8_t gHue = 0;
 String string = ""; //holder for the parser string.
 byte patternNumber = 0; // holder for i2c message which sets pattern when we address the stips as one array.
 byte y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
@@ -645,11 +645,11 @@ void theLights() { //  speckles and strobes
 void rainbow(){
   // FastLED's built-in rainbow generator
   if (paletteMode==0){
-    fill_rainbow(&(leds[LEDStart]), NoLEDs, 7);
+    fill_rainbow(&(leds[LEDStart]), NoLEDs, gHue, 7);
   }
   else{
     FL(LEDStart,LEDEnd){
-      leds[i]=ColorFromPalette( currentPalette,(i*5), brightness, currentBlending);
+      fill_palette(&(leds[LEDStart]), NoLEDs, gHue, 2, currentPalette, brightness, currentBlending);
     }
   }
 }
@@ -1081,6 +1081,9 @@ void setup() {
 void loop() {
   EVERY_N_SECONDS(1) {      
     timeSinceBt++;//count the time since beat
+  }
+  EVERY_N_MILLISECONDS(20){
+	  gHue++
   }
   EVERY_N_SECONDS(10){  // this flashes the onboard LED when loop is completed.
     if(debugLED){
