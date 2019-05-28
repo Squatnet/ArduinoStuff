@@ -49,9 +49,10 @@ CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
 uint8_t gHue = 0;
 String string = ""; //holder for the parser string.
-byte patternNumber = 0; // holder for i2c message which sets pattern when we address the stips as one array.
-byte y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
-int timeSinceBt = 0; //legacy currently unused. set to 0 when message comes in, then increments each second (time since last message recieved.)??
+int patternNumber = 0; // holder for i2c message which sets pattern when we address the stips as one array.
+int y = 0;//holder for i2c message which sets pattern when we adressing strips individually.
+// all of this needs to be int i recon dont know why it isnt
+int timeSinceBt = 0; //legacy currently unused. (NO IT IS NOT) set to 0 when message comes in, then increments each second (time since last message recieved.)??
 int autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
 int autoSecs = 30;//sets the upper bound for timeSinceBt function.
 int stripNumber = 2;//stores the strip that we wish to set the pattern on. 
