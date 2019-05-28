@@ -1007,7 +1007,6 @@ void patternSelect(){
   }
   if (individualStripMode!=0){//second switch case used to set patternSelect array.
     FL(1,NUM_STRIPS+1){
-      stripNumber=i;
       setLEDs();
       y=patternStore[i];
       switch (y) {
@@ -1045,7 +1044,6 @@ void patternSelect(){
           bouncingTrails();
           break;      
       }
-      stripNumber=lastStripNumber;
     }
   }
 }
