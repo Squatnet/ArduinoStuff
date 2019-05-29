@@ -63,7 +63,7 @@ func setup(args):
 			$MirrorModeLbl.hide()
 			$Messge.hide()
 		if x[0] == "Str":
-			attchStr = int(x[3])
+			attchStr = 4
 		if x[0] != "Str":
 			$InStrMode.hide()
 		commandDevClassOrID += str(x[2])+","
@@ -74,13 +74,13 @@ func setup(args):
 			$MirrorModeLbl.hide()
 			$MirrorModeName.hide()
 		if args[1] == "Str":
-			attchStr = GS.mostKnownStrips
+			attchStr = 4
 		if args[1] != "Str":
 			$InStrMode.hide()
 		commandDevClassOrID += str(args[1])+",All,"
 	elif pageType == 2:
 		$PAGE.set_text("Group :"+str(args[1]))
-		attchStr = GS.mostKnownStrips
+		attchStr = 4
 		shwChks = true
 		commandGrpName += str(args[1])+","
 func setCol(col):
