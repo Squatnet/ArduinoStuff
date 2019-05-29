@@ -224,7 +224,7 @@ int findDeviceByID(int id){
       DPRINTLN("Checked all arrays, Found nothing. Assuming device failed to register.");
       found = true; // device isnt in an array and we need not worry
       return 0;
-      //bus.send(uint8_t(id),"Rst,",5);
+      bus.send(uint8_t(id),"Rst,",5);
     }
     DPRINTLN("Not Found!!!");
     if(!chkStrps){
