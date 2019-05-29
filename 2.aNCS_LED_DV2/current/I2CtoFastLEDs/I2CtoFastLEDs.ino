@@ -54,10 +54,10 @@ int y = 0;//holder for i2c message which sets pattern when we adressing strips i
 // all of this needs to be int i recon dont know why it isnt
 int timeSinceBt = 0; //legacy currently unused. (NO IT IS NOT) set to 0 when message comes in, then increments each second (time since last message recieved.)??
 int autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments palette.
-int autoSecs = 30;//sets the upper bound for timeSinceBt function.
-int stripNumber = 2;//stores the strip that we wish to set the pattern on. 
-int individualStripMode = 1;//holds wether we are addressing all the stips(0)or individual strips (1)
-int paletteMode = 0;//holds if we sending indivdual colors to the patterns or a palette array.
+int autoSecs = 10;//sets the upper bound for timeSinceBt function.
+int stripNumber = 1;//stores the strip that we wish to set the pattern on. 
+int individualStripMode = 0;//holds wether we are addressing all the stips(0)or individual strips (1)
+int paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
 int paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 int numberOfPalettes=18;//total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
