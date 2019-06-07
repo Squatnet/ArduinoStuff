@@ -51,8 +51,8 @@ func setup(args):
 	numPatterns = knownPatterns.size()
 	numMirror = mirrorOpts.size()
 	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
-	$PatternName.set_text(knownPatterns[1])
-	$AutoMode/Label.set_text(autoOpts[automode])
+	#$PatternName.set_text(knownPatterns[1])
+	#$AutoMode/Label.set_text(autoOpts[automode])
 	pageType = args[0]
 	if pageType == 0:
 		$PAGE.set_text("Single Device: "+str(args[1]))
