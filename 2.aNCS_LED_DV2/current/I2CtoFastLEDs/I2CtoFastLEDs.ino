@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-#define DEBUG   //Comment this line to disable Debug output
+//#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -40,7 +40,7 @@ int autoMode = 1;//if 1 increments the pattern and palette. if 2 only increments
 int autoSecs = 5;//sets the upper bound for timeSinceBt function.
 int stripNumber = 1;//stores the strip that we wish to set the pattern on.
 int individualStripMode = 0;//holds wether we are addressing   all the stips(0)or individual strips (1)
-int paletteMode = 1;//holds if we sending indivdual colors to the patterns or a palette array.
+int paletteMode = 1;//holds if we sending individual colors to the patterns or a palette array.
 int paletteNumber = 0;//holds the number for which palette is in use when paletteMode is on.
 int numberOfPalettes = 18; //total number of palettes available -1.
 int colorIndex = 0;//holds the position in the palette array for the color to show.
@@ -654,9 +654,6 @@ void doPulse() {//pulses LEDs white then turns them off.
 }
 void theLights() { //  speckles and strobes
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 8));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   int myFadeOut = map(variableDelay, 0, 255, (standardDelay * 8), (standardDelay / 8));
   fadeToBlackBy(&(leds[LEDStart]), NoLEDs, myFadeOut);
   int pos = random16(LEDStart, LEDEnd);
@@ -670,16 +667,15 @@ void theLights() { //  speckles and strobes
   else {
     leds[pos] = ourCol;
   }
-  FastLED.delay(myDelay);
+  if (individualStripMode != 1) {
+    FastLED.delay(myDelay);
+  }
 }
 void rainbow() {
   static int gHue;//rotates through the palette.
   static int pHue = 0;// as above for palette mode.
   static int hueStore;
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 8));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   gHue++;
   if (paletteMode == 0) {
     fill_rainbow(&(leds[LEDStart]), NoLEDs, gHue, 7);
@@ -694,15 +690,11 @@ void rainbow() {
       leds[i] = ColorFromPalette( currentPalette, pHue, brightness, currentBlending);
     }
   }
-  if (rainbowWithGlitterTrigger == 0) {
+  if (rainbowWithGlitterTrigger == 0 && individualStripMode != 1) {
     FastLED.delay(myDelay);
   }
 }
 void addGlitter( fract8 chanceOfGlitter) {
-  int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 8));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   if ( random8() < chanceOfGlitter) {
     leds[ random16(LEDStart, LEDEnd) ] += CRGB::White;
   }
@@ -711,20 +703,16 @@ void rainbowWithGlitter() {
   // built-in FastLED rainbow, plus some random sparkly glitter
   rainbowWithGlitterTrigger = 1; //this trigger is used to disable delay in rainbow call.
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 8));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   rainbow();
   addGlitter(80);
-  FastLED.delay(myDelay);
+  if (individualStripMode != 1) {
+    FastLED.delay(myDelay);
+  }
   rainbowWithGlitterTrigger = 0;
 }
 void confetti() {
   // random colored speckles that blink in and fade smoothly
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 8));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   int myFadeOut = map(variableDelay, 0, 255, (standardDelay * 8), (standardDelay / 8));
   fadeToBlackBy(&(leds[LEDStart]), NoLEDs, myFadeOut);
   int pos = random16(LEDStart, LEDEnd);
@@ -739,14 +727,13 @@ void confetti() {
     leds[pos] = ourCol;
     leds[pos] += CHSV( colorIndex + random8(64), 200, 255);
   }
-  FastLED.delay(myDelay);
+  if (individualStripMode != 1) {
+    FastLED.delay(myDelay);
+  }
 }
 void sinelon() {
   // a colored dot sweeping back and forth, with fading trails
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 8));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   int myFadeOut = map(variableDelay, 0, 255, (standardDelay * 8), (standardDelay / 8));
   fadeToBlackBy(&(leds[LEDStart]), NoLEDs, myFadeOut);
   int pos = beatsin16( 13, LEDStart, LEDEnd - 1 ) ;
@@ -761,14 +748,13 @@ void sinelon() {
     leds[pos] = ourCol;
     leds[pos] += CHSV( colorIndex, 255, 192);
   }
-  FastLED.delay(myDelay);
+  if (individualStripMode != 1) {
+    FastLED.delay(myDelay);
+  }
 }
 void bpm() {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 6), (standardDelay * 6));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   int beatDelay = map(myDelay, (standardDelay / 6), (standardDelay * 6), (standardDelay * 6), (standardDelay / 6));
   uint8_t BeatsPerMinute = beatDelay;
   CRGBPalette16 palette = PartyColors_p;
@@ -788,7 +774,9 @@ void bpm() {
       leds[i] = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
     }
   }
-  FastLED.delay(myDelay);
+  if (individualStripMode != 1) {
+    FastLED.delay(myDelay);
+  }
 }
 void bouncingTrails() {
   //sets a "spawn" in the middle half of a strip then sends a trail in either direction which bounces of the ends of the strip.
@@ -801,9 +789,6 @@ void bouncingTrails() {
   static byte downReversed = 0; //as above, in reverse
   static int pos = 0; //holds the initial position from which the two trails emerge
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 2), (standardDelay * 6));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   int myFadeOut = map(variableDelay, 0, 255, (standardDelay * 6), (standardDelay / 8));
   counter++;
   if (counter == (NUM_LEDS_PER_STRIP * 4)) { //used a multiple of 2 so that a new point s formed when the two trails are close to each other (looks better in my opinon)
@@ -829,7 +814,7 @@ void bouncingTrails() {
         }
       }
     }
-    else {//if indivdual strip mode is on
+    else {//if individual strip mode is on
       if (paletteMode == 1) {
         leds[(pos + LEDStart)] = ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
       }
@@ -888,14 +873,13 @@ void bouncingTrails() {
     }
   }
   lastCount = counter;
-  FastLED.delay(myDelay);
+  if (individualStripMode != 1) {
+    FastLED.delay(myDelay);
+  }
 }
 void juggle() {//palette not currently supported
   // eight colored dots, weaving in and out of sync with each other
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 6));
-  if (individualStripMode == 1) {
-    myDelay = (myDelay / 4);
-  }
   int myFadeOut = map(variableDelay, 0, 255, (standardDelay * 6), (standardDelay / 8));
   fadeToBlackBy(&(leds[LEDStart]), NoLEDs, myFadeOut);
   byte dothue = 0;
@@ -913,11 +897,13 @@ void juggle() {//palette not currently supported
       dothue += 32;
     }
   }
-  FastLED.delay(myDelay);
+  if (individualStripMode != 1) {
+    FastLED.delay(myDelay);
+  }
 }
-/*void simpleStrobe () {
+void simpleStrobe () {
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 1.5));
-  fill_solid( leds, NUM_LEDS, CRGB::Black);
+  fill_solid( LEDStart, NoLEDs, CRGB::Black);
   const uint8_t kStrobeCycleLength = 6; // light every Nth frame
   static uint8_t sStrobePhase = 0;
   sStrobePhase = sStrobePhase + 1;
@@ -944,13 +930,13 @@ void juggle() {//palette not currently supported
     uint8_t strobesPerPosition = 2; // try 1..4
     strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
   }
-  if (individualStripMode == 0) {
+  if (individualStripMode != 1) {
     FastLED.delay(myDelay);
   }
-  }
-  void strobeCore(uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats, uint8_t huedelta) {
+}
+void strobeCore(uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats, uint8_t huedelta) {
   static uint8_t sRepeatCounter = 0;
-  static int8_t sStartPosition = 0;
+  static int8_t sStartPosition = LEDStart;
   static uint8_t sStartHue = 0;
   sStartHue += 1; //Shift the Colour little by little
   sRepeatCounter = sRepeatCounter + 1;
@@ -972,9 +958,9 @@ void juggle() {//palette not currently supported
   }
   const uint8_t kSaturation = 208; // WHITE >> CURRENT COLOUR control (def 208)
   const uint8_t kValue = 200; // Brightness??
-  strobeDraw( sStartPosition, NUM_LEDS - 1, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
-  }
-  static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width, uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value) {
+  strobeDraw( sStartPosition, LEDEnd, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
+}
+static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width, uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value) {
   uint8_t hue = huestart;
   for ( uint16_t i = startpos; i <= lastpos; i += period) {
     CRGB color = CHSV( hue, saturation, value);
@@ -983,13 +969,13 @@ void juggle() {//palette not currently supported
     for ( uint8_t w = 0; w < width; w++) {
       leds[pos] = ColorFromPalette(currentPalette, colorIndex);
       pos++;
-      if (pos >= NUM_LEDS) {
+      if (pos >= LEDEnd) {
         break;
       }
     }
     hue += huedelta;
   }
-  }*/
+}
 void paletteSelect() {//selects palette
   switch (paletteNumber) {
     case 0:
@@ -1082,14 +1068,15 @@ void patternSelect() {//selects pattern
         bpm();
         break;
       case 8:
-        bouncingTrails();
+        simpleStrobe();
         break;
       case 9:
+        bouncingTrails();
+        break;
+      case 10:
         juggle();
         break;
-        /*case 10:
-          simpleStrobe();
-          break;*/
+
     }
   }
   if (individualStripMode == 1) { //second switch case used to set patternSelect array.
@@ -1123,14 +1110,14 @@ void patternSelect() {//selects pattern
           bpm();
           break;
         case 8:
-          bouncingTrails();
+          simpleStrobe();
           break;
         case 9:
+          bouncingTrails();
+          break;
+        case 10:
           juggle();
           break;
-          /*case 10:
-            simpleStrobe();
-            break;*/
       }
     }
     stripNumber = lastStripNumber;
@@ -1206,4 +1193,7 @@ void loop() {
   setLEDs();
   paletteSelect();
   patternSelect();
+  if (individualStripMode == 1) {
+    FastLED.delay(standardDelay);
+  }
 }
