@@ -24,6 +24,7 @@
 #define NUM_LEDS_PER_STRIP 28 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 3
+#define BRIGHTNESS 64 // Used only for fastLeds set_brightness
 
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
 
@@ -48,9 +49,12 @@ int LEDStart = 0;//this holds the number of the first LED in the arry to start p
 int LEDEnd = 0;//this holds the number of the last LED in the arry to start printing a pattern to.
 int NoLEDs = 0;//this holds how many LED's we need to address. (may be a better way of doin this ToDo)
 int patternStore[NUM_STRIPS + 1]; //this array holds the pattern number for each strip.
+int delayStore[NUM_STRIPS + 1];
 int standardDelay = 20;//initial delay that the maths of the variable below relates to.
 long variableDelay = 128; //0..256 visible to parser and used to set FastLED.delay values.
-uint8_t brightness = 255;
+int currentDelay = 128; // The current delay of the pattern
+uint8_t paletteBrightness = 64; // Set to 64 to save power for dev.
+
 bool debugLED = false;//when true will flash the onboard LED each time the loop compleates.
 bool rainbowWithGlitterTrigger = 0;//a trigger to tell if rainbow with glitter is being called, so as to not have multiple delays.
 
@@ -504,14 +508,7 @@ void parser() {
       String sno = string.substring(0, (string.indexOf(","))); // get everything until the comma
       DPRINT(sno);
       DPRINT(" - ");
-      int tester;
-      bool trigger = 0;
-      tester = sno.toInt();
-      if (tester > NUM_STRIPS or tester <= 0) { //catches for unexpected numbers of strips.
-        trigger = 1;
-        tester = 1;
-      }
-      stripNumber = tester;
+      stripNumber = sno.toInt();
       DPRINTLN(stripNumber);
       string.remove(0, (string.indexOf(",") + 1)); // Remove the value
       setLEDs();
@@ -641,13 +638,11 @@ void turnOn() {// for each LED turn it to ourCol.
   FL(LEDStart, LEDEnd) {
     leds[i] = ourCol;
   }
-  FastLED.delay(standardDelay);
 }
 void turnOff() {//for each LED turn off.
   FL(LEDStart, LEDEnd) {
     leds[i] = CRGB(0, 0, 0);
   }
-  FastLED.delay(standardDelay);
 }
 void doPulse() {//pulses LEDs white then turns them off.
   turnOn();
@@ -662,14 +657,15 @@ void theLights() { //  speckles and strobes
     if (colorIndex > 254) {
       colorIndex = 0;
     }
-    leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+    leds[pos] = ColorFromPalette( currentPalette, colorIndex, paletteBrightness, currentBlending);
   }
   else {
     leds[pos] = ourCol;
   }
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void rainbow() {
   static int gHue;//rotates through the palette.
@@ -687,12 +683,13 @@ void rainbow() {
         hueStore = pHue - 256;
         pHue = hueStore;
       }
-      leds[i] = ColorFromPalette( currentPalette, pHue, brightness, currentBlending);
+      leds[i] = ColorFromPalette( currentPalette, pHue, paletteBrightness, currentBlending);
     }
   }
-  if (rainbowWithGlitterTrigger == 0 && individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void addGlitter( fract8 chanceOfGlitter) {
   if ( random8() < chanceOfGlitter) {
@@ -701,14 +698,8 @@ void addGlitter( fract8 chanceOfGlitter) {
 }
 void rainbowWithGlitter() {
   // built-in FastLED rainbow, plus some random sparkly glitter
-  rainbowWithGlitterTrigger = 1; //this trigger is used to disable delay in rainbow call.
-  int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 8));
   rainbow();
   addGlitter(80);
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
-  }
-  rainbowWithGlitterTrigger = 0;
 }
 void confetti() {
   // random colored speckles that blink in and fade smoothly
@@ -721,15 +712,16 @@ void confetti() {
     if (colorIndex > 254) {
       colorIndex = 0;
     }
-    leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+    leds[pos] = ColorFromPalette( currentPalette, colorIndex, paletteBrightness, currentBlending);
   }
   else {
     leds[pos] = ourCol;
     leds[pos] += CHSV( colorIndex + random8(64), 200, 255);
   }
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void sinelon() {
   // a colored dot sweeping back and forth, with fading trails
@@ -742,15 +734,16 @@ void sinelon() {
     if (colorIndex > 254) {
       colorIndex = 0;
     }
-    leds[pos] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+    leds[pos] = ColorFromPalette( currentPalette, colorIndex, paletteBrightness, currentBlending);
   }
   else {
     leds[pos] = ourCol;
     leds[pos] += CHSV( colorIndex, 255, 192);
   }
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void bpm() {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
@@ -774,9 +767,10 @@ void bpm() {
       leds[i] = ColorFromPalette(palette, colorIndex + (i * 2), beat - colorIndex + (i * 10));
     }
   }
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void bouncingTrails() {
   //sets a "spawn" in the middle half of a strip then sends a trail in either direction which bounces of the ends of the strip.
@@ -807,7 +801,7 @@ void bouncingTrails() {
     if (individualStripMode == 0) {
       FL(0, NUM_STRIPS) {
         if (paletteMode == 1) {
-          leds[(pos + (i * NUM_LEDS_PER_STRIP))] = ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+          leds[(pos + (i * NUM_LEDS_PER_STRIP))] = ColorFromPalette( currentPalette, paletteRef, paletteBrightness, currentBlending);
         }
         else {
           leds[(pos + (i * NUM_LEDS_PER_STRIP))] = ourCol;
@@ -816,7 +810,7 @@ void bouncingTrails() {
     }
     else {//if individual strip mode is on
       if (paletteMode == 1) {
-        leds[(pos + LEDStart)] = ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+        leds[(pos + LEDStart)] = ColorFromPalette( currentPalette, paletteRef, paletteBrightness, currentBlending);
       }
       else {
         leds[(pos + LEDStart)] = ourCol;
@@ -852,8 +846,8 @@ void bouncingTrails() {
     if (individualStripMode == 0) { //paint the trails
       FL(0, NUM_STRIPS) {
         if (paletteMode == 1) {
-          leds[(posUp + (i * NUM_LEDS_PER_STRIP))] = ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
-          leds[(posDown + (i * NUM_LEDS_PER_STRIP))] = ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+          leds[(posUp + (i * NUM_LEDS_PER_STRIP))] = ColorFromPalette( currentPalette, paletteRef,  paletteBrightness, currentBlending);
+          leds[(posDown + (i * NUM_LEDS_PER_STRIP))] = ColorFromPalette( currentPalette, paletteRef, paletteBrightness, currentBlending);
         }
         else {
           leds[(posUp + (i * NUM_LEDS_PER_STRIP))] = ourCol;
@@ -863,8 +857,8 @@ void bouncingTrails() {
     }
     else {
       if (paletteMode == 1) {
-        leds[(posUp + LEDStart)] = ColorFromPalette( currentPalette, paletteRef,  brightness, currentBlending);
-        leds[(posDown + LEDStart)] = ColorFromPalette( currentPalette, paletteRef, brightness, currentBlending);
+        leds[(posUp + LEDStart)] = ColorFromPalette( currentPalette, paletteRef,  paletteBrightness, currentBlending);
+        leds[(posDown + LEDStart)] = ColorFromPalette( currentPalette, paletteRef, paletteBrightness, currentBlending);
       }
       else {
         leds[(posUp + LEDStart)] = ourCol;
@@ -873,9 +867,10 @@ void bouncingTrails() {
     }
   }
   lastCount = counter;
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void juggle() {//palette not currently supported
   // eight colored dots, weaving in and out of sync with each other
@@ -885,7 +880,7 @@ void juggle() {//palette not currently supported
   byte dothue = 0;
   if (paletteMode == 1) {
     FL(0, 8) {
-      leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+      leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= ColorFromPalette( currentPalette, colorIndex, paletteBrightness, currentBlending);
       leds[beatsin16( i + 7, LEDStart, LEDEnd - 1 )] |= CHSV(dothue, 200, 255);
       dothue += 32;
     }
@@ -897,9 +892,10 @@ void juggle() {//palette not currently supported
       dothue += 32;
     }
   }
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void simpleStrobe () {
   int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 1.5));
@@ -930,9 +926,10 @@ void simpleStrobe () {
     uint8_t strobesPerPosition = 2; // try 1..4
     strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
   }
-  if (individualStripMode != 1) {
-    FastLED.delay(myDelay);
+  if (individualStripMode == 1) {
+    delayStore[stripNumber] = myDelay;
   }
+  currentDelay = myDelay;
 }
 void strobeCore(uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats, uint8_t huedelta) {
   static uint8_t sRepeatCounter = 0;
@@ -1135,7 +1132,7 @@ void setup() {
   FastLED.addLeds<WS2812B, 3, GRB>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<WS2812B, 4, GRB>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
   FastLED.addLeds<WS2812B, 5, GRB>(leds, 3 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
-  FastLED.setBrightness(128);
+  FastLED.setBrightness(BRIGHTNESS);
   currentBlending = LINEARBLEND;
   int i = 0;
   while (i < NUM_STRIPS + 1) {
@@ -1193,7 +1190,11 @@ void loop() {
   setLEDs();
   paletteSelect();
   patternSelect();
+  FastLED.show();
   if (individualStripMode == 1) {
-    FastLED.delay(standardDelay);
+    int sum = delayStore[1]+delayStore[2]+delayStore[3]+delayStore[4];
+    float avg = sum * 0.25;
+    FastLED.delay((int)avg);
   }
+  else FastLED.delay(currentDelay);
 }
