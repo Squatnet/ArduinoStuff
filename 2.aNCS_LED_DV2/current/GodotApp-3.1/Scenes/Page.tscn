@@ -87,12 +87,13 @@ align = 1
 valign = 1
 
 [node name="PalleteMode" type="CheckButton" parent="."]
-margin_left = 603.0
-margin_top = 414.8
-margin_right = 772.0
-margin_bottom = 454.8
+margin_left = 601.149
+margin_top = 409.248
+margin_right = 770.149
+margin_bottom = 449.248
 rect_scale = Vector2( 2, 2 )
 theme = ExtResource( 1 )
+disabled = true
 text = "PalleteMode"
 align = 2
 
@@ -287,6 +288,16 @@ text = "Term"
 align = 2
 valign = 1
 
+[node name="AddStrNum" type="Label" parent="."]
+visible = false
+margin_left = 841.0
+margin_top = 366.8
+margin_right = 862.0
+margin_bottom = 388.8
+text = "1"
+align = 1
+valign = 2
+
 [node name="InStrMode" type="CheckButton" parent="."]
 margin_left = 511.0
 margin_top = 314.0
@@ -294,19 +305,12 @@ margin_right = 774.0
 margin_bottom = 354.0
 rect_scale = Vector2( 1.6, 1.6 )
 theme = ExtResource( 1 )
+disabled = true
 text = "Individual Strip Addressing"
 align = 2
 
-[node name="AddStrNum" type="Label" parent="InStrMode"]
-margin_left = 206.25
-margin_top = 33.0
-margin_right = 227.25
-margin_bottom = 55.0
-text = "1"
-align = 1
-valign = 2
-
 [node name="AddStrLbl" type="Label" parent="InStrMode"]
+visible = false
 margin_left = 18.4811
 margin_top = 35.0
 margin_right = 131.481
@@ -316,6 +320,7 @@ align = 2
 valign = 1
 
 [node name="PrevBtn" type="Button" parent="InStrMode"]
+visible = false
 margin_left = 150.0
 margin_top = 33.0
 margin_right = 186.0
@@ -323,11 +328,19 @@ margin_bottom = 63.0
 text = "<"
 
 [node name="NextBtn" type="Button" parent="InStrMode"]
+visible = false
 margin_left = 244.0
 margin_top = 33.0
 margin_right = 280.0
 margin_bottom = 63.0
 text = ">"
+
+[node name="ColorRect" type="ColorRect" parent="."]
+margin_left = 451.0
+margin_top = 293.0
+margin_right = 959.0
+margin_bottom = 497.0
+color = Color( 0, 0, 0, 1 )
 
 [connection signal="pressed" from="CloseBtn" to="." method="_on_CloseBtn_pressed"]
 [connection signal="pressed" from="AutoMode/Prev" to="." method="_on_Prev_pressed"]
