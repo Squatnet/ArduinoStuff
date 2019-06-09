@@ -23,7 +23,7 @@
 #define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
 #define NUM_LEDS_PER_STRIP 28 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
-#define I2C_ADDR 3
+#define I2C_ADDR 1
 #define BRIGHTNESS 64 // Used only for fastLeds set_brightness
 
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
