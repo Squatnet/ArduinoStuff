@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-//#define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -21,9 +21,9 @@
 #define ZOOMING_BEATS_PER_MINUTE 200
 #define STROBE_BEATS_PER_MINUTE 300
 #define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
-#define NUM_LEDS_PER_STRIP 28 //defines number of LED's per strip, see above.
+#define NUM_LEDS_PER_STRIP 27 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
-#define I2C_ADDR 1
+#define I2C_ADDR 4
 #define BRIGHTNESS 64 // Used only for fastLeds set_brightness
 
 #define FL(aa,bb) for (int i = aa; i < bb; i++) //for loop definition.
@@ -897,82 +897,7 @@ void juggle() {//palette not currently supported
   }
   currentDelay = myDelay;
 }
-void simpleStrobe () {
-  int myDelay = map(variableDelay, 0, 255, (standardDelay / 8), (standardDelay * 1.5));
-  fill_solid( LEDStart, NoLEDs, CRGB::Black);
-  const uint8_t kStrobeCycleLength = 6; // light every Nth frame
-  static uint8_t sStrobePhase = 0;
-  sStrobePhase = sStrobePhase + 1;
-  colorIndex++;
-  if (colorIndex > 256) {
-    colorIndex = 1;
-  }
-  if ( sStrobePhase >= kStrobeCycleLength ) {
-    sStrobePhase = 0;
-  }
-  if ( sStrobePhase == 0 ) {
-    uint8_t dashperiod = beatsin8( 8, 4, 10);//First argument = cycles per minute
-    uint8_t dashwidth = (dashperiod / 4) + 1;
-    uint8_t zoomBPM = STROBE_BEATS_PER_MINUTE;
-    int8_t  dashmotionspeed = beatsin8( (zoomBPM / 2), 1, dashperiod);
-    if (dashmotionspeed >= (dashperiod / 2)) {
-      dashmotionspeed = 0 - (dashperiod - dashmotionspeed );
-    }
-    uint8_t cycle = beat8(2); // two cycles per minute
-    uint8_t easedcycle = ease8InOutCubic( ease8InOutCubic( cycle));
-    uint8_t wavecycle = cubicwave8( easedcycle);
-    // uint8_t hueShift = 0; // NO SHIFT OF HUE IN COLOUR (we should rebuild in RGB...)
-    uint8_t hueShift = scale8( wavecycle, 130); // METHOD HOW HUE VALUE SHIFTS
-    uint8_t strobesPerPosition = 2; // try 1..4
-    strobeCore( dashperiod, dashwidth, dashmotionspeed, strobesPerPosition, hueShift);
-  }
-  if (individualStripMode == 1) {
-    delayStore[stripNumber] = myDelay;
-  }
-  currentDelay = myDelay;
-}
-void strobeCore(uint8_t dashperiod, uint8_t dashwidth, int8_t  dashmotionspeed, uint8_t stroberepeats, uint8_t huedelta) {
-  static uint8_t sRepeatCounter = 0;
-  static int8_t sStartPosition = LEDStart;
-  static uint8_t sStartHue = 0;
-  sStartHue += 1; //Shift the Colour little by little
-  sRepeatCounter = sRepeatCounter + 1;
-  if ( sRepeatCounter >= stroberepeats) {
-    sRepeatCounter = 0;
-    sStartPosition = sStartPosition + dashmotionspeed;
-    if ( sStartPosition >= dashperiod ) {
-      while ( sStartPosition >= dashperiod) {
-        sStartPosition -= dashperiod;
-      }
-      sStartHue  -= huedelta;
-    }
-    else if ( sStartPosition < 0) {
-      while ( sStartPosition < 0) {
-        sStartPosition += dashperiod;
-      }
-      sStartHue  += huedelta;
-    }
-  }
-  const uint8_t kSaturation = 208; // WHITE >> CURRENT COLOUR control (def 208)
-  const uint8_t kValue = 200; // Brightness??
-  strobeDraw( sStartPosition, LEDEnd, dashperiod, dashwidth, sStartHue, huedelta, kSaturation, kValue);
-}
-static void strobeDraw(uint8_t startpos, uint16_t lastpos, uint8_t period, uint8_t width, uint8_t huestart, uint8_t huedelta, uint8_t saturation, uint8_t value) {
-  uint8_t hue = huestart;
-  for ( uint16_t i = startpos; i <= lastpos; i += period) {
-    CRGB color = CHSV( hue, saturation, value);
-    //CRGB color = CRGB::Blue; // USE TO COMPLETELY BYPASS HSV Change Scheme
-    uint16_t pos = i;
-    for ( uint8_t w = 0; w < width; w++) {
-      leds[pos] = ColorFromPalette(currentPalette, colorIndex);
-      pos++;
-      if (pos >= LEDEnd) {
-        break;
-      }
-    }
-    hue += huedelta;
-  }
-}
+
 void paletteSelect() {//selects palette
   switch (paletteNumber) {
     case 0:
@@ -1065,15 +990,12 @@ void patternSelect() {//selects pattern
         bpm();
         break;
       case 8:
-        simpleStrobe();
-        break;
-      case 9:
         bouncingTrails();
         break;
-      case 10:
+      case 9:
         juggle();
         break;
-
+      
     }
   }
   if (individualStripMode == 1) { //second switch case used to set patternSelect array.
@@ -1107,12 +1029,9 @@ void patternSelect() {//selects pattern
           bpm();
           break;
         case 8:
-          simpleStrobe();
-          break;
-        case 9:
           bouncingTrails();
           break;
-        case 10:
+        case 9:
           juggle();
           break;
       }
@@ -1124,7 +1043,7 @@ void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
   pinMode(DEBUG_LED, OUTPUT);
-  DBEGIN(9600);
+  DBEGIN(115200);
   DPRINTLN("Ready for i2c");
   //sets one long array containing multiple data pins in the following format.
   //type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
@@ -1157,7 +1076,7 @@ void loop() {
     while (Serial.available()) {
       char c = Serial.read();
       string.concat(c);
-      delay(5);
+      delay(50);
     }
     if (string != '\0') {
       parser();
