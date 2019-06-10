@@ -1,5 +1,5 @@
 // Varidaic Debug Macro
-//#define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
 #define DBEGIN(...)    Serial.begin(__VA_ARGS__)
 #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -21,7 +21,7 @@
 #define ZOOMING_BEATS_PER_MINUTE 200
 #define STROBE_BEATS_PER_MINUTE 300
 #define NUM_STRIPS 4 // defines the number of strips n use. these 3 lines will need additions to the parser to make fully modular.
-#define NUM_LEDS_PER_STRIP 27 //defines number of LED's per strip, see above.
+#define NUM_LEDS_PER_STRIP 28 //defines number of LED's per strip, see above.
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS //calculates the total number of LED's based on the above 2 values.
 #define I2C_ADDR 4
 #define BRIGHTNESS 64 // Used only for fastLeds set_brightness
@@ -1043,7 +1043,7 @@ void setup() {
   Wire.begin(I2C_ADDR);
   Wire.onReceive(receiveEvent);
   pinMode(DEBUG_LED, OUTPUT);
-  DBEGIN(115200);
+  DBEGIN(9600);
   DPRINTLN("Ready for i2c");
   //sets one long array containing multiple data pins in the following format.
   //type of led/ data pin/ color order(if not RGB)/ name/ point in array to start adding from/ number of LED's to add.
@@ -1109,7 +1109,7 @@ void loop() {
   setLEDs();
   paletteSelect();
   patternSelect();
-  FastLED.show();
+  //FastLED.show();
   if (individualStripMode == 1) {
     int sum = delayStore[1]+delayStore[2]+delayStore[3]+delayStore[4];
     float avg = sum * 0.25;
