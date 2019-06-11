@@ -176,7 +176,7 @@ void parser(){
       Wire.beginTransmission(10);
       Wire.write("Mode,");
       Wire.endTransmission();
-      for(int i = 1; i<=I2C_SLAVES_NUM; i++){
+      for(int i = 1; i<=I2C_SLAVES_NUM+1; i++){
         Wire.beginTransmission(i);
         Wire.write("Atm,2");
         Wire.endTransmission();
@@ -187,7 +187,7 @@ void parser(){
      DPRINT("Control message");
      DPRINTLN(string);
      string.toCharArray(c,string.length()+1);
-     for(int i = 1; i <= I2C_SLAVES_NUM; i++){
+     for(int i = 1; i <= I2C_SLAVES_NUM+1; i++){
       Wire.beginTransmission(i);
       DPRINT("Sending to :");
       DPRINT(i);
