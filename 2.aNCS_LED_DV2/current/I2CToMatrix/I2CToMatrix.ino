@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
-#include <FontMatrise.h>
+//#include <FontMatrise.h> // uncomment for text
 // CHANGE THIS FOR ALTERNATE MATRIX
 #define I2C_ADDR 2
 
@@ -21,19 +21,19 @@
 #define DFLUSH(...)
 #endif // end macro
 
-#define LED_PIN        3
+#define LED_PIN        6
 #define COLOR_ORDER    GRB
 #define CHIPSET        WS2812B
-#define MATRIX_WIDTH   32
+#define MATRIX_WIDTH   8
 #define MATRIX_HEIGHT  8
-#define NUM_LEDS       256
+#define NUM_LEDS       64
 #define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX
 #define FRAMES_PER_SECOND  120
 #define STROBE_BEATS_PER_MINUTE 97.5
 #define CONNECTED_STRIPS 1
 
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix;
-cLEDText ScrollingMsg;
+//cLEDText ScrollingMsg;
 CRGB ourCol = CRGB(255, 255, 255);
 CRGBPalette16 currentPalette;//holds the palette
 TBlendType currentBlending;//blending type 
@@ -426,18 +426,18 @@ DEFINE_GRADIENT_PALETTE( saga_17_gp ) {//group green -> red.
 void setup() {
 	Wire.begin(I2C_ADDR); //2,3,4 for A,B+C aNCS_2560 boards.
 	Wire.onReceive(receiveEvent);
-	DBEGIN(115200);
+	DBEGIN(9600);
 	randomSeed(analogRead(0));
 	FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(matrix[0], matrix.Size());
 	FastLED.setBrightness(64); // Limit Power Consumption 
 	currentBlending = LINEARBLEND;
 	FastLED.clear(true);
-	ScrollingMsg.SetFont(MatriseFontData); // or Robotron.
+	/*ScrollingMsg.SetFont(MatriseFontData); // or Robotron.  uncommeent block to initialize text.
 	ScrollingMsg.Init(&matrix, matrix.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
 	ScrollingMsg.SetText((unsigned char *)TxtAncs, sizeof(TxtAncs) - 1);
 	ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0xff);
 	ScrollingMsg.SetScrollDirection(SCROLL_LEFT);
-	ScrollingMsg.SetFrameRate(2);
+	ScrollingMsg.SetFrameRate(2);*/
 	delay(500);
 	DPRINTLN("SETUP");
 }
@@ -898,7 +898,7 @@ void bouncingTrails(){
 	mirrorSelect();
 	FastLED.delay(myDelay);
 }
-void scrollText(){
+/*void scrollText(){//uncomment for text
 	int myDelay=map(variableDelay,0,256,1,10);
   ScrollingMsg.SetFrameRate(myDelay);
 	if (ScrollingMsg.UpdateText() == -1) { // if end of text
@@ -909,7 +909,7 @@ void scrollText(){
 	else{
 	FastLED.show();
   }
-}
+}*/
 void randShapes(){
 	int myDelay = map(variableDelay,0,256,(standardDelay*6),(standardDelay*40));
 	int myFadeOut = map(variableDelay,0,256,(standardDelay*40),(standardDelay*6));
@@ -1159,6 +1159,9 @@ void paletteSelect(){
 	}
 }
 void patternSelect(){
+	if (patternNumber == 10){//comment this if statement out to implement text on larger matrix
+		patternNumber++;
+	}
 	switch (patternNumber) {
 		case 0:
 			turnOff();
@@ -1190,9 +1193,9 @@ void patternSelect(){
 		case 9:
 			bouncingTrails();
 			break;
-		case 10:
+		/*case 10: //uncomment here for text
 			scrollText();
-			break;
+			break;*/
 		case 11:
 			randShapes();
 			break;
@@ -1220,6 +1223,23 @@ void mirrorSelect(){
 	}
 }
 void loop(){
+#ifdef DEBUG//serial input for debug purposes.
+  if (Serial.available()) {
+    string = "";
+    while (Serial.available()) {
+      char c = Serial.read();
+      string.concat(c);
+      delay(50);
+    }
+    if (string != '\0') {
+      parser();
+      string = "";
+    }
+  }
+#endif
+  EVERY_N_SECONDS(1) {
+    timeSinceBt++;
+  }
 	EVERY_N_SECONDS(1) {      
 			timeSinceBt++;//count the time since beat
 	}
