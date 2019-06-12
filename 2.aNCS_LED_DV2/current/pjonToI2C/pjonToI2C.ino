@@ -136,7 +136,7 @@ void parser(){
     DPRINTLN(string);
     if (subs.startsWith("Rst")){
 		DPRINT("Reset Command Received... Sending to : ");
-		for(int i = 1; i<=I2C_SLAVES_NUM; i++){
+		for(int i = 1; i<=I2C_SLAVES_NUM+1; i++){
 			DPRINT(i);
 			Wire.beginTransmission(i);
 			Wire.write("Rst,");
