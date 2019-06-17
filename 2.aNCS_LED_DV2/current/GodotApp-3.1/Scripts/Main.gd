@@ -1,6 +1,7 @@
 extends Control
 #warnings-disable
 signal ack 
+var regFin = false
 var menuBtn = load("res://Assets/Objects/Menu_A_Btn.tscn")
 var loadSc
 var TheDict = {}
@@ -50,6 +51,7 @@ func _on_disconnected():
 func _on_reg_finished():
 	$Control.show()
 	loadSc.loadScreenStep()
+	regFin = true
 	print("Main : Register Devices finished")
 	addMenuButton("List All")
 	if GS.knownGroups.empty():
@@ -66,7 +68,10 @@ func addMenuButton(name):
 	btn.rect_scale = Vector2(2,2)
 	btn.connect("pressed",self,"_on_Menu_A_Btn_Pressed",[btn.text])
 	$Control/MenuBarA.add_child(btn)
-
+func _process(delta):
+	if !regFin:
+		if !GS.lastRegStepConfirmed:
+			$Timer.start()
 func _on_data_received(data_received):
 	$DebugLabel.add_text(data_received+"\n")
 	$Settings/Terminal/RichTextLabel.add_text(data_received+"\n")
@@ -107,6 +112,8 @@ func _on_data_received(data_received):
 			print("MAIN: regStepsArray created: "+str(GS.regStepsArray))
 			GS.doRegStep()
 		elif test.has("Dev"):
+			GS.lastRegStepConfirmed = true
+			$Timer.stop()
 			var sglDev = test.Dev
 			print("Main: hasDev"+str(sglDev))
 			var type = sglDev.pop_front()
@@ -166,3 +173,7 @@ func updateLock():
 		GS.BT.sendData("Lck,"+str(int(lock)))
 	else:
 		OS.alert("LOCKOUT: "+str(lock),str(int(lock)))
+
+
+func _on_Timer_timeout():
+	GS.doRegStep()

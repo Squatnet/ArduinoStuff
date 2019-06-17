@@ -26,6 +26,8 @@ var knownGroups = []
 var knownPatterns = ["Turn Off","Turn On","The Lights","Rainbow","Rainbow w/ Glitter","Confetti","Sinelon","BPM","Juggle","ScrollText / Strobe"]
 var registerStep = 0
 var regStepsArray = []
+var lastRegString = ""
+var lastRegStepConfirmed = false
 var pallettes = {}
 var pallettesList = []
 var mostKnownStrips = 0
@@ -146,6 +148,8 @@ func addDvc(typ,dev): # Adds a new device from a bluetooth message, expects a st
 	knownDevs[typ][sPos] = sArr
 func doRegStep():
 	OS.delay_msec(500)
+	if !lastRegStepConfirmed:
+		BT.sendData(str(lastRegString))
 	if BT && regStepsArray.size() == 0:
 		print("GS: doRegStep: regStepsArray Empty!!")
 		registerStep += 1
@@ -153,6 +157,8 @@ func doRegStep():
 		var t = regStepsArray.pop_front()
 		print("GS: doRegStep: Sending "+str(t))
 		BT.sendData(str(t))
+		lastRegString = t
+		lastRegStepConfirmed = false
 	if registerStep == 2:
 		print("GS: doRegStep: Register Queue Finished")
 		print("GS: knownDevices: "+str(knownDevs.size()))

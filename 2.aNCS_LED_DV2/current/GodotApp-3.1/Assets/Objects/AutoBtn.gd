@@ -19,5 +19,5 @@ func setup(name, levelsToParent, butType):
 func _on_AutoBtn_toggled(button_pressed):
 	for i in get_parent().get_children():
 		i.pressed = false
-	parent.autoButtonPressed(name,type)
+	parent.autoButtonPressed(text,type)
 	

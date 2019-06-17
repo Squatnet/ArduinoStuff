@@ -32,5 +32,6 @@ func sendData(data):
 	if UdpSocket.is_listening():
 		UdpSocket.set_dest_address(GS.getRemoteAddr(), GS.getRemoteUdpPort())
 		var pac = data.to_ascii()
+		print(pac)
 		UdpSocket.put_packet(pac)
 		print("send data via UDP! "+data)

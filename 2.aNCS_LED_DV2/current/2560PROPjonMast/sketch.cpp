@@ -4,6 +4,8 @@
 #include <FastLED.h>
 #include <Arduino.h> // using c++ std lib now or some shit
 #include <PJONMaster.h> // Pjon Master
+#define PJON_MAX_PACKETS 1
+#define PJON_PACKET_MAX_LENGTH 120
 #include <SoftwareSerial.h> // HC-05
 #include <Queue.h>
 //#include <Wire.h> // i2c
@@ -34,11 +36,11 @@ SoftwareSerial hc05(10,11); // Bluetooth rx, tx
 // Declare device Struct
 struct device { // struct for a device
   int id = NULL;// device id num
-  String namee = NULL; // device name
+  String namee = ""; // device name
 };
 struct deviceStr {
   int id = NULL;
-  String namee = NULL;
+  String namee = "";
   int attachedStr = NULL;
 };
 
@@ -69,6 +71,9 @@ int *msgSendList;
 int msgSendListSize = 0;
 String mastBPM = "97.5";
 String i2cMsg = "";
+String fragmentHolder = "";
+int fragmentID = 0;
+bool fragCompleted = false;
 
 // Function to remove gaps from the device arrays 
 // Designed to be called by removeDevice(id)
@@ -476,19 +481,43 @@ int * findDeviceByName(String type, String nme){
 // Function to send to a group //
 void sendMessageGroup(){
   DPRINTLN("GroupMess Function called");
-  const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
-  msgToSend.toCharArray(packet,msgToSend.length()); //convert String msgToSend to char array, \0 auto added
+  //convert String msgToSend to char array, \0 auto added
   DPRINT("MESSAGE = "); 
   DPRINTLN(msgToSend);
   for(int i=0; i<=msgSendListSize; i++){
     if(!msgSendList[i] == 0){
-      DPRINT("SENDING TO");
-      DPRINTLN(msgSendList[i]);
-      DPRINT("Pjon status - ");
-      bus.update();
-      DPRINTLN(  bus.send(uint8_t(msgSendList[i]),packet,msgToSend.length()+1));
-      bus.update();// adds the messsageto the bus (prints status code to console)
+      if (msgToSend.length() > 16){
+        String MsgSendCopy = msgToSend;
+        while (MsgSendCopy.length() > 0){
+          bus.update();
+          String currPart = "+";
+          currPart.concat(MsgSendCopy.substring(0,16));
+          MsgSendCopy.remove(0,16);
+          currPart.concat("+");
+          DPRINTLN(currPart);
+          DPRINTLN(MsgSendCopy);
+          int er2 = 0;
+          while (er2 != 6){
+            er2 = bus.send_packet(msgSendList[i],currPart.c_str(),currPart.length()+1);
+          }
+          DPRINT("PART SENT ");
+          delay(5);
+        }
+        MsgSendCopy = "+END+";
+        int er3 = 0;
+        while (er3 !=6){
+          er3 = bus.send_packet(msgSendList[i],MsgSendCopy.c_str(),MsgSendCopy.length()+1);
+        }
+        DPRINT("Part End SENT ");
+        bus.update();
+      }
+    else {
+     int err = 0;
+     while (err != 6){
+      err = bus.send_packet(msgSendList[i],msgToSend.c_str(),msgToSend.length()+1);
+     }
     }
+  }
   }
   msgSendId = 0; //reset
   msgToSend = ""; //reset
@@ -498,6 +527,24 @@ void sendMessageGroup(){
     msgSendList[i] = NULL;
   }
 }
+void fragMsgHandler(int fragID, String ourFragment){
+  if (fragmentID != fragID){
+    fragmentHolder = "";
+    fragmentID = fragID;
+  }
+  if (ourFragment.indexOf(',') == -1){}
+  if (ourFragment == "+END+"){
+    fragCompleted = true;
+    DPRINTLN(fragmentHolder);
+  }
+  else{
+    ourFragment.remove(0,1);
+    ourFragment.remove(ourFragment.indexOf('+'));
+    DPRINTLN(ourFragment);
+    fragmentHolder.concat(ourFragment);
+  }
+}
+  
 // function to send a message to a device, called from loop if msgSwitch = 1
 void sendMessage(){
   msgSwitch = 0;
@@ -506,13 +553,53 @@ void sendMessage(){
   }
   if(msgSendId != 9999){
     DPRINTLN("sendMessage Function called");
-    const char packet[msgToSend.length()+1]; // create a char array that is the length of the message +1 (for \0)
-    msgToSend.toCharArray(packet,msgToSend.length()); //convert String msgToSend to char array, \0 auto added
-    DPRINT("MESSAGE = "); 
-    DPRINTLN(msgToSend);
-    DPRINT("Pjon status - ");
-    DPRINTLN(  bus.send(uint8_t(msgSendId),packet,msgToSend.length()+1));
-    bus.update();// adds the messsageto the bus (prints status code to console)
+    if (msgToSend.length() > 24){
+      while (msgToSend.length() > 0){
+        bus.update();
+        String currPart = "+";
+        currPart.concat(msgToSend.substring(0,24));
+        msgToSend .remove(0,24);
+        currPart.concat("+");
+        DPRINTLN(currPart);
+        int er2 = 0;
+        int iter = 0;
+        while (er2 != 6 && iter < 30){
+          iter++;
+          DPRINT("ER2 ");
+          DPRINT(er2);
+          DPRINT(" ITER ");
+          DPRINTLN(iter);
+          delay(5);
+          er2 = bus.send_packet(msgSendId,currPart.c_str(),currPart.length()+1);
+        }
+        if (iter == 30)break;
+        DPRINT("PART SENT ");
+        delay(5);
+        DPRINTLN(msgToSend);
+        }
+      msgToSend = "+END+";
+      int er3 = 0;
+      int iter = 0;
+      while (er3 != 6 && iter < 30){
+        iter++;
+        DPRINT("ER3 ");
+        DPRINTLN(er3);
+        delay(5);
+        er3 = bus.send_packet(msgSendId,msgToSend.c_str(),msgToSend.length()+1);
+      }
+      if (iter < 30) DPRINT("Part End SENT ");
+      else("SENDING FAILED ");
+    }
+    else{
+      bus.update();
+      int err = 0;
+      int iter = 0;
+      while (err != 6){
+        iter++;
+        err = bus.send_packet(msgSendId,msgToSend.c_str(),msgToSend.length()+1);
+        if (iter >= 30)break;
+      }
+    }
   }
   else{
     DPRINTLN("GROUP MESSAGE");
@@ -705,13 +792,20 @@ void parseMsg(int id, String msg) {
    *  Ctl,Str,Tree1,X1 / CONTROL,TYPE,NAME,COMMAND
    *  Ctl,56,S30 / CONTROL,ID#,COMMAND
    */ 
-  //DPRINTLN(msg
+  DPRINTLN(msg);
   if(id == udpId){
     bus.send(uint8_t(id),"ack",4);
     bus.update();
   }
   int i = msg.indexOf(','); // A well structured message will have at least 1 comma
-  if(i==-1)DPRINTLN("WHAT?"); // no comma? dont wanna parse your shit
+  if(i==-1){
+    if(msg.startsWith("+")){
+      DPRINTLN("GOT VALUE WITH NO COMMA, Fragment msg");
+    }
+    else{
+    DPRINTLN("WHAT?"); // no comma? dont wanna parse your shit
+    }
+  }
   // Device Registration - msg = Reg,Type,Name
   if(msg.startsWith("Reg")){
     msg.remove(0,msg.indexOf(',')+1); // Take "Reg," off the front. 
@@ -791,6 +885,11 @@ void parseMsg(int id, String msg) {
   msg.remove(0,msg.indexOf(',')+1);
   adminLock = msg.toInt();
   msg = "";
+ }
+ if (msg.startsWith("+")){
+  // Fragmented message
+  fragCompleted = false;
+  fragMsgHandler(id,msg);
  }
 /*
  if(msg.startsWith("Clk")){
@@ -963,6 +1062,14 @@ void loop() {
   }
   if(msgSwitch!=0){ // Theres a message to send fam!
   sendMessage(); // Send it then!
+  }
+  if(fragCompleted == true){
+    fragCompleted = false;
+    DPRINTLN("PARSING REBUILT MESSAGE");
+    parseMsg(fragmentID,fragmentHolder);
+    fragmentID = 0;
+    fragmentHolder = "";
+    
   }
   bus.receive(5000); // PJON Listen 
   bus.update(); // 

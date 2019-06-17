@@ -33,11 +33,24 @@ var commandDevClassOrID = ""
 var commandGrpName = ""
 var commandToRelay = ""
 var commandSuffix = ","
+var autoBtn = load("res://Assets/Objects/AutoBtn.tscn")
 func _ready():
 	call_deferred("showChkBox")
 	print(rect_scale)
 	rect_scale = Vector2(0.3,0.3)
 	get_node("/root/InitialLoader/Main").connect("ack",self,"onAck")
+	for i in autoOpts:
+		var aTb = autoBtn.instance()
+		aTb.setup(i,3,"auto")
+		$AutoMode/HBoxContainer.add_child(aTb)
+	for i in mirrorOpts:
+		var mTb = autoBtn.instance()
+		mTb.setup(i,3,"mirr")
+		$MirrMode/HBoxContainer.add_child(mTb)
+	for i in knownPatterns:
+		var pTb = autoBtn.instance()
+		pTb.setup(i,3,"patt")
+		$Pattern/HBoxContainer.add_child(pTb)
 func showChkBox():
 	var arg = shwChks
 	print("Page: showChkBox: "+str(arg))
@@ -50,7 +63,6 @@ func setup(args):
 	knownPatterns = GS.knownPatterns
 	numPatterns = knownPatterns.size()
 	numMirror = mirrorOpts.size()
-	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
 	#$PatternName.set_text(knownPatterns[1])
 	#$AutoMode/Label.set_text(autoOpts[automode])
 	pageType = args[0]
@@ -59,8 +71,7 @@ func setup(args):
 		var x = str(args[1]).split(":")
 		print("Page: "+str(x))
 		if x[0] != "Mat":
-			$MirrorModeName.hide()
-			$MirrorModeLbl.hide()
+			$MirrMode.hide()
 			$Messge.hide()
 		if x[0] == "Str":
 			attchStr = 4
@@ -105,12 +116,16 @@ func sendMessage():
 		var st = OS.get_unix_time()
 		GS.BT.sendData(commandToSend)
 		var msec = 0
+		var iter = 0
 		while !gotAck:
-			if msec < 600:
+			if msec < 2000:
 				print("wait for ack "+str(msec))
 				yield(get_tree(),"idle_frame")
 				msec += 10
-			if msec >= 600:
+			if iter >= 4:
+				break
+			if msec >= 2000:
+				iter += 1
 				print("Didn't get ack")
 				GS.BT.sendData(commandToSend)
 				msec = 0
@@ -124,16 +139,6 @@ func sendMessage():
 	updated.clear()
 func _on_CloseBtn_pressed():
 	queue_free()
-
-func _on_AutoMode_toggled(button_pressed):
-	if button_pressed == true:
-		automode = 1
-	else:
-		automode = 0
-	if !updated.has("automode"):
-		updated.push_back("automode")
-
-
 func _on_LineEdit_text_changed(new_text):
 	if int(new_text) != 0:
 		autoSecs = int(new_text)
@@ -301,37 +306,24 @@ func _on_PatNextBtn_pressed():
 func onAck():
 	gotAck = true
 
-func _on_MirPrevBtn_pressed():
-	mirrorSel -= 1
-	if mirrorSel < 0:
-		mirrorSel = numMirror-1
-	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
-	if !updated.has("mirror"):
-		updated.push_back("mirror")
-
-
-func _on_MirNextBtn_pressed():
-	mirrorSel += 1
-	if mirrorSel > numMirror-1:
-		mirrorSel = 0
-	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
-	if !updated.has("mirror"):
-		updated.push_back("mirror")
-
-
-func _on_Prev_pressed():
-	automode -= 1
-	if automode < 0:
-		automode = autoOpts.size()-1
-	$AutoMode/Label.set_text(autoOpts[automode])
-	if !updated.has("automode"):
-		updated.push_back("automode")
-
-
-func _on_Next_pressed():
-	automode += 1
-	if automode > autoOpts.size()-1:
-		automode = 0
-	$AutoMode/Label.set_text(autoOpts[automode])
-	if !updated.has("automode"):
-		updated.push_back("automode")
+func autoButtonPressed(btnName,btnType):
+	print(btnName)
+	if btnType == "auto":
+		if autoOpts.has(btnName):
+			automode = autoOpts.find(btnName)
+			if !updated.has("automode"):
+				updated.push_back("automode")
+		else:
+			OS.alert("Undefined Behaviour")
+	elif btnType == "mirr":
+		if mirrorOpts.has(btnName):
+			mirrorSel = mirrorOpts.find(btnName)
+			if !updated.has("mirror"):
+				updated.push_back("mirror")
+		else:
+			OS.alert("Undefined Behaviour")
+	elif btnType == "patt":
+		if knownPatterns.has(btnName):
+			patternSel = knownPatterns.find(btnName)
+			if !updated.has("pattern"):
+				updated.push_back("pattern")
