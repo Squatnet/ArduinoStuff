@@ -4,8 +4,9 @@ signal connected
 signal disconnected
 signal data_received
 signal reg_finished
+signal clock
 #warnings-disable
-var version = 0.2
+var version = 0.3
 var appDebug = true
 var appAdminMode = false
 var BTMast
@@ -15,7 +16,11 @@ var udp = false
 var udpRemoteIp = "192.168.1.1"
 var udpLocalPort = 1
 var udpSendPort = 1
-var settings = {"fakeData":false,"adminMode":false,"debugMode":true,"lockout":true,"udp":{"ip":"127.0.0.1","locPort":9000,"remPort":9001}}
+var osc = false
+var oscRemoteIp = "192.168.1.1"
+var oscLocalPort = 9654
+var oscSendPort = 1
+var settings = {"fakeData":false,"adminMode":false,"debugMode":true,"lockout":true,"udp":{"ip":"127.0.0.1","locPort":9000,"remPort":9001},"osc":{"locPort":9654,"remPort":10000,"ip":"192.168.1.2"}}
 var devNums = [0,0,0,0]
 var knownDevs = {"Str":{},
 				"Mat":{},
@@ -27,7 +32,7 @@ var knownPatterns = ["Turn Off","Turn On","The Lights","Rainbow","Rainbow w/ Gli
 var registerStep = 0
 var regStepsArray = []
 var lastRegString = ""
-var lastRegStepConfirmed = false
+var lastRegStepConfirmed = true
 var pallettes = {}
 var pallettesList = []
 var mostKnownStrips = 0
@@ -36,6 +41,7 @@ func saveSettings():
 	var f = File.new()
 	f.open("user://settings.xws", File.WRITE)
 	settings["udp"] = {"ip":udpRemoteIp,"locPort":udpLocalPort,"remPort":udpSendPort}
+	settings["osc"] = {"ip":oscRemoteIp,"locPort":oscLocalPort,"remPort":oscSendPort}
 	f.store_var(settings)
 	f.close()
 	setupBT(settings.fakeData)
@@ -53,6 +59,12 @@ func LoadSettings(): # Loads settings (volume, etc)
 			udpRemoteIp = settings.udp.ip
 			udpLocalPort = settings.udp.locPort
 			udpSendPort = settings.udp.remPort
+			if !settings.has("osc"):
+				settings["osc"] = {"ip":oscRemoteIp,"locPort":oscLocalPort,"remPort":oscSendPort}
+			else:
+				oscRemoteIp = settings.osc.ip
+				oscLocalPort = settings.osc.locPort
+				oscSendPort = settings.osc.remPort
 			if settings.debugMode == true:
 				appDebug = true
 			else:
@@ -210,6 +222,7 @@ func setupBT(arg):
 	else:
 		print("GS: setupBT: No Module")
 		BT = BTMast
+		osc = true
 #GodotBluetooth Callbacks
 func _on_connected(device_name, device_adress):
 	print("GS - Connected")

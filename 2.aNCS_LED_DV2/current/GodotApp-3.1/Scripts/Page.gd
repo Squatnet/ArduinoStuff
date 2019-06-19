@@ -38,6 +38,7 @@ func _ready():
 	call_deferred("showChkBox")
 	print(rect_scale)
 	rect_scale = Vector2(0.3,0.3)
+	GS.connect("clock",self,"_on_SendButton_pressed")
 	get_node("/root/InitialLoader/Main").connect("ack",self,"onAck")
 	for i in autoOpts:
 		var aTb = autoBtn.instance()
@@ -82,8 +83,7 @@ func setup(args):
 		$PAGE.set_text("Device Type :"+str(args[1]))
 		if args[1] != "Mat":
 			$Messge.hide()
-			$MirrorModeLbl.hide()
-			$MirrorModeName.hide()
+			$MirrMode.hide()
 		if args[1] == "Str":
 			attchStr = 4
 		if args[1] != "Str":
@@ -115,6 +115,8 @@ func sendMessage():
 		gotAck = false
 		var st = OS.get_unix_time()
 		GS.BT.sendData(commandToSend)
+		if GS.getSetting("fakeData") == true:
+			gotAck = true
 		var msec = 0
 		var iter = 0
 		while !gotAck:

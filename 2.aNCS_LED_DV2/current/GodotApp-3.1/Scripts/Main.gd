@@ -4,6 +4,8 @@ signal ack
 var regFin = false
 var menuBtn = load("res://Assets/Objects/Menu_A_Btn.tscn")
 var loadSc
+var oscrcv
+var currOSCMess = []
 var TheDict = {}
 var TypeNums = []
 func _ready():
@@ -12,6 +14,8 @@ func _ready():
 	if GS.pallettes.empty():
 		var pallParser = load("res://Scripts/PallParser.gd").new()
 		pallParser.parse()
+	if GS.osc:
+		setupOSC()
 func set_signals():
 	GS.connect("connected", self, "_on_connected")
 	GS.connect("disconnected", self, "_on_disconnected")
@@ -72,6 +76,15 @@ func _process(delta):
 	if !regFin:
 		if !GS.lastRegStepConfirmed:
 			$Timer.start()
+	if GS.osc:
+		while( oscrcv.has_message() ):
+			var msg = oscrcv.get_next()
+			print(str(msg))
+			currOSCMess.push_back(msg["address"])
+			for i in range( 0, msg["arg_num"] ):
+				currOSCMess.push_back(msg["args"][i])
+			if currOSCMess[0] == "/Clk":
+				GS.emit_signal("clock")
 func _on_data_received(data_received):
 	$DebugLabel.add_text(data_received+"\n")
 	$Settings/Terminal/RichTextLabel.add_text(data_received+"\n")
@@ -174,6 +187,13 @@ func updateLock():
 	else:
 		OS.alert("LOCKOUT: "+str(lock),str(int(lock)))
 
-
+func setupOSC():
+	var oscSet = GS.getSetting("osc")
+	oscrcv = load("res://addons/gdosc/bin/gdoscreceiver.gdns").new()
+	oscrcv.max_queue( 15 )
+	oscrcv.setup(oscSet.locPort)
+	oscrcv.start()
+func _exit_tree():
+	oscrcv.stop()
 func _on_Timer_timeout():
 	GS.doRegStep()
