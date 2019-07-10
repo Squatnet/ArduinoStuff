@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2018
+// Copyright Benoit Blanchon 2014-2019
 // MIT License
 
 #include <ArduinoJson.h>
@@ -8,31 +8,47 @@
 TEST_CASE("JsonVariant undefined") {
   JsonVariant variant;
 
-  SECTION("as<long>()") {
+  SECTION("AsLongReturns0") {
     REQUIRE(0 == variant.as<long>());
   }
 
-  SECTION("as<unsigned>()") {
+  SECTION("AsUnsignedReturns0") {
     REQUIRE(0 == variant.as<unsigned>());
   }
 
-  SECTION("as<char*>()") {
+  SECTION("AsStringReturnsNull") {
     REQUIRE(0 == variant.as<char*>());
   }
 
-  SECTION("as<double>()") {
+  SECTION("AsDoubleReturns0") {
     REQUIRE(0 == variant.as<double>());
   }
 
-  SECTION("as<bool>()") {
+  SECTION("AsBoolReturnsFalse") {
     REQUIRE(false == variant.as<bool>());
   }
 
-  SECTION("as<JsonArray>()") {
-    REQUIRE(variant.as<JsonArray>().isNull());
+  SECTION("AsArrayReturnInvalid") {
+    REQUIRE(JsonArray::invalid() == variant.as<JsonArray&>());
   }
 
-  SECTION("as<JsonObject>()") {
-    REQUIRE(variant.as<JsonObject>().isNull());
+  SECTION("AsConstArrayReturnInvalid") {
+    REQUIRE(JsonArray::invalid() == variant.as<const JsonArray&>());
+  }
+
+  SECTION("AsObjectReturnInvalid") {
+    REQUIRE(JsonObject::invalid() == variant.as<JsonObject&>());
+  }
+
+  SECTION("AsConstObjectReturnInvalid") {
+    REQUIRE(JsonObject::invalid() == variant.as<const JsonObject&>());
+  }
+
+  SECTION("AsArrayWrapperReturnInvalid") {
+    REQUIRE(JsonArray::invalid() == variant.as<JsonArray>());
+  }
+
+  SECTION("AsObjectWrapperReturnInvalid") {
+    REQUIRE(JsonObject::invalid() == variant.as<JsonObject>());
   }
 }

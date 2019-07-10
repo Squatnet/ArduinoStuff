@@ -30,6 +30,8 @@ uint8_t bus_id[4] = {0, 0, 1, 53}; // aNCS Unique Bus ID :)
 int masterTerm = 0; // This is the ID of a TFT called masterTerm. 
 int debugMode = 1; // Set to 1 for debug on
 int adminLock = 0;
+bool fakeReg = true;
+int fakeDevices = 100;
 int udpId = 0;
 PJONMaster<SoftwareBitBang> bus(bus_id); // MASTER SO ID 254
 SoftwareSerial hc05(10,11); // Bluetooth rx, tx
@@ -52,7 +54,7 @@ int numStrip = 0;
 device term[30];
 int numTerm = 0;
 // Matrix Boards
-device matrix[20];
+device matrix[100];
 int numMatrix = 0;
 // Routers
 device router[20];
@@ -288,7 +290,7 @@ int findDeviceByID(int id){
       DPRINTLN("CHECK UDP");
       if (UdpIn.id == id){
         found = true;
-        DPRINT("Device ");
+        DPRINT("NO! Device ");
         DPRINT(id);
         DPRINTLN(" is UDPIN");
         return 1;
@@ -301,18 +303,33 @@ int findDeviceByID(int id){
 void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   // Another Master / a static device dropped us?
   if (code == PJON_CONNECTION_LOST) { 
-    DPRINT("PJON error: connection lost with device id ");
-    bus.send(int(data),"Rst,",5);
-    removeDevice(int(data));
+    int id = int(data);
+    if (fakeReg == true){
+      if (id == udpId){
+        bus.send(id,"Rst,",5);
+      }
+    }
+    else{
+      DPRINT("PJON error: connection lost with device id ");
+      bus.send(int(data),"Rst,",5);
+      removeDevice(int(data));
+    }
   } 
   // we pinged a device we had already assigned an id to, and it didnt respond? 
   // we should remove it
   if (code == PJON_ID_ACQUISITION_FAIL) {
-    DPRINT("PJONMaster error: connection lost with slave id ");
-    DPRINTLN(data, DEC);
     int id = int(data);
-    DPRINTLN(id);
-    removeDevice(id); // pretty self explanitory
+    if(fakeReg == true){
+      if (id == udpId){
+        removeDevice(id);
+      }
+    }
+    else{
+      DPRINT("PJONMaster error: connection lost with slave id ");
+      DPRINTLN(data, DEC);
+      DPRINTLN(id);
+      removeDevice(id); // pretty self explanitory
+    }
   }
   // NETWORK OVERLOAD. something is spamming us
   if (code == PJON_DEVICES_BUFFER_FULL) {
@@ -351,7 +368,7 @@ int * findDeviceByName(String type, String nme){
       if(nme.startsWith("All")){
         queue.push(dev.id);
       }
-      if (dev.namee == String(nme)){
+      if (dev.namee.compareTo(String(nme))== 0){
         DPRINT("found Matrix with name ");
         DPRINTLN(nme);
         queue.push(dev.id);
@@ -368,7 +385,7 @@ int * findDeviceByName(String type, String nme){
       if( nme.startsWith("All")){
         queue.push(dev.id);
       }
-      if (dev.namee == String(nme)){
+      if (dev.namee.compareTo(String(nme))== 0){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
         queue.push(dev.id);
@@ -384,7 +401,7 @@ int * findDeviceByName(String type, String nme){
       if (nme.startsWith("All")){
         queue.push(dev.id);
       }
-      if (dev.namee == String(nme)){
+      if (dev.namee.compareTo(String(nme))== 0){
         DPRINT("found Terminal with name ");
         DPRINTLN(nme);
         queue.push(dev.id);     }
@@ -486,39 +503,62 @@ void sendMessageGroup(){
   DPRINTLN(msgToSend);
   for(int i=0; i<=msgSendListSize; i++){
     if(!msgSendList[i] == 0){
-      if (msgToSend.length() > 16){
+      DPRINT("GM: ");
+      DPRINT(i);
+      DPRINT(" ID: ");
+      DPRINTLN(msgSendList[i]);
+      if (msgToSend.length() > 24){
         String MsgSendCopy = msgToSend;
         while (MsgSendCopy.length() > 0){
           bus.update();
           String currPart = "+";
-          currPart.concat(MsgSendCopy.substring(0,16));
-          MsgSendCopy.remove(0,16);
+          currPart.concat(MsgSendCopy.substring(0,24));
+          MsgSendCopy.remove(0,24);
           currPart.concat("+");
           DPRINTLN(currPart);
           DPRINTLN(MsgSendCopy);
-          int er2 = 0;
-          while (er2 != 6){
+          if(fakeReg){}
+          else{
+            int iter = 0;
+            int er2 = 0;
+            while (er2 != 6){
             er2 = bus.send_packet(msgSendList[i],currPart.c_str(),currPart.length()+1);
+            if(iter > 10)break;
+          }
           }
           DPRINT("PART SENT ");
           delay(5);
         }
         MsgSendCopy = "+END+";
-        int er3 = 0;
-        while (er3 !=6){
-          er3 = bus.send_packet(msgSendList[i],MsgSendCopy.c_str(),MsgSendCopy.length()+1);
+        if(fakeReg){}
+        else{
+          int iter = 0;
+          int er3 = 0;
+          while (er3 !=6){
+            er3 = bus.send_packet(msgSendList[i],MsgSendCopy.c_str(),MsgSendCopy.length()+1);
+            if(iter>10)break;
+          }
         }
         DPRINT("Part End SENT ");
         bus.update();
       }
     else {
-     int err = 0;
-     while (err != 6){
-      err = bus.send_packet(msgSendList[i],msgToSend.c_str(),msgToSend.length()+1);
-     }
+      if(fakeReg){}
+      else{
+        int err = 0;
+        while (err != 6){
+        err = bus.send_packet(msgSendList[i],msgToSend.c_str(),msgToSend.length()+1);
+        }
+      }
     }
   }
+  else {
+    DPRINT("GM: ");
+    DPRINT(i);
+    DPRINT(" ID: ");
+    DPRINTLN(msgSendList[i]);
   }
+}
   msgSendId = 0; //reset
   msgToSend = ""; //reset
   msgSwitch = 0; //reset
@@ -563,7 +603,7 @@ void sendMessage(){
         DPRINTLN(currPart);
         int er2 = 0;
         int iter = 0;
-        while (er2 != 6 && iter < 30){
+        while (er2 != 6 && iter < 10){
           iter++;
           DPRINT("ER2 ");
           DPRINT(er2);
@@ -572,7 +612,7 @@ void sendMessage(){
           delay(5);
           er2 = bus.send_packet(msgSendId,currPart.c_str(),currPart.length()+1);
         }
-        if (iter == 30)break;
+        if (iter == 10)break;
         DPRINT("PART SENT ");
         delay(5);
         DPRINTLN(msgToSend);
@@ -580,14 +620,14 @@ void sendMessage(){
       msgToSend = "+END+";
       int er3 = 0;
       int iter = 0;
-      while (er3 != 6 && iter < 30){
+      while (er3 != 6 && iter < 10){
         iter++;
         DPRINT("ER3 ");
         DPRINTLN(er3);
         delay(5);
         er3 = bus.send_packet(msgSendId,msgToSend.c_str(),msgToSend.length()+1);
       }
-      if (iter < 30) DPRINT("Part End SENT ");
+      if (iter < 10) DPRINT("Part End SENT ");
       else("SENDING FAILED ");
     }
     else{
@@ -597,7 +637,7 @@ void sendMessage(){
       while (err != 6){
         iter++;
         err = bus.send_packet(msgSendId,msgToSend.c_str(),msgToSend.length()+1);
-        if (iter >= 30)break;
+        if (iter >= 10)break;
       }
     }
   }
@@ -715,6 +755,9 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
     DPRINT(reg);
       reg.remove(0,reg.indexOf(',')+1);
       DPRINTLN(reg);
+      if (reg.indexOf(',')!=-1){
+        reg.remove(reg.indexOf(','),1);
+      }
       matrix[numMatrix].id = id;
       matrix[numMatrix].namee = reg;
       DPRINT("Matrix : ");
@@ -732,6 +775,9 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
       if( reg.startsWith("Master")){ // If a TFT registers, Called Master
         masterTerm = id; // make sure we send our debug output to it
       }
+      if (reg.indexOf(',')!=-1){
+        reg.remove(reg.indexOf(','),1);
+      }
       term[numTerm].id = id;
       term[numTerm].namee = reg;
       DPRINT("Term : ");
@@ -745,6 +791,9 @@ void regDev(int id, String reg){ // id is who it came from and reg is Type,Name,
   else if( reg.startsWith("Rou")){
     DPRINT(reg);
       reg.remove(0,reg.indexOf(',')+1);
+      if (reg.indexOf(',')!=-1){
+        reg.remove(reg.indexOf(','),1);
+      }
       DPRINTLN(reg);
       router[numRouter].id = id;
       router[numRouter].namee = reg;
@@ -851,7 +900,9 @@ void parseMsg(int id, String msg) {
       idList = findDeviceByName(idStr,idName);
       msgSendId = 9999; // Run findDeviceByName with our 2 variables. Set the id to be the number returned
       msgSendList = idList;
-      msgSendListSize = sizeof(idList);
+      int listSz = 0;
+      while(idList[listSz] != 0)listSz++;
+      msgSendListSize = listSz;
       }
      else {
       msgSendId = id;
@@ -1009,7 +1060,7 @@ void printRtrs(){
 }
 
 void setup() { // Setup
-#ifdef DEBUG{
+#ifdef DEBUG
   Serial.begin(115200); // Start Serial
   #endif
   DPRINT("Setup ");
@@ -1038,8 +1089,41 @@ void setup() { // Setup
   //Wire.begin(8);
   DPRINT(". ");
   //Wire.onReceive(gotWire);
-  }
-  //MAin fucking loop time.
+  if(fakeReg == true){
+    DPRINTLN("Fakey Register boyo");
+    DPRINTLN("Add A Bunch of devices");
+    String ch0 = "Debug";
+    String ch1 = "Long";
+    String ch2 = "Top";
+    String ch3 = "Wall";
+    String ch4 = "Square";
+    String ch5 = "Bottom";
+    String ch6 = "Left";
+    String ch7 = "Right";
+    String ch8 = "Final";
+    for(int i = 130; i<(130+fakeDevices);i++){
+      String regSt = "";
+      int split = int(fakeDevices/2); 
+      split += 130;
+      if(i<split) regSt.concat("Str,");
+      else regSt.concat("Mat,");
+      int chk = random(0,4);
+      if(chk == 0)regSt.concat(ch0);
+      else if(chk == 1)regSt.concat(ch1);
+      else if(chk == 2)regSt.concat(ch2);
+      else if(chk == 3)regSt.concat(ch3);
+      else if(chk == 4)regSt.concat(ch4);
+      else if(chk == 5)regSt.concat(ch5);
+      else if(chk == 6)regSt.concat(ch6);
+      else if(chk == 7)regSt.concat(ch7);
+      else regSt.concat(ch8);
+      regSt.concat(",");
+      regDev(i,regSt);
+      }
+    DPRINTLN("DONE");
+   }
+}
+//MAin fucking loop time.
   
 void loop() {
   if(bus.debug)digitalWrite(PJON_ISSUE_LED,HIGH); // Turn the led on if debug is on. 

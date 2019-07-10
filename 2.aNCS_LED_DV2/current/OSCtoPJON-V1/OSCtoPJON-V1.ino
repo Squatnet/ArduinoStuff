@@ -103,12 +103,14 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 // PJON RECEIVER CODE
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
    const char * arr = payload; // Not a pointer now.... !
+   Serial.print("ARR : ");
+   Serial.println(arr);
   string.concat(arr); // addd it to our string
   if( string.startsWith("ack")){ // master got our registation message!
     ack = true; // nice
     string = ""; // thats all it says!
-    DPRINT("Heard from server : "); 
-    DPRINTLN(remPort);
+    //DPRINT("Heard from server : "); 
+    //DPRINTLN(remPort);
     Udp.beginPacket(remote, remPort);
     Udp.write("ack");
     Udp.endPacket();
@@ -128,12 +130,12 @@ void fragMsgHandler(String ourFragment){
   if (ourFragment.indexOf(',') == -1){}
   if (ourFragment == "+END+"){
     fragCompleted = true;
-    DPRINTLN(fragmentHolder);
+   // DPRINTLN(fragmentHolder);
   }
   else{
     ourFragment.remove(0,1);
     ourFragment.remove(ourFragment.indexOf('+'));
-    DPRINTLN(ourFragment);
+   // DPRINTLN(ourFragment);
     fragmentHolder.concat(ourFragment);
   }
 }
@@ -155,11 +157,14 @@ void parser(){
         fragMsgHandler(string);
         }
     else{
+      if (!string.endsWith(",")) string.concat(",");
       String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
       string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
       DPRINTLN("STRING FUCKED NOW");
       DPRINTLN(string);
-      if (subs.startsWith("Rst"))resetFunc(); // Reboot yourself. messge is destryed at this point
+      if (subs.startsWith("Rst")){
+        resetFunc(); // Reboot yourself. messge is destryed at this point
+      }
       if (subs.startsWith("Lck")){}
       /* 
       * Add your if staments here, Strips pattern code added for example
@@ -176,45 +181,33 @@ void parser(){
   string = ""; // empty it
   }
 };
-void iic(String x){
-  //Wire.beginTransmission(addr);
-  char c[x.length()+1];
-  x.toCharArray(c,x.length()+1);
-  //Wire.write(c);
-  bus.send(254,c,x.length()+1);
-  bus.update();
-  DPRINTLN("Sent Pjon");
-  //Wire.endTransmission();
-}
-
-
 void setup(){  // SETUP 
   DBEGIN(115200); // Serial console
-  DPRINT("Setup ");
+  //DPRINT("Setup ");
   bus.set_error(error_handler); // link PJON to error handler
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.strategy.set_pin(PJON_PIN); // Set PJON pin
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.begin(); // 
-  DPRINT(". ");
+  //DPRINT(". ");
   delay(160); // possibly not needed if master is online
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.acquire_id_master_slave(); //get an id
-  DPRINT(". ");
+  //DPRINT(". ");
   delayStart = millis();
-  DPRINT(". ");
+  //DPRINT(". ");
   delayRunning = true;
-  DPRINT(". ");
+  //DPRINT(". ");
   pinMode(4, OUTPUT); // disable SD
-  DPRINT(". ");
+  //DPRINT(". ");
   digitalWrite(4, HIGH);
-  DPRINT(". ");
+  //DPRINT(". ");
   Ethernet.begin(mac, ip);  // init ETH
-  DPRINT(". ");
+  //DPRINT(". ");
   DPRINTLN("Done!!!");
-  DPRINTLN("Arduino IP address: ");
+  //DPRINTLN("Arduino IP address: ");
   for (byte thisByte = 0; thisByte < 4; thisByte++) {
     DPRINT(Ethernet.localIP()[thisByte], DEC);
     DPRINT("."); 
@@ -225,10 +218,8 @@ void setup(){  // SETUP
 };
 // Function to register with master.
 // simply converts a String to a char array and sends it
-void tellMasterAboutSelf(){ 
-  const char pkt[regString.length()+1]; // Create array
-  regString.toCharArray(pkt,regString.length()); // Convert string to Char[]
-  bus.send(254,pkt,regString.length()+1); // Send the packet to master. 
+void tellMasterAboutSelf(){
+  bus.send(254,regString.c_str(),regString.length()+1); // Send the packet to master. 
 };
 void loop() {
     //DPRINTLN("LOOP");
@@ -277,7 +268,7 @@ void loop() {
     remote = Udp.remoteIP();
     remPort = Udp.remotePort();
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
-    DPRINTLN("READ UDP PACKET");
+    //DPRINTLN("READ UDP PACKET");
     // send a reply to the IP address and port that sent us the packet we received
     String str = "";
     DPRINT("THE PKT : ");
