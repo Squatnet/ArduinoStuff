@@ -10,7 +10,7 @@
  */
 
 // Varidaic Debug Macro //
-//#define DEBUG   //Comment this line to disable Debug output
+#define DEBUG   //Comment this line to disable Debug output
 #ifdef DEBUG    // Debug is on
   #define DBEGIN(...)    Serial.begin(__VA_ARGS__)     // Debug serial begin
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //Sends our arguments to DPRINT()
@@ -43,7 +43,8 @@ int ourID = 255; // Our ID number
 unsigned long DELAY_TIME = 15000; // 1.5 sec
 unsigned long delayStart = 0; // the time the delay started
 bool delayRunning = false; // true if still waiting for delay to finish
-
+String fragmentHolder = "";
+bool fragCompleted = false;
 
 // Shows free ram 
 int freeRam () {
@@ -113,6 +114,19 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   DFLUSH();
   
 };
+void fragMsgHandler(String ourFragment){
+  if (ourFragment.indexOf(',') == -1){}
+  if (ourFragment == "+END+"){
+    fragCompleted = true;
+    DPRINTLN(fragmentHolder);
+  }
+  else{
+    ourFragment.remove(0,1);
+    ourFragment.remove(ourFragment.indexOf('+'));
+    DPRINTLN(ourFragment);
+    fragmentHolder.concat(ourFragment);
+  }
+}
 // Reads an incoming control message
 void parser(){
   DPRINT(string.length());
@@ -120,6 +134,12 @@ void parser(){
     DPRINT("Packet length = ");
     DPRINTLN(string.length());
     DFLUSH();
+    if (string.startsWith("+")){
+      // Fragmented message
+      fragCompleted = false;
+      fragMsgHandler(string);
+      string = "";
+    }
     if(string.indexOf(",")==-1)string.concat(","); //adds comma at end if not exists. hackkkyyyyy! i love it
     DPRINT("packet = ");
     DPRINTLN(string); // While there message left to read. 
@@ -262,6 +282,13 @@ void loop() {
     delay(100);
     acquired = true; // track that
     tellMasterAboutSelf(); // and register
+  }
+  if (fragCompleted) {
+    string = fragmentHolder;
+    DPRINTLN(string);
+    parser();
+    fragmentHolder = "";
+    fragCompleted = false;
   }
   bus.update(); // update the PJON
   bus.receive(5000); // receive for a while

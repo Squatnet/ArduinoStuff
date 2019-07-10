@@ -21,12 +21,12 @@
 #define DFLUSH(...)
 #endif // end macro
 
-#define LED_PIN        3
+#define LED_PIN        4
 #define COLOR_ORDER    GRB
 #define CHIPSET        WS2812B
-#define MATRIX_WIDTH   32
-#define MATRIX_HEIGHT  8
-#define NUM_LEDS       256
+#define MATRIX_WIDTH   60
+#define MATRIX_HEIGHT  14
+#define NUM_LEDS       624
 #define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX
 #define FRAMES_PER_SECOND  120
 #define STROBE_BEATS_PER_MINUTE 97.5
