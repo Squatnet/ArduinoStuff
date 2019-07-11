@@ -31,9 +31,12 @@ int ledState = LOW;
 EthernetUDP Udp; // init ETH UDP lib
 IPAddress remote;
 unsigned int remPort = 9500;
+char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
 
 // PJON stuff //
 #define PJON_INCLUDE_SWBB
+#define PJON_MAX_PACKETS 2
+#define PJON_PACKET_MAX_LENGTH 120
 #define PJON_PIN  7
 #include <PJONSlave.h>  // Coz we are inslave mode .
 uint8_t bus_id[] = {0, 0, 1, 53}; // Ancs unique ID
@@ -46,6 +49,8 @@ int ourID = 255; // Our ID number
 unsigned long DELAY_TIME = 15000; // 1.5 sec
 unsigned long delayStart = 0; // the time the delay started
 bool delayRunning = false; // true if still waiting for delay to finish
+String fragmentHolder = "";
+bool fragCompleted = false;
 int frames = 0;
 
 // Shows free ram 
@@ -98,12 +103,14 @@ void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
 // PJON RECEIVER CODE
 void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
    const char * arr = payload; // Not a pointer now.... !
+   Serial.print("ARR : ");
+   Serial.println(arr);
   string.concat(arr); // addd it to our string
   if( string.startsWith("ack")){ // master got our registation message!
     ack = true; // nice
     string = ""; // thats all it says!
-    DPRINT("Heard from server : "); 
-    DPRINTLN(remPort);
+    //DPRINT("Heard from server : "); 
+    //DPRINTLN(remPort);
     Udp.beginPacket(remote, remPort);
     Udp.write("ack");
     Udp.endPacket();
@@ -119,6 +126,19 @@ void receiver_handler(uint8_t *payload, uint16_t length, const PJON_Packet_Info 
   DFLUSH();
   
 };
+void fragMsgHandler(String ourFragment){
+  if (ourFragment.indexOf(',') == -1){}
+  if (ourFragment == "+END+"){
+    fragCompleted = true;
+   // DPRINTLN(fragmentHolder);
+  }
+  else{
+    ourFragment.remove(0,1);
+    ourFragment.remove(ourFragment.indexOf('+'));
+   // DPRINTLN(ourFragment);
+    fragmentHolder.concat(ourFragment);
+  }
+}
 // Reads an incoming control message
 void parser(){
   while(string.length() >= 1){ // While there message left to read. 
@@ -127,72 +147,67 @@ void parser(){
     DPRINTLN("ITS HERE");
     if (string.startsWith("{")){
       if (!string.endsWith("}"))string.concat("}");
-      char replyBuffer[string.length()+1];
-      string.toCharArray(replyBuffer,string.length()+1);
-      string = "";
       Udp.beginPacket(remote, remPort);
-      Udp.write(replyBuffer);
+      Udp.write(string.c_str());
       Udp.endPacket();
     }
-    String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
-    string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
-    DPRINTLN("STRING FUCKED NOW");
+    else if (string.startsWith("+")){
+         // Fragmented message
+        fragCompleted = false;
+        fragMsgHandler(string);
+        }
+    else{
+      if (!string.endsWith(",")) string.concat(",");
+      String subs = string.substring(0,string.indexOf(",")); // get everything until the first comma.
+      string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // remove everything up to and including the first comma
+      DPRINTLN("STRING FUCKED NOW");
+      DPRINTLN(string);
+      if (subs.startsWith("Rst")){
+        resetFunc(); // Reboot yourself. messge is destryed at this point
+      }
+      if (subs.startsWith("Lck")){}
+      /* 
+      * Add your if staments here, Strips pattern code added for example
+      * if (subs.startsWith("ptn")){ // next value is pattern. 
+      *   String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
+      *   x = ptn.toInt(); // Its going to be an integer. its the pattern number,
+      *   string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
+      *   }
+      *  
+      */
+    }
+    DPRINT("STR = "); // prints after length < 1
     DPRINTLN(string);
-    if (subs.startsWith("Rst")){}//resetFunc(); // Reboot yourself. messge is destryed at this point
-    if (subs.startsWith("Lck")){}
-    /* 
-     * Add your if staments here, Strips pattern code added for example
-     * if (subs.startsWith("ptn")){ // next value is pattern. 
-     *   String ptn = string.substring(0,string.indexOf(",")); // get everything until the comma
-     *   x = ptn.toInt(); // Its going to be an integer. its the pattern number,
-     *   string.remove(0,string.indexOf(0,string.indexOf(",")+1)); // Remove the value
-     *   }
-     *  
-     */
-  }
-  DPRINT("STR = "); // prints after length < 1
-  DPRINTLN(string);
   string = ""; // empty it
+  }
 };
-void iic(String x){
-  //Wire.beginTransmission(addr);
-  char c[x.length()+1];
-  x.toCharArray(c,x.length()+1);
-  //Wire.write(c);
-  bus.send(254,c,x.length()+1);
-  bus.update();
-  DPRINTLN("Sent Pjon");
-  //Wire.endTransmission();
-}
-
-
 void setup(){  // SETUP 
   DBEGIN(115200); // Serial console
-  DPRINT("Setup ");
+  //DPRINT("Setup ");
   bus.set_error(error_handler); // link PJON to error handler
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.set_receiver(receiver_handler); // link PJON to receiver
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.strategy.set_pin(PJON_PIN); // Set PJON pin
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.begin(); // 
-  DPRINT(". ");
+  //DPRINT(". ");
   delay(160); // possibly not needed if master is online
-  DPRINT(". ");
+  //DPRINT(". ");
   bus.acquire_id_master_slave(); //get an id
-  DPRINT(". ");
+  //DPRINT(". ");
   delayStart = millis();
-  DPRINT(". ");
+  //DPRINT(". ");
   delayRunning = true;
-  DPRINT(". ");
+  //DPRINT(". ");
   pinMode(4, OUTPUT); // disable SD
-  DPRINT(". ");
+  //DPRINT(". ");
   digitalWrite(4, HIGH);
-  DPRINT(". ");
+  //DPRINT(". ");
   Ethernet.begin(mac, ip);  // init ETH
-  DPRINT(". ");
+  //DPRINT(". ");
   DPRINTLN("Done!!!");
-  DPRINTLN("Arduino IP address: ");
+  //DPRINTLN("Arduino IP address: ");
   for (byte thisByte = 0; thisByte < 4; thisByte++) {
     DPRINT(Ethernet.localIP()[thisByte], DEC);
     DPRINT("."); 
@@ -203,10 +218,8 @@ void setup(){  // SETUP
 };
 // Function to register with master.
 // simply converts a String to a char array and sends it
-void tellMasterAboutSelf(){ 
-  const char pkt[regString.length()+1]; // Create array
-  regString.toCharArray(pkt,regString.length()); // Convert string to Char[]
-  bus.send(254,pkt,regString.length()+1); // Send the packet to master. 
+void tellMasterAboutSelf(){
+  bus.send(254,regString.c_str(),regString.length()+1); // Send the packet to master. 
 };
 void loop() {
     //DPRINTLN("LOOP");
@@ -219,12 +232,12 @@ void loop() {
       if(bus.device_id() == PJON_NOT_ASSIGNED){
        DPRINTLN("NO ID AFTER 15000");
        DFLUSH();
-       //resetFunc(); // reset
+       resetFunc(); // reset
     }
     if(!acquired | !ack){
       DPRINTLN("Check master knows about");
       DFLUSH();
-     // bus.send(254,"Chk,",5);
+      bus.send(254,"Chk,",5);
       acquired = true;
       ack = true;
     }
@@ -238,25 +251,67 @@ void loop() {
     acquired = true; // track that
     tellMasterAboutSelf(); // and register
   }
+  if (fragCompleted){
+    string = fragmentHolder;
+    parser();
+    fragmentHolder = "";
+    fragCompleted = false;
+  }
   int packetSize = Udp.parsePacket();
   if (packetSize) {
     DPRINTLN("GOT UDP PACKET");
+    int i = 0;
+    while(packetBuffer[i] != '\0'){
+      packetBuffer[i] = '\0';
+      i++;
+    }
     remote = Udp.remoteIP();
     remPort = Udp.remotePort();
-    char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
-    // read the packet into packetBufffer
-        for(int i=0; i<UDP_TX_PACKET_MAX_SIZE;i++){
-      packetBuffer[i] = '\0';
-    }
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
-    DPRINTLN("READ UDP PACKET");
+    //DPRINTLN("READ UDP PACKET");
     // send a reply to the IP address and port that sent us the packet we received
     String str = "";
+    DPRINT("THE PKT : ");
+    DPRINTLN(packetBuffer);
     str.concat(packetBuffer);
+    DPRINT("THE STR : ");
     DPRINTLN(str);
-    bus.send(254,packetBuffer,str.length()+1);
     bus.update();
+    int err = bus.send_packet(254,packetBuffer,str.length()+1);
+    if (err != 6){
+      Udp.beginPacket(remote, remPort);
+      Udp.write("ack");
+      Udp.endPacket();
+      DPRINT("Error, Trying chop and resend");
+      while (str.length()>0){
+        DPRINTLN(str);
+        String currPart = "+";
+        currPart.concat(str.substring(0,24));
+        str.remove(0,24);
+        currPart.concat("+");
+        DPRINTLN(currPart);
+        DPRINTLN(str);
+        int er2 = 0;
+        while (er2 != 6){
+          DPRINT("ER2 ");
+          DPRINTLN(er2);
+          delay(5);
+         er2 = bus.send_packet(254,currPart.c_str(),currPart.length()+1);
+        }
+        DPRINT("PART SENT ");
+        delay(5);
+      }
+      str = "+END+";
+      int er3 = 0;
+      while (er3 != 6){
+        DPRINT("ER3 ");
+          DPRINTLN(er3);
+          delay(5);
+        er3 = bus.send_packet(254,str.c_str(),str.length()+1);
+      }
+      DPRINT("Part End SENT ");
     }
+  }
   //DPRINTLN("LOOP END");
   bus.update(); // update the PJON
   bus.receive(5000); // receive for a while

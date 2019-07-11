@@ -7,66 +7,35 @@
 #include <string>
 
 TEST_CASE("JsonObject::remove()") {
-  DynamicJsonDocument doc(4096);
-  JsonObject obj = doc.to<JsonObject>();
-  obj["a"] = 0;
-  obj["b"] = 1;
-  obj["c"] = 2;
-  std::string result;
+  DynamicJsonBuffer jb;
 
-  SECTION("remove(key)") {
-    SECTION("Remove first") {
-      obj.remove("a");
-      serializeJson(obj, result);
-      REQUIRE("{\"b\":1,\"c\":2}" == result);
-    }
+  SECTION("SizeDecreased_WhenValuesAreRemoved") {
+    JsonObject& obj = jb.createObject();
+    obj["hello"] = 1;
 
-    SECTION("Remove middle") {
-      obj.remove("b");
-      serializeJson(obj, result);
-      REQUIRE("{\"a\":0,\"c\":2}" == result);
-    }
+    obj.remove("hello");
 
-    SECTION("Remove last") {
-      obj.remove("c");
-      serializeJson(obj, result);
-      REQUIRE("{\"a\":0,\"b\":1}" == result);
-    }
+    REQUIRE(0 == obj.size());
   }
 
-  SECTION("remove(iterator)") {
-    JsonObject::iterator it = obj.begin();
+  SECTION("SizeUntouched_WhenRemoveIsCalledWithAWrongKey") {
+    JsonObject& obj = jb.createObject();
+    obj["hello"] = 1;
 
-    SECTION("Remove first") {
-      obj.remove(it);
-      serializeJson(obj, result);
-      REQUIRE("{\"b\":1,\"c\":2}" == result);
-    }
+    obj.remove("world");
 
-    SECTION("Remove middle") {
-      ++it;
-      obj.remove(it);
-      serializeJson(obj, result);
-      REQUIRE("{\"a\":0,\"c\":2}" == result);
-    }
-
-    SECTION("Remove last") {
-      it += 2;
-      obj.remove(it);
-      serializeJson(obj, result);
-      REQUIRE("{\"a\":0,\"b\":1}" == result);
-    }
+    REQUIRE(1 == obj.size());
   }
 
-#ifdef HAS_VARIABLE_LENGTH_ARRAY
-  SECTION("key is a vla") {
-    int i = 16;
-    char vla[i];
-    strcpy(vla, "b");
-    obj.remove(vla);
+  SECTION("RemoveByIterator") {
+    JsonObject& obj = jb.parseObject("{\"a\":0,\"b\":1,\"c\":2}");
 
-    serializeJson(obj, result);
+    for (JsonObject::iterator it = obj.begin(); it != obj.end(); ++it) {
+      if (it->value == 1) obj.remove(it);
+    }
+
+    std::string result;
+    obj.printTo(result);
     REQUIRE("{\"a\":0,\"c\":2}" == result);
   }
-#endif
 }

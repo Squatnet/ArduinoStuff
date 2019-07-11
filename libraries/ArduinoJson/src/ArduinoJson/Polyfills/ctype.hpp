@@ -4,7 +4,8 @@
 
 #pragma once
 
-namespace ARDUINOJSON_NAMESPACE {
+namespace ArduinoJson {
+namespace Internals {
 
 inline bool isdigit(char c) {
   return '0' <= c && c <= '9';
@@ -13,4 +14,5 @@ inline bool isdigit(char c) {
 inline bool issign(char c) {
   return '-' == c || c == '+';
 }
-}  // namespace ARDUINOJSON_NAMESPACE
+}  // namespace Internals
+}  // namespace ArduinoJson

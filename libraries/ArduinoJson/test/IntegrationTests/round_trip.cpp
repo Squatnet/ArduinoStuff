@@ -6,15 +6,13 @@
 #include <catch.hpp>
 
 void check(std::string originalJson) {
-  DynamicJsonDocument doc(16384);
+  DynamicJsonBuffer jb;
 
   std::string prettyJson;
-  deserializeJson(doc, originalJson);
-  serializeJsonPretty(doc, prettyJson);
+  jb.parseObject(originalJson).prettyPrintTo(prettyJson);
 
   std::string finalJson;
-  deserializeJson(doc, originalJson);
-  serializeJson(doc, finalJson);
+  jb.parseObject(prettyJson).printTo(finalJson);
 
   REQUIRE(originalJson == finalJson);
 }

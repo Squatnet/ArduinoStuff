@@ -4,22 +4,16 @@
 
 #pragma once
 
-namespace ARDUINOJSON_NAMESPACE {
-
-// Some libraries #define isnan() and isinf() so we need to check before
-// using this name
-
-#ifndef isnan
+namespace ArduinoJson {
+namespace Internals {
 template <typename T>
-bool isnan(T x) {
+bool isNaN(T x) {
   return x != x;
 }
-#endif
 
-#ifndef isinf
 template <typename T>
-bool isinf(T x) {
+bool isInfinity(T x) {
   return x != 0.0 && x * 2 == x;
 }
-#endif
-}  // namespace ARDUINOJSON_NAMESPACE
+}  // namespace Internals
+}  // namespace ArduinoJson

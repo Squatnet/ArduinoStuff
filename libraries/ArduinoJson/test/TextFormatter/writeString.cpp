@@ -4,15 +4,25 @@
 
 #include <catch.hpp>
 
+<<<<<<< HEAD:libraries/ArduinoJson/test/TextFormatter/writeString.cpp
 #include <ArduinoJson/Json/TextFormatter.hpp>
 #include <ArduinoJson/Serialization/StaticStringWriter.hpp>
+=======
+#include <ArduinoJson/Serialization/JsonWriter.hpp>
+#include <ArduinoJson/Serialization/StaticStringBuilder.hpp>
+>>>>>>> FastLedi2c:libraries/ArduinoJson/test/JsonWriter/writeString.cpp
 
-using namespace ARDUINOJSON_NAMESPACE;
+using namespace ArduinoJson::Internals;
 
 void check(const char* input, std::string expected) {
   char output[1024];
+<<<<<<< HEAD:libraries/ArduinoJson/test/TextFormatter/writeString.cpp
   StaticStringWriter sb(output, sizeof(output));
   TextFormatter<StaticStringWriter> writer(sb);
+=======
+  StaticStringBuilder sb(output, sizeof(output));
+  JsonWriter<StaticStringBuilder> writer(sb);
+>>>>>>> FastLedi2c:libraries/ArduinoJson/test/JsonWriter/writeString.cpp
   writer.writeString(input);
   REQUIRE(expected == output);
   REQUIRE(writer.bytesWritten() == expected.size());

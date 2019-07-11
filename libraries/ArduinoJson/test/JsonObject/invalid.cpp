@@ -8,28 +8,28 @@
 using namespace Catch::Matchers;
 
 TEST_CASE("JsonObject::invalid()") {
-  JsonObject obj;
+  JsonObject& obj = JsonObject::invalid();
 
   SECTION("SubscriptFails") {
-    REQUIRE(obj["key"].isNull());
+    REQUIRE_FALSE(obj["key"].success());
   }
 
   SECTION("AddFails") {
-    obj["hello"] = "world";
+    obj.set("hello", "world");
     REQUIRE(0 == obj.size());
   }
 
   SECTION("CreateNestedArrayFails") {
-    REQUIRE(obj.createNestedArray("hello").isNull());
+    REQUIRE_FALSE(obj.createNestedArray("hello").success());
   }
 
   SECTION("CreateNestedObjectFails") {
-    REQUIRE(obj.createNestedObject("world").isNull());
+    REQUIRE_FALSE(obj.createNestedObject("world").success());
   }
 
-  SECTION("serialize to 'null'") {
+  SECTION("PrintToWritesBraces") {
     char buffer[32];
-    serializeJson(obj, buffer, sizeof(buffer));
-    REQUIRE_THAT(buffer, Equals("null"));
+    obj.printTo(buffer, sizeof(buffer));
+    REQUIRE_THAT(buffer, Equals("{}"));
   }
 }

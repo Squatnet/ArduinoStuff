@@ -6,16 +6,26 @@
 #include <limits>
 #include <string>
 
+<<<<<<< HEAD:libraries/ArduinoJson/test/TextFormatter/writeFloat.cpp
 #include <ArduinoJson/Json/TextFormatter.hpp>
 #include <ArduinoJson/Serialization/DynamicStringWriter.hpp>
+=======
+#include <ArduinoJson/Serialization/DynamicStringBuilder.hpp>
+#include <ArduinoJson/Serialization/JsonWriter.hpp>
+>>>>>>> FastLedi2c:libraries/ArduinoJson/test/JsonWriter/writeFloat.cpp
 
-using namespace ARDUINOJSON_NAMESPACE;
+using namespace ArduinoJson::Internals;
 
 template <typename TFloat>
 void check(TFloat input, const std::string& expected) {
   std::string output;
+<<<<<<< HEAD:libraries/ArduinoJson/test/TextFormatter/writeFloat.cpp
   DynamicStringWriter<std::string> sb(output);
   TextFormatter<DynamicStringWriter<std::string> > writer(sb);
+=======
+  DynamicStringBuilder<std::string> sb(output);
+  JsonWriter<DynamicStringBuilder<std::string> > writer(sb);
+>>>>>>> FastLedi2c:libraries/ArduinoJson/test/JsonWriter/writeFloat.cpp
   writer.writeFloat(input);
   REQUIRE(writer.bytesWritten() == output.size());
   CHECK(expected == output);

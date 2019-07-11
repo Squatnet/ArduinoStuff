@@ -8,63 +8,47 @@
 TEST_CASE("JsonVariant undefined") {
   JsonVariant variant;
 
-  SECTION("as<T>()") {
-    SECTION("long") {
-      REQUIRE(variant.as<long>() == 0);
-    }
-
-    SECTION("unsigned") {
-      REQUIRE(variant.as<unsigned>() == 0);
-    }
-
-    SECTION("char*") {
-      REQUIRE(variant.as<char*>() == 0);
-    }
-
-    SECTION("double") {
-      REQUIRE(variant.as<double>() == 0);
-    }
-
-    SECTION("bool") {
-      REQUIRE(variant.as<bool>() == false);
-    }
-
-    SECTION("JsonArray") {
-      REQUIRE(variant.as<JsonArray>().isNull());
-    }
-
-    SECTION("JsonObject") {
-      REQUIRE(variant.as<JsonObject>().isNull());
-    }
+  SECTION("AsLongReturns0") {
+    REQUIRE(0 == variant.as<long>());
   }
 
-  SECTION("is<T>()") {
-    SECTION("long") {
-      REQUIRE(variant.is<long>() == false);
-    }
+  SECTION("AsUnsignedReturns0") {
+    REQUIRE(0 == variant.as<unsigned>());
+  }
 
-    SECTION("unsigned") {
-      REQUIRE(variant.is<unsigned>() == false);
-    }
+  SECTION("AsStringReturnsNull") {
+    REQUIRE(0 == variant.as<char*>());
+  }
 
-    SECTION("char*") {
-      REQUIRE(variant.is<char*>() == false);
-    }
+  SECTION("AsDoubleReturns0") {
+    REQUIRE(0 == variant.as<double>());
+  }
 
-    SECTION("double") {
-      REQUIRE(variant.is<double>() == false);
-    }
+  SECTION("AsBoolReturnsFalse") {
+    REQUIRE(false == variant.as<bool>());
+  }
 
-    SECTION("bool") {
-      REQUIRE(variant.is<bool>() == false);
-    }
+  SECTION("AsArrayReturnInvalid") {
+    REQUIRE(JsonArray::invalid() == variant.as<JsonArray&>());
+  }
 
-    SECTION("JsonArray") {
-      REQUIRE(variant.is<JsonArray>() == false);
-    }
+  SECTION("AsConstArrayReturnInvalid") {
+    REQUIRE(JsonArray::invalid() == variant.as<const JsonArray&>());
+  }
 
-    SECTION("JsonObject") {
-      REQUIRE(variant.is<JsonObject>() == false);
-    }
+  SECTION("AsObjectReturnInvalid") {
+    REQUIRE(JsonObject::invalid() == variant.as<JsonObject&>());
+  }
+
+  SECTION("AsConstObjectReturnInvalid") {
+    REQUIRE(JsonObject::invalid() == variant.as<const JsonObject&>());
+  }
+
+  SECTION("AsArrayWrapperReturnInvalid") {
+    REQUIRE(JsonArray::invalid() == variant.as<JsonArray>());
+  }
+
+  SECTION("AsObjectWrapperReturnInvalid") {
+    REQUIRE(JsonObject::invalid() == variant.as<JsonObject>());
   }
 }

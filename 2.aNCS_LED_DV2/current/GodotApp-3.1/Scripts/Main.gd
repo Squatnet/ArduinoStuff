@@ -1,8 +1,11 @@
 extends Control
 #warnings-disable
 signal ack 
+var regFin = false
 var menuBtn = load("res://Assets/Objects/Menu_A_Btn.tscn")
 var loadSc
+var oscrcv
+var currOSCMess = []
 var TheDict = {}
 var TypeNums = []
 func _ready():
@@ -11,6 +14,8 @@ func _ready():
 	if GS.pallettes.empty():
 		var pallParser = load("res://Scripts/PallParser.gd").new()
 		pallParser.parse()
+	if GS.osc:
+		setupOSC()
 func set_signals():
 	GS.connect("connected", self, "_on_connected")
 	GS.connect("disconnected", self, "_on_disconnected")
@@ -50,6 +55,7 @@ func _on_disconnected():
 func _on_reg_finished():
 	$Control.show()
 	loadSc.loadScreenStep()
+	regFin = true
 	print("Main : Register Devices finished")
 	addMenuButton("List All")
 	if GS.knownGroups.empty():
@@ -66,7 +72,19 @@ func addMenuButton(name):
 	btn.rect_scale = Vector2(2,2)
 	btn.connect("pressed",self,"_on_Menu_A_Btn_Pressed",[btn.text])
 	$Control/MenuBarA.add_child(btn)
-
+func _process(delta):
+	if !regFin:
+		if !GS.lastRegStepConfirmed:
+			$Timer.start()
+	if GS.osc:
+		while( oscrcv.has_message() ):
+			var msg = oscrcv.get_next()
+			print(str(msg))
+			currOSCMess.push_back(msg["address"])
+			for i in range( 0, msg["arg_num"] ):
+				currOSCMess.push_back(msg["args"][i])
+			if currOSCMess[0] == "/Clk":
+				GS.emit_signal("clock")
 func _on_data_received(data_received):
 	$DebugLabel.add_text(data_received+"\n")
 	$Settings/Terminal/RichTextLabel.add_text(data_received+"\n")
@@ -107,6 +125,8 @@ func _on_data_received(data_received):
 			print("MAIN: regStepsArray created: "+str(GS.regStepsArray))
 			GS.doRegStep()
 		elif test.has("Dev"):
+			GS.lastRegStepConfirmed = true
+			$Timer.stop()
 			var sglDev = test.Dev
 			print("Main: hasDev"+str(sglDev))
 			var type = sglDev.pop_front()
@@ -141,7 +161,8 @@ func _on_Connect_pressed():
 	else: ## no bluetooth module
 		if $Connect.text == "Connect":
 			GS.emit_signal("connected")
-			OS.alert("BT Module not initialised, Using FakeData","Alert!")
+			if GS.getSetting("adminMode") == true:
+				OS.alert("BT Module not initialised, Using FakeData","Alert!")
 		else:
 			GS.emit_signal("disconnected")
 			GS._on_disconnected()
@@ -168,7 +189,22 @@ func _on_LockButton_pressed():
 	if switch:
 		$LockIcon/PinPad.show()
 	else:
+<<<<<<< HEAD
 		GS.setSetting("lockout",true)
 		GS.emit_signal("locked")
 	updateLock()
 	pass # Replace with function body.
+=======
+		OS.alert("LOCKOUT: "+str(lock),str(int(lock)))
+
+func setupOSC():
+	var oscSet = GS.getSetting("osc")
+	oscrcv = load("res://addons/gdosc/bin/gdoscreceiver.gdns").new()
+	oscrcv.max_queue( 15 )
+	oscrcv.setup(oscSet.locPort)
+	oscrcv.start()
+func _exit_tree():
+	oscrcv.stop()
+func _on_Timer_timeout():
+	GS.doRegStep()
+>>>>>>> FastLedi2c

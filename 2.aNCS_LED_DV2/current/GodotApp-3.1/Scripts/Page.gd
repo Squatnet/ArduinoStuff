@@ -19,8 +19,8 @@ var indStrAddr = 0
 var AddrStrNo = 1
 var attchStr = 0
 var message = ""
-var chkStr = false
-var chkMat = false
+var chkStr = true
+var chkMat = true
 var chkRtr = false
 var chkTerm = false
 var shwChks = false
@@ -35,56 +35,83 @@ var commandDevClassOrID = ""
 var commandGrpName = ""
 var commandToRelay = ""
 var commandSuffix = ","
+var autoBtn = load("res://Assets/Objects/AutoBtn.tscn")
 func _ready():
 	call_deferred("showChkBox")
 	GS.connect("locked",self,"onLockSig")
 	onLockSig()
 	print(rect_scale)
-	rect_scale = Vector2(0.3,0.3)
+	rect_scale = Vector2(0.4,0.4)
+	rect_global_position = Vector2(0,0)
+	GS.connect("clock",self,"_on_SendButton_pressed")
 	get_node("/root/InitialLoader/Main").connect("ack",self,"onAck")
+	for i in autoOpts:
+		var aTb = autoBtn.instance()
+		aTb.setup(i,3,"auto")
+		$AutoMode/HBoxContainer.add_child(aTb)
+	for i in mirrorOpts:
+		var mTb = autoBtn.instance()
+		mTb.setup(i,3,"mirr")
+		$MirrMode/HBoxContainer.add_child(mTb)
+	for i in knownPatterns:
+		var pTb = autoBtn.instance()
+		pTb.setup(i,3,"patt")
+		$Pattern/HBoxContainer.add_child(pTb)
+	var clrBt = autoBtn.instance()
+	clrBt.setup("Color",3,"clr")
+	$ColorMode/HBoxContainer.add_child(clrBt)
+	var palBt = autoBtn.instance()
+	palBt.setup("Palette",3,"clr")
+	$ColorMode/HBoxContainer.add_child(palBt)
+	var ismOff = autoBtn.instance()
+	ismOff.setup("Off",3,"ism")
+	$ISMode/HBoxContainer.add_child(ismOff)
+	var ismOn = autoBtn.instance()
+	ismOn.setup("On",3,"ism")
+	$ISMode/HBoxContainer.add_child(ismOn)
 func showChkBox():
 	var arg = shwChks
 	print("Page: showChkBox: "+str(arg))
-	for i in get_tree().get_nodes_in_group("chkBox"):
-		if arg == true:
-			i.show()
-		else:
-			i.hide()
+	if arg == true:
+		$Control.show()
 func setup(args):
 	knownPatterns = GS.knownPatterns
 	numPatterns = knownPatterns.size()
 	numMirror = mirrorOpts.size()
-	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
-	$PatternName.set_text(knownPatterns[1])
-	$AutoMode/Label.set_text(autoOpts[automode])
+	#$PatternName.set_text(knownPatterns[1])
+	#$AutoMode/Label.set_text(autoOpts[automode])
 	pageType = args[0]
 	if pageType == 0:
 		$PAGE.set_text("Single Device: "+str(args[1]))
 		var x = str(args[1]).split(":")
 		print("Page: "+str(x))
 		if x[0] != "Mat":
-			$MirrorModeName.hide()
-			$MirrorModeLbl.hide()
+			$MirrMode.hide()
 			$Messge.hide()
+			$MatrixLbl.hide()
 		if x[0] == "Str":
-			attchStr = int(x[3])
+			attchStr = 4
 		if x[0] != "Str":
+			$ISMode.hide()
 			$InStrMode.hide()
+			$StripLbl.hide()
 		commandDevClassOrID += str(x[2])+","
 	elif pageType == 1:
 		$PAGE.set_text("Device Type :"+str(args[1]))
 		if args[1] != "Mat":
 			$Messge.hide()
-			$MirrorModeLbl.hide()
-			$MirrorModeName.hide()
+			$MirrMode.hide()
+			$MatrixLbl.hide()
 		if args[1] == "Str":
-			attchStr = GS.mostKnownStrips
+			attchStr = 4
 		if args[1] != "Str":
+			$ISMode.hide()
 			$InStrMode.hide()
+			$StripLbl.hide()
 		commandDevClassOrID += str(args[1])+",All,"
 	elif pageType == 2:
 		$PAGE.set_text("Group :"+str(args[1]))
-		attchStr = GS.mostKnownStrips
+		attchStr = 4
 		shwChks = true
 		commandGrpName += str(args[1])+","
 func setCol(col):
@@ -109,12 +136,18 @@ func sendMessage():
 		var st = OS.get_unix_time()
 		GS.BT.sendData(commandToSend)
 		var msec = 0
+		var iter = 0
 		while !gotAck:
-			if msec < 600:
+			if GS.getSetting("fakeData"):
+				gotAck = true
+			if msec < 2000:
 				print("wait for ack "+str(msec))
 				yield(get_tree(),"idle_frame")
 				msec += 10
-			if msec >= 600:
+			if iter >= 4:
+				break
+			if msec >= 2000:
+				iter += 1
 				print("Didn't get ack")
 				GS.BT.sendData(commandToSend)
 				msec = 0
@@ -128,43 +161,19 @@ func sendMessage():
 	updated.clear()
 func _on_CloseBtn_pressed():
 	queue_free()
-
-func _on_AutoMode_toggled(button_pressed):
-	if button_pressed == true:
-		automode = 1
-	else:
-		automode = 0
-	if !updated.has("automode"):
-		updated.push_back("automode")
-
-
 func _on_LineEdit_text_changed(new_text):
 	if int(new_text) != 0:
 		autoSecs = int(new_text)
+		print("autoSecs")
 		if !updated.has("autoSecs"):
 			updated.push_back("autoSecs")
 
 
 func _on_PalleteMode_toggled(button_pressed):
 	if button_pressed == true:
-		paletteMode = 1
-		$ColorPicker.hide()
-		$PallettePicker.show()
-		if updated.has("color"):
-			updated.erase("color")
-		if !updated.has("pall"):
-			updated.push_back("pall")
+		pass
 	else:
-		paletteMode = 0
-		$ColorPicker.show()
-		$PallettePicker.hide()
-		if updated.has("pall"):
-			updated.erase("pall")
-		if !updated.has("color"):
-			updated.push_back("color")
-	if !updated.has("palMode"):
-		updated.push_back("palMode")
-
+		pass
 
 func _on_SendButton_pressed():
 	if updated.size() > 0:
@@ -197,7 +206,7 @@ func _on_SendButton_pressed():
 				commandToRelay += "SNo,"+str(AddrStrNo)+","
 				
 		if pageType == 2:
-			if chkStr == true && chkMat == true && chkRtr == true && chkTerm == true:
+			if chkStr == true && chkMat == true:
 				commandDevClassOrID = "All,"
 				sendMessage()
 			elif chkStr == false && chkMat == false && chkRtr == false && chkTerm == false:
@@ -231,22 +240,23 @@ func _on_SendButton_pressed():
 				commandDevClassOrID = "Mat,"
 			commandToRelay += "Msg,"+message+","
 			message = ""
+			$Messge.text =""
 			sendMessage()
 	else:
 		if message.length() > 0:
 			commandToRelay += "Msg,"+message+","
 			message = ""
+			$Messge.text = ""
 			sendMessage()
 		elif GS.getSetting("debugMode") == true:
 			OS.alert("Nothing was updated or failed to generate command","Fail!")
 		else:
-			OS.alert("NOTHING TO SEND","Warning!")
+			if !GS.locked == false && GS.getSetting("adminMode") == true:
+					OS.alert("NOTHING TO SEND","Warning!")
 
 func _on_Messge_text_changed(new_text):
 	message = new_text
-
-
-
+	
 func _on_StrChk_toggled(button_pressed):
 	chkStr = button_pressed
 
@@ -277,15 +287,7 @@ func _on_NextBtn_pressed():
 	if !updated.has("strNo"):
 		updated.push_back("strNo")
 
-func _on_InStrMode_toggled(button_pressed):
-	indStrAddr = int(button_pressed)
-	for i in $InStrMode.get_children():
-		if indStrAddr == 1:
-			i.show()
-		else:
-			i.hide()
-	if !updated.has("inSt"):
-		updated.push_back("inSt")
+
 
 func _on_PatPrevBtn_pressed():
 	patternSel -= 1
@@ -305,33 +307,84 @@ func _on_PatNextBtn_pressed():
 func onAck():
 	gotAck = true
 
-func _on_MirPrevBtn_pressed():
-	mirrorSel -= 1
-	if mirrorSel < 0:
-		mirrorSel = numMirror-1
-	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
-	if !updated.has("mirror"):
-		updated.push_back("mirror")
+func autoButtonPressed(btnName,btnType):
+	print(btnName)
+	if btnType == "auto":
+		if autoOpts.has(btnName):
+			automode = autoOpts.find(btnName)
+			if !updated.has("automode"):
+				updated.push_back("automode")
+		else:
+			OS.alert("Undefined Behaviour")
+	elif btnType == "mirr":
+		if mirrorOpts.has(btnName):
+			mirrorSel = mirrorOpts.find(btnName)
+			if !updated.has("mirror"):
+				updated.push_back("mirror")
+		else:
+			OS.alert("Undefined Behaviour")
+	elif btnType == "patt":
+		if knownPatterns.has(btnName):
+			patternSel = knownPatterns.find(btnName)
+			if !updated.has("pattern"):
+				updated.push_back("pattern")
+	elif btnType == "clr":
+		if btnName == "Palette":
+			paletteMode = 1
+			$ColorPicker.hide()
+			$PallettePicker.show()
+			if updated.has("color"):
+				updated.erase("color")
+			if !updated.has("pall"):
+				updated.push_back("pall")
+		else:
+			paletteMode = 0
+			$ColorPicker.show()
+			$PallettePicker.hide()
+			if updated.has("pall"):
+				updated.erase("pall")
+			if !updated.has("color"):
+				updated.push_back("color")
+		if !updated.has("palMode"):
+			updated.push_back("palMode")
+	elif btnType == "ism":
+		if btnName == "On":
+			indStrAddr = 1
+			$InStrMode.show()
+		else:
+			indStrAddr = 0
+			$InStrMode.hide()
+		if !updated.has("inSt"):
+			updated.push_back("inSt")
+
+func _on_HSlider_value_changed(value):
+	$AutoS.text = str(value+3)
+	_on_LineEdit_text_changed($AutoS.text)
 
 
-func _on_MirNextBtn_pressed():
-	mirrorSel += 1
-	if mirrorSel > numMirror-1:
-		mirrorSel = 0
-	$MirrorModeName.set_text(mirrorOpts[mirrorSel])
-	if !updated.has("mirror"):
-		updated.push_back("mirror")
+func _on_StripsBtn_toggled(button_pressed):
+	chkStr = button_pressed
 
 
-func _on_Prev_pressed():
-	automode -= 1
-	if automode < 0:
-		automode = autoOpts.size()-1
-	$AutoMode/Label.set_text(autoOpts[automode])
-	if !updated.has("automode"):
-		updated.push_back("automode")
+func _on_MatrixBtn_toggled(button_pressed):
+	chkMat = button_pressed
 
 
+func _on_ToolButton_toggled(button_pressed):
+	if button_pressed == true:
+		GS.setLock(true)
+		$CloseBtn.hide()
+		$SendButton.hide()
+		OS.window_fullscreen = true
+	else:
+		$Panel.show()
+
+
+func _on_PinBtn11_pressed():
+	pass # Replace with function body.
+
+
+<<<<<<< HEAD
 func _on_Next_pressed():
 	automode += 1
 	if automode > autoOpts.size()-1:
@@ -363,3 +416,13 @@ func unlockSelf():
 	OS.set_window_maximized(true)
 	OS.set_window_position(screen_size*0.5 - window_size*0.5)
 	
+=======
+func _on_ToolButton_pressed():
+	if message != "":
+		$Messge/Osk.theText = message
+		$Messge/Osk/Label.text = message
+	$Messge/Osk.show()
+func _process(delta):
+	if Input.is_action_just_pressed("set_fullsc"):
+		get_tree().get_root().get_node("InitialLoader").swFS()
+>>>>>>> FastLedi2c

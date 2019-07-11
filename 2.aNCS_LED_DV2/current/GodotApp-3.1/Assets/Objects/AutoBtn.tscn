@@ -1,0 +1,25 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://Assets/Objects/AutoBtnFoc.tres" type="StyleBox" id=1]
+[ext_resource path="res://Assets/Styles/AutoBtnPress.tres" type="StyleBox" id=2]
+[ext_resource path="res://Assets/Styles/AutoBtnDis.tres" type="StyleBox" id=3]
+[ext_resource path="res://Assets/Styles/AutoBtn.tres" type="StyleBox" id=4]
+[ext_resource path="res://Assets/Objects/new_buttongroup.tres" type="ButtonGroup" id=5]
+[ext_resource path="res://Assets/Objects/AutoBtn.gd" type="Script" id=6]
+
+[node name="AutoBtn" type="Button"]
+anchor_right = 1.0
+margin_right = -1823.0
+margin_bottom = 25.0
+rect_min_size = Vector2( 97, 25 )
+custom_styles/hover = ExtResource( 1 )
+custom_styles/pressed = ExtResource( 2 )
+custom_styles/focus = ExtResource( 2 )
+custom_styles/disabled = ExtResource( 3 )
+custom_styles/normal = ExtResource( 4 )
+custom_constants/hseparation = 1
+toggle_mode = true
+group = ExtResource( 5 )
+text = "PornTrader"
+script = ExtResource( 6 )
+[connection signal="toggled" from="." to="." method="_on_AutoBtn_toggled"]

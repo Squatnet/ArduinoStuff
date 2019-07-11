@@ -6,26 +6,30 @@
 #include <catch.hpp>
 
 TEST_CASE("JsonArray::size()") {
-  DynamicJsonDocument doc(4096);
-  JsonArray array = doc.to<JsonArray>();
-
-  SECTION("returns 0 is empty") {
-    REQUIRE(0U == array.size());
-  }
+  DynamicJsonBuffer _jsonBuffer;
+  JsonArray& _array = _jsonBuffer.createArray();
 
   SECTION("increases after add()") {
-    array.add("hello");
-    REQUIRE(1U == array.size());
+    _array.add("hello");
+    REQUIRE(1U == _array.size());
 
-    array.add("world");
-    REQUIRE(2U == array.size());
+    _array.add("world");
+    REQUIRE(2U == _array.size());
   }
 
-  SECTION("remains the same after replacing an element") {
-    array.add("hello");
-    REQUIRE(1U == array.size());
+  SECTION("remains the same after set()") {
+    _array.add("hello");
+    REQUIRE(1U == _array.size());
 
-    array[0] = "hello";
-    REQUIRE(1U == array.size());
+    _array.set(0, "hello");
+    REQUIRE(1U == _array.size());
+  }
+
+  SECTION("remains the same after assigment") {
+    _array.add("hello");
+    REQUIRE(1U == _array.size());
+
+    _array[0] = "hello";
+    REQUIRE(1U == _array.size());
   }
 }

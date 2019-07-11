@@ -6,34 +6,25 @@
 #include <catch.hpp>
 
 TEST_CASE("JsonObject::containsKey()") {
-  DynamicJsonDocument doc(4096);
-  JsonObject obj = doc.to<JsonObject>();
-  obj["hello"] = 42;
+  DynamicJsonBuffer _jsonBuffer;
+  JsonObject& _object = _jsonBuffer.createObject();
 
-  SECTION("returns true only if key is present") {
-    REQUIRE(false == obj.containsKey("world"));
-    REQUIRE(true == obj.containsKey("hello"));
+  SECTION("ContainsKeyReturnsFalseForNonExistingKey") {
+    _object.set("hello", 42);
+
+    REQUIRE(false == _object.containsKey("world"));
   }
 
-  SECTION("works with JsonObjectConst") {
-    JsonObjectConst cobj = obj;
-    REQUIRE(false == cobj.containsKey("world"));
-    REQUIRE(true == cobj.containsKey("hello"));
+  SECTION("ContainsKeyReturnsTrueForDefinedValue") {
+    _object.set("hello", 42);
+
+    REQUIRE(true == _object.containsKey("hello"));
   }
 
-  SECTION("returns false after remove()") {
-    obj.remove("hello");
+  SECTION("ContainsKeyReturnsFalseAfterRemove") {
+    _object.set("hello", 42);
+    _object.remove("hello");
 
-    REQUIRE(false == obj.containsKey("hello"));
+    REQUIRE(false == _object.containsKey("hello"));
   }
-
-#ifdef HAS_VARIABLE_LENGTH_ARRAY
-  SECTION("key is a VLA") {
-    int i = 16;
-    char vla[i];
-    strcpy(vla, "hello");
-
-    REQUIRE(true == obj.containsKey(vla));
-  }
-#endif
 }
